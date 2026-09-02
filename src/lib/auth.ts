@@ -21,12 +21,10 @@ export const authOptions: NextAuthOptions = {
 
         if (!user) return null;
 
-        // Gestor precisa de senha
-        if (user.role === "ADMIN") {
-           if (!credentials.password || !user.password) return null;
-           const isValid = await bcrypt.compare(credentials.password, user.password);
-           if (!isValid) return null;
-        }
+        // Todos precisam de senha
+        if (!credentials.password || !user.password) return null;
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) return null;
 
         return {
           id: user.id,

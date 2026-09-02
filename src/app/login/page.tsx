@@ -86,6 +86,7 @@ export default function LoginPage() {
             </div>
 
             <motion.button 
+              type="submit"
               disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
               className="w-full bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 group mt-4"
             >
