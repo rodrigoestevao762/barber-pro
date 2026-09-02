@@ -24,19 +24,13 @@ export default function LoginPage() {
     const res = await signIn("credentials", {
       phone: cleanPhone,
       password,
-      redirect: false,
+      redirect: true,
+      callbackUrl: "/dashboard",
     });
 
     if (res?.error) {
       setError("Credenciais inválidas ou número não encontrado.");
       setLoading(false);
-    } else {
-      const session = await getSession();
-      if ((session?.user as any)?.role === "ADMIN") {
-        router.push("/dashboard");
-      } else {
-        router.push("/cliente");
-      }
     }
   };
 

@@ -14,8 +14,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
-    if (status === "unauthenticated" || (session && (session.user as any).role !== "ADMIN")) {
+    if (status === "unauthenticated") {
       router.push("/login");
+    } else if (session && (session.user as any).role === "CLIENT") {
+      router.push("/cliente");
     }
   }, [status, session, router]);
 
