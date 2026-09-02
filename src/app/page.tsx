@@ -373,65 +373,75 @@ export default function Home() {
                  <span className="text-xs text-gray-500 uppercase tracking-widest">Para Você e sua Família</span>
               </div>
             </motion.div>
+            <Scissors className="w-10 h-10 text-[#C88E70]" />
+          </motion.div>
+
+          <div className="text-center space-y-4 mb-16 relative">
+             <motion.h2 
+               initial={{ opacity: 0, y: 100, filter: "blur(20px)" }}
+               whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+               viewport={{ once: true }}
+               transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+               className="text-[4rem] md:text-[8rem] font-serif leading-[0.8] tracking-tighter uppercase"
+             >
+               A Sua Nova <br /> 
+               <span className="text-transparent [-webkit-text-stroke:2px_#C88E70] hover:text-[#C88E70] transition-colors duration-1000">
+                 Assinatura
+               </span>
+             </motion.h2>
+             <motion.p 
+               initial={{ opacity: 0, scale: 0.8 }}
+               whileInView={{ opacity: 1, scale: 1 }}
+               viewport={{ once: true }}
+               transition={{ delay: 0.5, duration: 1 }}
+               className="text-xl md:text-2xl text-gray-400 font-light max-w-2xl mx-auto italic"
+             >
+               Onde tradição e sofisticação se encontram para redefinir o seu estilo.
+             </motion.p>
           </div>
 
-        </div>
-      </section>
-
-      {/* FINAL CALL TO ACTION (ULTRA PREMIUM) */}
-      <section className="py-32 px-8 bg-[#C88E70] text-[#050B14] relative overflow-hidden flex justify-center">
-         {/* Partículas flutuantes para dar vida ao fundo dourado */}
-         <motion.div 
-           animate={{ rotate: 360 }}
-           transition={{ duration: 150, repeat: Infinity, ease: "linear" }}
-           className="absolute -top-[50%] -left-[20%] w-[150%] h-[200%] bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"
-         />
-         
-         <motion.div
-           initial={{ scale: 0.8, opacity: 0, y: 50 }}
-           whileInView={{ scale: 1, opacity: 1, y: 0 }}
-           viewport={{ once: true }}
-           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-           className="max-w-4xl mx-auto text-center relative z-10 flex flex-col items-center"
-         >
-           <Scissors className="w-12 h-12 mb-8 opacity-80" />
-           <RevealText>
-              <h2 className="text-5xl md:text-[5rem] font-serif mb-6 leading-[0.9] tracking-tight">
-                Pronto para se <br /><span className="text-white italic">Reinventar?</span>
-              </h2>
-           </RevealText>
-           
-           <motion.p 
-             initial={{ opacity: 0 }}
-             whileInView={{ opacity: 1 }}
-             viewport={{ once: true }}
-             transition={{ delay: 0.5, duration: 1 }}
-             className="font-medium text-xl md:text-2xl mb-12 opacity-80 max-w-2xl"
-           >
-             Sua melhor versão aguarda. Reserve seu momento e deixe nossa equipe cuidar dos detalhes.
-           </motion.p>
-           
-           <motion.div 
-             initial={{ opacity: 0, y: 20 }}
+          <motion.div 
+             initial={{ opacity: 0, y: 50 }}
              whileInView={{ opacity: 1, y: 0 }}
              viewport={{ once: true }}
-             transition={{ delay: 0.8, duration: 0.8 }}
+             transition={{ delay: 0.8, duration: 1, type: "spring" }}
              onClick={() => setIsModalOpen(true)} 
+             className="relative group cursor-pointer"
            >
-             <MagneticButton className="group relative bg-[#050B14] text-white px-12 py-6 uppercase tracking-[0.3em] text-sm font-bold overflow-hidden">
-               <div className="absolute inset-0 bg-white translate-y-[100%] group-hover:translate-y-0 transition-transform duration-500 ease-out" />
-               <span className="relative z-10 group-hover:text-[#050B14] transition-colors duration-500">Agendar Seu Horário</span>
+             <div className="absolute -inset-4 rounded-full bg-[#C88E70]/20 blur-2xl group-hover:bg-[#C88E70]/40 transition-all duration-700" />
+             <MagneticButton className="relative bg-[#C88E70] text-[#050B14] px-16 py-8 rounded-full uppercase tracking-[0.4em] text-sm font-black overflow-hidden transform hover:scale-110 transition-transform duration-500">
+               <motion.div 
+                 animate={{ y: ["0%", "-100%", "0%"] }}
+                 transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
+                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-[45deg]"
+               />
+               <span className="relative z-10 flex items-center gap-4">
+                 <Calendar className="w-5 h-5" /> Reservar Horário
+               </span>
              </MagneticButton>
            </motion.div>
-         </motion.div>
-      </section>
+        </div>
 
-      {/* FOOTER */}
-      <footer className="bg-[#02050A] border-t border-white/5 py-12 px-8 text-center">
-         <p className="text-gray-500 text-xs tracking-widest uppercase">
-           © {new Date().getFullYear()} SUA BARBEARIA. TODOS OS DIREITOS RESERVADOS.
-         </p>
-      </footer>
+        <motion.footer 
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 1.5, duration: 2 }}
+          className="w-full border-t border-white/5 py-8 flex flex-col md:flex-row items-center justify-between px-12 z-20 bg-[#02050A]/80 backdrop-blur-xl"
+        >
+           <div className="flex items-center gap-2 mb-4 md:mb-0">
+              <Scissors className="w-4 h-4 text-[#C88E70]" />
+              <span className="text-white font-serif text-lg tracking-widest uppercase">SUA BARBEARIA</span>
+           </div>
+           <p className="text-gray-600 text-[10px] tracking-[0.3em] uppercase">
+             © {new Date().getFullYear()} O PADRÃO DE EXCELÊNCIA.
+           </p>
+           <div className="flex gap-6 mt-4 md:mt-0">
+              <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors"><Instagram className="w-4 h-4" /></a>
+              <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors"><MapPin className="w-4 h-4" /></a>
+           </div>
+        </motion.footer>
+      </section>
 
     </div>
   );
