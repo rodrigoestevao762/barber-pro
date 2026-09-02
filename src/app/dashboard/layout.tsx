@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
 
       {/* Top Header */}
-      <header className="pl-40 pr-12 pt-12 flex justify-between items-end relative z-10">
+      <header className="pl-40 pr-12 pt-12 flex justify-between items-end relative z-50">
         <div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
