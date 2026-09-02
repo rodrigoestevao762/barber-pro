@@ -133,10 +133,10 @@ export default function Home() {
             A Experiência
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
           </a>
-          <Link href="/login" className="hover:text-[#C88E70] transition-colors relative group">
+          <a href="/login" className="hover:text-[#C88E70] transition-colors relative group">
             Login
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
-          </Link>
+          </a>
           <div onClick={() => setIsModalOpen(true)}>
             <MagneticButton className="bg-[#C88E70] text-[#050B14] px-8 py-4 flex items-center gap-3 hover:bg-white transition-colors duration-300">
               <Calendar className="w-4 h-4" /> AGENDAR
