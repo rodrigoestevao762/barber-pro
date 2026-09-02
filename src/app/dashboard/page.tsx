@@ -1,12 +1,17 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { TrendingUp, Users, User, Scissors, Clock, ChevronRight, Star, CheckCircle, Clock3 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { TrendingUp, Users, User, Scissors, Clock, ChevronRight, Star, CheckCircle, Clock3, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
   const [data, setData] = useState({ revenue: 0, todayCount: 0, clientsCount: 0, appointments: [] as any[] });
   const [loading, setLoading] = useState(true);
+  
+  // Modal states
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [services, setServices] = useState<any[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchDashboard = async () => {
     try {
@@ -21,8 +26,21 @@ export default function DashboardPage() {
     setLoading(false);
   };
 
+  const fetchServices = async () => {
+    try {
+      const res = await fetch('/api/services');
+      if (res.ok) {
+        const json = await res.json();
+        setServices(json);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     fetchDashboard();
+    fetchServices();
   }, []);
 
   const updateStatus = async (id: string, newStatus: string) => {
@@ -34,13 +52,15 @@ export default function DashboardPage() {
     fetchDashboard(); // Recarrega os dados para atualizar o faturamento
   };
 
-  const createWalkIn = async () => {
-    // Cria um agendamento rápido (Cliente Balcão)
+  const createWalkIn = async (serviceId: string) => {
+    setIsSubmitting(true);
     await fetch('/api/appointments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ serviceId: "1", date: new Date().toISOString(), isWalkIn: true })
+      body: JSON.stringify({ serviceId, date: new Date().toISOString(), isWalkIn: true })
     });
+    setIsSubmitting(false);
+    setIsModalOpen(false);
     fetchDashboard();
   };
 
@@ -49,6 +69,7 @@ export default function DashboardPage() {
   const nextApt = data.appointments.find((a: any) => a.status === 'CONFIRMED' || a.status === 'PENDING');
 
   return (
+    <>
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
         
@@ -56,9 +77,9 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-6">
           <div className="bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 backdrop-blur-md relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-[#C88E70]/10 blur-[50px] group-hover:bg-[#C88E70]/20 transition-colors" />
-            <p className="text-gray-400 text-xs tracking-[0.2em] uppercase mb-4 flex justify-between">
+            <p className="text-gray-400 text-xs tracking-[0.2em] uppercase mb-4 flex justify-between items-center">
               Faturamento (Concluídos)
-              <button onClick={createWalkIn} className="text-[#C88E70] border border-[#C88E70]/50 px-2 py-1 rounded hover:bg-[#C88E70] hover:text-black transition-colors">+ Cliente Balcão</button>
+              <button onClick={() => setIsModalOpen(true)} className="text-[#C88E70] border border-[#C88E70]/50 px-3 py-2 rounded-lg hover:bg-[#C88E70] hover:text-black transition-colors font-bold tracking-widest text-[10px]">+ CLIENTE BALCÃO</button>
             </p>
             <h2 className="text-5xl font-serif text-white mb-4">
               R$ {data.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -179,5 +200,51 @@ export default function DashboardPage() {
         </div>
       </div>
     </motion.div>
+
+    {/* MODAL CLIENTE BALCÃO */}
+    <AnimatePresence>
+      {isModalOpen && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-[#050B14] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative"
+          >
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors rounded-full hover:bg-white/10">
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="p-8 pb-4">
+              <h2 className="text-2xl font-serif text-white mb-1">Cliente Balcão</h2>
+              <p className="text-gray-400 text-sm font-light">Selecione o serviço realizado para registrar o faturamento.</p>
+            </div>
+
+            <div className="p-8 pt-4 space-y-3 max-h-[60vh] overflow-y-auto scrollbar-hide">
+              {services.map(svc => (
+                <button
+                  key={svc.id}
+                  onClick={() => createWalkIn(svc.id)}
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-[#C88E70]/30 transition-all text-left disabled:opacity-50"
+                >
+                  <div>
+                    <h3 className="text-white font-medium">{svc.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{svc.duration} min</p>
+                  </div>
+                  <span className="text-[#C88E70] font-serif text-lg">R$ {svc.price}</span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+    </>
   );
 }

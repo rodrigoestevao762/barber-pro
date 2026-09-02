@@ -7,8 +7,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     let { serviceId, date, isWalkIn, clientName, clientPhone, clientPassword } = body;
 
-    // Pega o primeiro serviço caso venha ID genérico (como do botão Cliente Balcão)
-    if (isWalkIn || serviceId === "1") {
+    // Usa o serviceId selecionado ou pega o primeiro como fallback
+    if (!serviceId || serviceId === "1") {
        const defaultService = await prisma.service.findFirst();
        if(defaultService) {
          serviceId = defaultService.id;

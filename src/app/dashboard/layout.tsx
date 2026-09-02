@@ -1,13 +1,28 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell, User as UserIcon } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [active, setActive] = useState("overview");
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Básico: busca os últimos agendamentos para criar notificações simples
+    const fetchNotifs = async () => {
+      try {
+        const res = await fetch('/api/dashboard');
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data.appointments.slice(0, 5));
+        }
+      } catch (e) {}
+    };
+    fetchNotifs();
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#050B14] text-white relative overflow-hidden font-sans selection:bg-[#C88E70] selection:text-black">
@@ -71,11 +86,49 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <div className="flex items-center gap-6">
-          <button className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors relative">
-            <Bell className="w-5 h-5 text-gray-300" />
-            <span className="absolute top-3 right-3 w-2 h-2 bg-[#C88E70] rounded-full shadow-[0_0_10px_#C88E70]"></span>
+          <div className="relative">
+            <button 
+              onClick={() => setIsNotifOpen(!isNotifOpen)}
+              className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors relative"
+            >
+              <Bell className="w-5 h-5 text-gray-300" />
+              {notifications.length > 0 && <span className="absolute top-3 right-3 w-2 h-2 bg-[#C88E70] rounded-full shadow-[0_0_10px_#C88E70]"></span>}
+            </button>
+            
+            <AnimatePresence>
+              {isNotifOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                  className="absolute right-0 mt-4 w-80 bg-[#050B14] border border-white/10 rounded-2xl shadow-2xl p-4 z-50"
+                >
+                  <h3 className="text-white font-serif mb-4">Notificações Recentes</h3>
+                  <div className="space-y-3">
+                    {notifications.length === 0 ? (
+                      <p className="text-gray-500 text-sm italic">Sem novidades no momento.</p>
+                    ) : (
+                      notifications.map((n, idx) => (
+                        <div key={idx} className="bg-white/5 rounded-xl p-3 border border-white/5">
+                          <p className="text-xs text-[#C88E70] font-semibold mb-1">{n.status === 'CONFIRMED' ? 'NOVO AGENDAMENTO' : n.status}</p>
+                          <p className="text-white text-sm">{n.user?.name || 'Cliente'} - {n.service?.name}</p>
+                          <p className="text-gray-500 text-xs mt-1">{new Date(n.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' })}</p>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          
+          {/* Profile Picture (temporarily just opens an alert until image bucket is configured) */}
+          <button 
+            onClick={() => alert("O upload de fotos de perfil requer a configuração de um Storage (Vercel Blob ou Amazon S3). Esta funcionalidade será ativada na versão final do sistema!")}
+            className="w-12 h-12 rounded-full bg-white/5 border border-[#C88E70] flex items-center justify-center hover:scale-105 transition-transform overflow-hidden"
+          >
+             <UserIcon className="w-5 h-5 text-[#C88E70]" />
           </button>
-          <div className="w-12 h-12 rounded-full bg-[url('https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=150')] bg-cover bg-center border border-[#C88E70]" />
         </div>
       </header>
 
