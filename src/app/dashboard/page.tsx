@@ -5,7 +5,7 @@ import { TrendingUp, Users, User, Scissors, Clock, ChevronRight, Star, CheckCirc
 import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
-  const [data, setData] = useState({ revenue: 0, todayCount: 0, clientsCount: 0, appointments: [] });
+  const [data, setData] = useState({ revenue: 0, todayCount: 0, clientsCount: 0, appointments: [] as any[] });
   const [loading, setLoading] = useState(true);
 
   const fetchDashboard = async () => {
