@@ -72,7 +72,7 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboard();
     fetchServices();
-  }, []);
+  }, [selectedDate]);
 
   const updateStatus = async (id: string, newStatus: string) => {
     await fetch('/api/dashboard', {
