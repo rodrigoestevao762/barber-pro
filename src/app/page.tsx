@@ -5,6 +5,7 @@ import { Calendar, ChevronRight, ChevronLeft, Menu, Scissors, Star, MapPin, Cloc
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import BookingModal from "@/components/BookingModal";
+import { useSession } from "next-auth/react";
 
 // --- DADOS ---
 const HERO_IMAGES = [
@@ -63,6 +64,7 @@ const MagneticButton = ({ children, className = "" }: { children: ReactNode, cla
 
 // --- PÁGINA PRINCIPAL ---
 export default function Home() {
+  const { data: session } = useSession();
   const [currentImage, setCurrentImage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -133,10 +135,10 @@ export default function Home() {
             A Experiência
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
           </a>
-          <a href="/login" className="hover:text-[#C88E70] transition-colors relative group">
-            Login
+          <Link href={session ? "/dashboard" : "/login"} className="hover:text-[#C88E70] transition-colors relative group">
+            {session ? "Painel" : "Login"}
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
-          </a>
+          </Link>
           <div onClick={() => setIsModalOpen(true)}>
             <MagneticButton className="bg-[#C88E70] text-[#050B14] px-8 py-4 flex items-center gap-3 hover:bg-white transition-colors duration-300">
               <Calendar className="w-4 h-4" /> AGENDAR
