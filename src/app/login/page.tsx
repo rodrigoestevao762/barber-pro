@@ -16,6 +16,10 @@ export default function LoginPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!phone || !password) {
+      setError("Preencha todos os campos para continuar.");
+      return;
+    }
     setLoading(true);
     setError("");
 
@@ -56,7 +60,7 @@ export default function LoginPage() {
                 <Phone className="w-5 h-5 text-gray-600 group-focus-within:text-[#C88E70] transition-colors" />
               </div>
               <input 
-                type="text" required value={phone} onChange={(e) => setPhone(e.target.value)}
+                type="text" value={phone} onChange={(e) => setPhone(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder-transparent peer"
                 placeholder="Telefone" id="phone"
               />
@@ -70,7 +74,7 @@ export default function LoginPage() {
                 <Lock className="w-5 h-5 text-gray-600 group-focus-within:text-[#C88E70] transition-colors" />
               </div>
               <input 
-                type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+                type="password" value={password} onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder-transparent peer"
                 placeholder="Senha" id="password"
               />
@@ -79,14 +83,15 @@ export default function LoginPage() {
               </label>
             </div>
 
-            <motion.button 
+            <button 
               type="submit"
-              disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-              className="w-full bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 group mt-4"
+              onClick={handleAuth}
+              disabled={loading}
+              className="w-full bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 group mt-4 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? "Processando..." : "Acessar Sistema"}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </motion.button>
+            </button>
           </form>
         </div>
       </div>
