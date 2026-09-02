@@ -15,8 +15,17 @@ export async function GET() {
       orderBy: { date: 'asc' }
     });
 
-    return NextResponse.json(appointments);
+    const appointmentsWithDuration = appointments.map(apt => {
+       if (apt.status === 'COMPLETED') {
+          const dur = Math.floor((apt.updatedAt.getTime() - apt.date.getTime()) / 60000);
+          return { ...apt, durationSpent: dur > 0 ? dur : 1 };
+       }
+       return apt;
+    });
+
+    return NextResponse.json(appointmentsWithDuration);
   } catch (error) {
     return NextResponse.json({ error: 'Erro ao buscar' }, { status: 500 });
   }
 }
+

@@ -47,16 +47,28 @@ export async function GET() {
     const uniqueClients = await prisma.user.count({ where: { role: 'CLIENT' } });
 
     // 4. Tempo Médio de Cortes Hoje
-    const completedToday = todayAppointments.filter(apt => apt.status === 'COMPLETED' && apt.durationSpent);
-    const totalDurationToday = completedToday.reduce((acc, apt) => acc + (apt.durationSpent || 0), 0);
+    const completedToday = todayAppointments.filter(apt => apt.status === 'COMPLETED');
+    const totalDurationToday = completedToday.reduce((acc, apt) => {
+       const durationMinutes = Math.floor((apt.updatedAt.getTime() - apt.date.getTime()) / 60000);
+       return acc + (durationMinutes > 0 ? durationMinutes : 1);
+    }, 0);
     const averageDuration = completedToday.length > 0 ? Math.round(totalDurationToday / completedToday.length) : 0;
+    
+    // Populate individual durations so the frontend can display them
+    const appointmentsWithDuration = todayAppointments.map(apt => {
+       if (apt.status === 'COMPLETED') {
+          const dur = Math.floor((apt.updatedAt.getTime() - apt.date.getTime()) / 60000);
+          return { ...apt, durationSpent: dur > 0 ? dur : 1 };
+       }
+       return apt;
+    });
 
     return NextResponse.json({
       revenue,
       todayCount: todayAppointments.length,
       clientsCount: uniqueClients,
       averageDuration,
-      appointments: todayAppointments
+      appointments: appointmentsWithDuration
     });
   } catch (error) {
     return NextResponse.json({ error: 'Erro ao buscar dados do dashboard' }, { status: 500 });
