@@ -105,7 +105,7 @@ export default function Home() {
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="mt-4 font-serif text-[#C88E70] tracking-[0.3em] uppercase text-sm"
             >
-              ARTHUR BARBER
+              SUA BARBEARIA
             </motion.p>
           </motion.div>
         )}
@@ -120,7 +120,7 @@ export default function Home() {
       >
         <div className="flex items-center gap-3 cursor-pointer group">
            <Scissors className="w-6 h-6 text-[#C88E70] group-hover:rotate-180 transition-transform duration-700" />
-           <span className="text-xl font-serif tracking-[0.3em] text-white uppercase">ARTHUR BARBER</span>
+           <span className="text-xl font-serif tracking-[0.3em] text-white uppercase">SUA BARBEARIA</span>
         </div>
         
         <div className="hidden md:flex items-center gap-12 text-xs uppercase tracking-[0.2em] text-gray-300 font-semibold">
@@ -346,7 +346,7 @@ export default function Home() {
                 Acreditamos que cuidar da aparência vai muito além da estética. É sobre confiança, bem-estar e o prazer de se sentir bem consigo mesmo em um ambiente que te respeita.
               </p>
               <p>
-                Construímos a Arthur Barber para ser o refúgio seguro onde pais e filhos podem compartilhar momentos. Oferecemos um atendimento atencioso, serviço de excelência e uma atmosfera de respeito onde todos são bem-vindos para relaxar e renovar suas energias.
+                Construímos a SUA BARBEARIA para ser o refúgio seguro onde pais e filhos podem compartilhar momentos. Oferecemos um atendimento atencioso, serviço de excelência e uma atmosfera de respeito onde todos são bem-vindos para relaxar e renovar suas energias.
               </p>
             </motion.div>
 
@@ -424,7 +424,7 @@ export default function Home() {
       {/* FOOTER */}
       <footer className="bg-[#02050A] border-t border-white/5 py-12 px-8 text-center">
          <p className="text-gray-500 text-xs tracking-widest uppercase">
-           © {new Date().getFullYear()} ARTHUR BARBER. TODOS OS DIREITOS RESERVADOS.
+           © {new Date().getFullYear()} SUA BARBEARIA. TODOS OS DIREITOS RESERVADOS.
          </p>
       </footer>
 

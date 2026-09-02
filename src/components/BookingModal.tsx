@@ -95,7 +95,7 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean; onC
                 <h3 className="text-3xl font-serif text-white mb-2">Tudo Certo!</h3>
                 <p className="text-gray-400 font-light max-w-md">Seu horário para <strong>{selectedService?.name}</strong> foi reservado. Você receberá um e-mail com os detalhes.</p>
                 <div className="mt-8 flex gap-4">
-                  <a href={`https://wa.me/5511999999999?text=Olá Arthur! Acabei de agendar um ${selectedService?.name} para o dia ${selectedDate} às ${selectedTime}. Meu nome é ${clientName}.`} target="_blank" rel="noreferrer" className="bg-[#25D366] text-white px-8 py-3 uppercase tracking-widest text-xs font-bold rounded-lg hover:bg-[#128C7E] transition-colors flex items-center gap-2">
+                  <a href={`https://wa.me/5511999999999?text=Olá! Acabei de agendar um ${selectedService?.name} para o dia ${selectedDate} às ${selectedTime}. Meu nome é ${clientName}.`} target="_blank" rel="noreferrer" className="bg-[#25D366] text-white px-8 py-3 uppercase tracking-widest text-xs font-bold rounded-lg hover:bg-[#128C7E] transition-colors flex items-center gap-2">
                     Confirmar no WhatsApp
                   </a>
                   <button onClick={onClose} className="bg-white/10 text-white px-8 py-3 uppercase tracking-widest text-xs font-bold rounded-lg hover:bg-white/20 transition-colors">

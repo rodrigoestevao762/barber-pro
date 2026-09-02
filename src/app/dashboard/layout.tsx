@@ -58,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl font-serif text-white tracking-tight"
           >
-            BOM DIA, <span className="text-[#C88E70] italic">ARTHUR</span>
+            BOM DIA, <span className="text-[#C88E70] italic">GESTOR</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}

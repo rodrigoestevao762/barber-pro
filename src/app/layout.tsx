@@ -13,8 +13,8 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Suramar Barber Shop",
-  description: "Premium barber shop experience.",
+  title: "Sua Barbearia | Template Premium",
+  description: "Experiência premium para barbearias.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
