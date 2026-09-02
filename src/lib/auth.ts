@@ -3,6 +3,10 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+process.env.NEXTAUTH_URL = "https://barber-pro-six.vercel.app";
+process.env.NEXTAUTH_URL_INTERNAL = "https://barber-pro-six.vercel.app";
+delete process.env.VERCEL_URL;
+
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || "super-secret-barber-key-123",
   providers: [

@@ -7,6 +7,7 @@ import { authOptions } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
+    console.log("DASHBOARD API SESSION:", session);
     if (session && (session.user as any).role === 'CLIENT') {
       const user = await prisma.user.findUnique({
         where: { id: (session.user as any).id },

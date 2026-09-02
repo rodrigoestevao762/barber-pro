@@ -25,17 +25,26 @@ export default function LoginPage() {
 
     const cleanPhone = phone.replace(/\D/g, "");
 
-    const res = await signIn("credentials", {
-      phone: cleanPhone,
-      password,
-      redirect: false,
-    });
+    try {
+      const res = await signIn("credentials", {
+        phone: cleanPhone,
+        password,
+        redirect: false,
+      });
 
-    if (res?.error) {
-      setError("Credenciais inválidas ou número não encontrado.");
+      if (res?.error) {
+        setError("Credenciais inválidas ou número não encontrado.");
+        setLoading(false);
+      } else if (res?.ok) {
+        router.refresh();
+        router.push("/dashboard");
+      } else {
+        setError("Falha inesperada no login.");
+        setLoading(false);
+      }
+    } catch (err: any) {
+      setError("Erro de conexão: " + err.message);
       setLoading(false);
-    } else {
-      window.location.href = "/dashboard";
     }
   };
 
@@ -85,7 +94,6 @@ export default function LoginPage() {
 
             <button 
               type="submit"
-              onClick={handleAuth}
               disabled={loading}
               className="w-full bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 group mt-4 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
             >
