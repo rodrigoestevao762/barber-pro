@@ -16,6 +16,7 @@ export default function LoginPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    alert("Botão foi clicado! Verificando credenciais...");
     if (!phone || !password) {
       setError("Preencha todos os campos para continuar.");
       return;
