@@ -171,15 +171,15 @@ export default function FinanceiroPage() {
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
               className="bg-[#050B14] border border-[#C88E70]/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative"
             >
               <div className="absolute inset-0 bg-gradient-to-b from-[#C88E70]/5 to-transparent pointer-events-none" />
-              
-              <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 p-2 text-gray-500 hover:text-white transition-colors rounded-full hover:bg-white/10 z-50">
-                <X className="w-5 h-5" />
-              </button>
 
               <div className="p-8 relative z-10">
+                <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 p-2 text-gray-500 hover:text-white transition-colors rounded-full hover:bg-white/10 z-50">
+                  <X className="w-5 h-5" />
+                </button>
                 <h2 className="text-3xl font-serif text-white mb-2">Nova <span className="text-[#C88E70] italic">Despesa</span></h2>
                 <p className="text-gray-400 text-sm font-light mb-8">Registre um gasto para calcular seu lucro líquido real.</p>
 
