@@ -373,6 +373,27 @@ export default function Home() {
                  <span className="text-xs text-gray-500 uppercase tracking-widest">Para Você e sua Família</span>
               </div>
             </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* MEGA BRAIN FINAL CTA & FOOTER */}
+      <section className="relative bg-[#02050A] text-[#C88E70] min-h-screen flex flex-col items-center justify-center overflow-hidden">
+        {/* Fundo Parallax Sombrio */}
+        <motion.div 
+          style={{ y: useTransform(scrollYProgress, [0.8, 1], [0, 200]), opacity: useTransform(scrollYProgress, [0.8, 1], [0, 0.4]) }}
+          className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1520338661084-3522f7c00683?q=80&w=2070')] bg-cover bg-center pointer-events-none"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#02050A] via-[#02050A]/90 to-transparent pointer-events-none" />
+
+        <div className="relative z-10 w-full max-w-7xl mx-auto px-8 flex flex-col items-center justify-center flex-1 py-32">
+          <motion.div 
+            initial={{ scale: 0.5, rotate: -180, opacity: 0 }}
+            whileInView={{ scale: 1, rotate: 0, opacity: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ type: "spring", stiffness: 50, damping: 20 }}
+            className="w-24 h-24 rounded-full border border-[#C88E70]/30 flex items-center justify-center mb-12 backdrop-blur-sm"
+          >
             <Scissors className="w-10 h-10 text-[#C88E70]" />
           </motion.div>
 
