@@ -216,7 +216,7 @@ export default function DashboardPage() {
             exit={{ scale: 0.95, opacity: 0 }}
             className="bg-[#050B14] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative"
           >
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors rounded-full hover:bg-white/10">
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors rounded-full hover:bg-white/10 z-50">
               <X className="w-5 h-5" />
             </button>
 

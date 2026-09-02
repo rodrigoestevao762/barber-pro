@@ -175,7 +175,7 @@ export default function FinanceiroPage() {
             >
               <div className="absolute inset-0 bg-gradient-to-b from-[#C88E70]/5 to-transparent pointer-events-none" />
               
-              <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 p-2 text-gray-500 hover:text-white transition-colors rounded-full hover:bg-white/10 z-10">
+              <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 p-2 text-gray-500 hover:text-white transition-colors rounded-full hover:bg-white/10 z-50">
                 <X className="w-5 h-5" />
               </button>
 
@@ -224,3 +224,4 @@ export default function FinanceiroPage() {
     </motion.div>
   );
 }
+

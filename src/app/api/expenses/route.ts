@@ -26,3 +26,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Erro ao criar despesa' }, { status: 500 });
   }
 }
+
