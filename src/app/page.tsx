@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
-import { Calendar, ChevronRight, ChevronLeft, Menu, Scissors, Star, MapPin, Clock, Instagram } from "lucide-react";
+import { Calendar, ChevronRight, ChevronLeft, Menu, Scissors, Star, MapPin, Clock } from "lucide-react";
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import BookingModal from "@/components/BookingModal";
@@ -458,7 +458,7 @@ export default function Home() {
              © {new Date().getFullYear()} O PADRÃO DE EXCELÊNCIA.
            </p>
            <div className="flex gap-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors"><Instagram className="w-4 h-4" /></a>
+              <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors">Instagram</a>
               <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors"><MapPin className="w-4 h-4" /></a>
            </div>
         </motion.footer>
