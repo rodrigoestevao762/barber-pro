@@ -8,9 +8,9 @@ import BookingModal from "@/components/BookingModal";
 
 // --- DADOS ---
 const HERO_IMAGES = [
-  "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=2000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=2000&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1512496015851-a1cbfc779bb6?q=80&w=2000&auto=format&fit=crop"
+  "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=2074&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2074&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2074&auto=format&fit=crop"
 ];
 
 const SERVICES = [
