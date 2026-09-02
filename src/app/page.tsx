@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
-import { Calendar, ChevronRight, ChevronLeft, Menu, Scissors, Star, MapPin, Clock } from "lucide-react";
+import { Calendar, ChevronRight, ChevronLeft, Menu, Scissors, Star, MapPin, Clock, Instagram } from "lucide-react";
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import BookingModal from "@/components/BookingModal";
