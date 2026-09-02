@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const [data, setData] = useState({ isClient: false, revenue: 0, todayCount: 0, clientsCount: 0, appointments: [] as any[] });
+  const [data, setData] = useState({ isClient: false, revenue: 0, todayCount: 0, clientsCount: 0, averageDuration: 0, appointments: [] as any[] });
   const [loading, setLoading] = useState(true);
   
   // Modal states
@@ -147,42 +147,53 @@ export default function DashboardPage() {
       <div className="lg:col-span-2 space-y-6">
         
         {/* Bento Grid de Métricas */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="bg-gradient-to-br from-white/5 to-transparent border border-white/10 rounded-3xl p-8 backdrop-blur-md relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#C88E70]/10 blur-[50px] group-hover:bg-[#C88E70]/20 transition-colors" />
-            <p className="text-gray-400 text-xs tracking-[0.2em] uppercase mb-4 flex justify-between items-center">
-              Faturamento (Concluídos)
-              <button onClick={() => setIsModalOpen(true)} className="text-[#C88E70] border border-[#C88E70]/50 px-3 py-2 rounded-lg hover:bg-[#C88E70] hover:text-black transition-colors font-bold tracking-widest text-[10px]">+ CLIENTE BALCÃO</button>
-            </p>
-            <h2 className="text-5xl font-serif text-white mb-4">
-              R$ {data.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            </h2>
-            <div className="flex items-center gap-2 text-green-400 bg-green-400/10 w-fit px-3 py-1 rounded-full text-xs font-semibold">
-              <TrendingUp className="w-3 h-3" /> Cálculo Real Automático
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md relative overflow-hidden flex flex-col justify-center">
+              {/* Background accent */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/10 blur-[80px] rounded-full pointer-events-none" />
+              
+              <p className="text-gray-400 text-xs tracking-[0.2em] uppercase mb-4 flex justify-between items-center">
+                Faturamento (Concluídos)
+                <button onClick={() => setIsModalOpen(true)} className="text-[#C88E70] border border-[#C88E70]/50 px-3 py-2 rounded-lg hover:bg-[#C88E70] hover:text-black transition-colors font-bold tracking-widest text-[10px]">+ CLIENTE BALCÃO</button>
+              </p>
+              <h2 className="text-5xl font-serif text-white mb-4">
+                R$ {data.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </h2>
+              <div className="flex items-center gap-2 text-green-400 bg-green-400/10 w-fit px-3 py-1 rounded-full text-xs font-semibold">
+                <TrendingUp className="w-3 h-3" /> Cálculo Real Automático
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-rows-2 gap-6">
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-colors cursor-pointer">
-              <div>
-                <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Agendamentos Hoje</p>
-                <p className="text-3xl font-serif text-white">{data.todayCount}</p>
+            <div className="grid grid-rows-3 gap-4">
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-colors cursor-pointer">
+                <div>
+                  <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Agendamentos Hoje</p>
+                  <p className="text-3xl font-serif text-white">{data.todayCount}</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
+                  <Scissors className="w-5 h-5" />
+                </div>
               </div>
-              <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
-                <Scissors className="w-5 h-5" />
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-colors cursor-pointer">
+                <div>
+                  <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Tempo Médio de Cortes</p>
+                  <p className="text-3xl font-serif text-white">{data.averageDuration} <span className="text-sm text-gray-500 font-sans">min</span></p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
+                  <Clock3 className="w-5 h-5" />
+                </div>
               </div>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-white/20 transition-colors cursor-pointer">
-              <div>
-                <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Total de Clientes (Base)</p>
-                <p className="text-3xl font-serif text-white">{data.clientsCount}</p>
-              </div>
-              <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-300 group-hover:scale-110 transition-transform">
-                <Users className="w-5 h-5" />
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-white/20 transition-colors cursor-pointer">
+                <div>
+                  <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Total de Clientes</p>
+                  <p className="text-3xl font-serif text-white">{data.clientsCount}</p>
+                </div>
+                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-300 group-hover:scale-110 transition-transform">
+                  <Users className="w-5 h-5" />
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
         {/* PRÓXIMO CLIENTE */}
         {nextApt && (
@@ -248,13 +259,19 @@ export default function DashboardPage() {
                 </div>
                 <p className="text-gray-400 text-sm font-light mb-3">{apt.service?.name}</p>
                 
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-md border ${
                     apt.status === 'CONFIRMED' ? 'border-[#C88E70]/30 text-[#C88E70]' : 
                     apt.status === 'COMPLETED' ? 'border-green-500/30 text-green-500' : 'border-yellow-500/30 text-yellow-500'
                   }`}>
                     {apt.status}
                   </span>
+
+                  {apt.status === 'COMPLETED' && apt.durationSpent && (
+                    <span className="text-[10px] uppercase tracking-widest px-2 py-1 text-gray-400 flex items-center gap-1">
+                       <Clock3 className="w-3 h-3" /> {apt.durationSpent} min
+                    </span>
+                  )}
                   
                   {apt.status === 'PENDING' && (
                     <button onClick={() => updateStatus(apt.id, 'CONFIRMED')} className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-md bg-white/10 hover:bg-[#C88E70] hover:text-black transition-colors">

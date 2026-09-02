@@ -19,9 +19,17 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
     }
 
+    let updateData: any = { status };
+
+    if (status === 'COMPLETED') {
+      updateData.completedAt = new Date();
+      const durationMinutes = Math.floor((new Date().getTime() - apt.date.getTime()) / 60000);
+      updateData.durationSpent = durationMinutes > 0 ? durationMinutes : 1; // Mínimo de 1 min
+    }
+
     const updated = await prisma.appointment.update({
       where: { id: resolvedParams.id },
-      data: { status }
+      data: updateData
     });
 
     return NextResponse.json(updated);

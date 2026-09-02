@@ -46,10 +46,16 @@ export async function GET() {
     // 3. Clientes Únicos
     const uniqueClients = await prisma.user.count({ where: { role: 'CLIENT' } });
 
+    // 4. Tempo Médio de Cortes Hoje
+    const completedToday = todayAppointments.filter(apt => apt.status === 'COMPLETED' && apt.durationSpent);
+    const totalDurationToday = completedToday.reduce((acc, apt) => acc + (apt.durationSpent || 0), 0);
+    const averageDuration = completedToday.length > 0 ? Math.round(totalDurationToday / completedToday.length) : 0;
+
     return NextResponse.json({
       revenue,
       todayCount: todayAppointments.length,
       clientsCount: uniqueClients,
+      averageDuration,
       appointments: todayAppointments
     });
   } catch (error) {
