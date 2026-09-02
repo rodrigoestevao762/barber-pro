@@ -28,6 +28,29 @@ export default function DashboardPage() {
     }
   };
 
+  const cancelClientAppointment = async (id: string, date: string, serviceName: string) => {
+    if (!confirm("Tem certeza que deseja cancelar este agendamento?")) return;
+    try {
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'CANCELLED' })
+      });
+      if (res.ok) {
+        fetchDashboard();
+        const dateStr = new Date(date).toLocaleDateString('pt-BR');
+        const timeStr = new Date(date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const msg = `Olá! Precisei cancelar meu agendamento de ${serviceName} para ${dateStr} às ${timeStr}. O horário já está liberado no sistema.`;
+        const waUrl = `https://wa.me/5521997073357?text=${encodeURIComponent(msg)}`;
+        window.open(waUrl, '_blank');
+      } else {
+        alert("Erro ao cancelar o agendamento.");
+      }
+    } catch (e) {
+      alert("Erro de conexão.");
+    }
+  };
+
   const fetchServices = async () => {
     try {
       const res = await fetch('/api/services');
@@ -95,11 +118,19 @@ export default function DashboardPage() {
                      </p>
                    </div>
                 </div>
-                <div className="flex items-center gap-4">
-                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${apt.status === 'CONFIRMED' ? 'bg-green-500/20 text-green-400' : apt.status === 'CANCELLED' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                     {apt.status === 'CONFIRMED' ? 'Confirmado' : apt.status === 'CANCELLED' ? 'Cancelado' : 'Pendente'}
-                   </span>
-                </div>
+                  <div className="flex flex-col md:flex-row items-end md:items-center gap-3">
+                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${apt.status === 'CONFIRMED' ? 'bg-green-500/20 text-green-400' : apt.status === 'CANCELLED' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                       {apt.status === 'CONFIRMED' ? 'Confirmado' : apt.status === 'CANCELLED' ? 'Cancelado' : 'Pendente'}
+                     </span>
+                     {isFuture && apt.status !== 'CANCELLED' && apt.status !== 'COMPLETED' && (
+                        <button 
+                          onClick={() => cancelClientAppointment(apt.id, apt.date, apt.service.name)}
+                          className="text-xs text-red-400 hover:text-red-300 font-semibold uppercase tracking-widest underline underline-offset-4"
+                        >
+                          Cancelar
+                        </button>
+                     )}
+                  </div>
               </div>
             )
           })}
