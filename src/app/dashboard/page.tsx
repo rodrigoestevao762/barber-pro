@@ -147,37 +147,23 @@ export default function DashboardPage() {
 
   const nextApt = data.appointments.find((a: any) => a.status === 'CONFIRMED' || a.status === 'PENDING');
 
+  const containerVariants: any = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+  const itemVariants: any = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } } };
+
   return (
     <>
     <div className="max-w-[1400px] mx-auto flex justify-between items-center mb-6">
-        <h2 className="text-xl font-serif text-white">Visão Geral</h2>
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-gray-400 uppercase tracking-widest">Filtrar por data:</label>
-          <input 
-            type="date" 
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C88E70]"
-          />
-        </div>
-    </div>
-    const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-    const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } } };
-
-    return (
-      <>
-      <div className="max-w-[1400px] mx-auto flex justify-between items-center mb-6">
-        <h2 className="text-xl font-serif text-white">Visão Geral</h2>
-        <div className="flex items-center gap-3">
-          <label className="text-xs text-gray-400 uppercase tracking-widest">Filtrar por data:</label>
-          <input 
-            type="date" 
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C88E70] transition-colors"
-          />
-        </div>
+      <h2 className="text-xl font-serif text-white">Visão Geral</h2>
+      <div className="flex items-center gap-3">
+        <label className="text-xs text-gray-400 uppercase tracking-widest">Filtrar por data:</label>
+        <input 
+          type="date" 
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C88E70] transition-colors"
+        />
       </div>
+    </div>
       <motion.div variants={containerVariants} initial="hidden" animate="show" className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           
