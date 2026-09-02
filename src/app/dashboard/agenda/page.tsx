@@ -1,13 +1,42 @@
-export const dynamic = 'force-dynamic';
+"use client";
 
-import prisma from '@/lib/prisma';
-import { Calendar, Clock, CheckCircle, User } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, User, Clock3 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
-export default async function AgendaPage() {
-  const appointments = await prisma.appointment.findMany({
-    include: { service: true, user: true },
-    orderBy: { date: 'asc' }
-  });
+export default function AgendaPage() {
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAgenda = async () => {
+    try {
+      const res = await fetch('/api/appointments/all');
+      if (res.ok) {
+        const data = await res.json();
+        setAppointments(data);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAgenda();
+  }, []);
+
+  const updateStatus = async (id: string, status: string) => {
+    try {
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) fetchAgenda();
+    } catch(e) {}
+  };
+
+  if (loading) return <div className="animate-pulse text-[#C88E70]">Carregando agenda...</div>;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -30,10 +59,41 @@ export default async function AgendaPage() {
                 </div>
               </div>
               
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col md:flex-row items-end md:items-center gap-6">
                 <div className="text-right">
-                  <p className="text-white font-serif text-xl">{apt.date.toLocaleDateString('pt-BR')} às {apt.date.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</p>
-                  <p className="text-[#C88E70] text-xs uppercase tracking-widest mt-1">{apt.status}</p>
+                  <p className="text-white font-serif text-xl">{new Date(apt.date).toLocaleDateString('pt-BR')} às {new Date(apt.date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}</p>
+                  <div className="flex items-center justify-end gap-2 mt-1">
+                    <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-md border ${
+                      apt.status === 'CONFIRMED' ? 'border-[#C88E70]/30 text-[#C88E70]' : 
+                      apt.status === 'COMPLETED' ? 'border-green-500/30 text-green-500' : 
+                      apt.status === 'CANCELLED' ? 'border-red-500/30 text-red-500' : 'border-yellow-500/30 text-yellow-500'
+                    }`}>
+                      {apt.status}
+                    </span>
+                    {apt.status === 'COMPLETED' && apt.durationSpent && (
+                      <span className="text-[10px] uppercase tracking-widest px-2 py-1 text-gray-400 flex items-center gap-1">
+                         <Clock3 className="w-3 h-3" /> {apt.durationSpent} min
+                      </span>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  {apt.status === 'PENDING' && (
+                    <button onClick={() => updateStatus(apt.id, 'CONFIRMED')} className="text-[10px] uppercase tracking-widest px-3 py-2 rounded-md bg-white/10 hover:bg-[#C88E70] hover:text-black transition-colors">
+                      Confirmar
+                    </button>
+                  )}
+                  {apt.status === 'CONFIRMED' && (
+                    <button onClick={() => updateStatus(apt.id, 'COMPLETED')} className="text-[10px] uppercase tracking-widest px-3 py-2 rounded-md bg-white/10 hover:bg-green-500 hover:text-white transition-colors">
+                      Finalizar
+                    </button>
+                  )}
+                  {apt.status !== 'CANCELLED' && apt.status !== 'COMPLETED' && (
+                    <button onClick={() => updateStatus(apt.id, 'CANCELLED')} className="text-[10px] uppercase tracking-widest px-3 py-2 rounded-md bg-white/10 hover:bg-red-500 hover:text-white transition-colors">
+                      Cancelar
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
