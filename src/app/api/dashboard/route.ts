@@ -37,8 +37,18 @@ export async function GET(req: Request) {
     const completedTodayList = todayAppointments.filter(apt => apt.status === 'COMPLETED');
     const revenue = completedTodayList.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
 
-    // 3. Clientes Únicos
-    const uniqueClients = await prisma.user.count({ where: { role: 'CLIENT' } });
+    // 3. Clientes Atendidos no Dia
+    const clientIds = new Set();
+    let anonymousClients = 0;
+    
+    todayAppointments.forEach(apt => {
+      if (apt.user?.role === 'ADMIN') {
+        anonymousClients += 1; // Walk-in
+      } else if (apt.userId) {
+        clientIds.add(apt.userId);
+      }
+    });
+    const uniqueClients = clientIds.size + anonymousClients;
 
     // 4. Tempo Médio de Cortes Hoje
     const completedToday = todayAppointments.filter(apt => apt.status === 'COMPLETED');
