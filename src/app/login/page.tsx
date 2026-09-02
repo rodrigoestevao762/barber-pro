@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Phone, Lock, ArrowRight, ChevronLeft } from "lucide-react";
@@ -31,9 +31,8 @@ export default function LoginPage() {
       setError("Credenciais inválidas ou número não encontrado.");
       setLoading(false);
     } else {
-      const sessionRes = await fetch("/api/auth/session");
-      const session = await sessionRes.json();
-      if (session?.user?.role === "ADMIN") {
+      const session = await getSession();
+      if ((session?.user as any)?.role === "ADMIN") {
         router.push("/dashboard");
       } else {
         router.push("/cliente");

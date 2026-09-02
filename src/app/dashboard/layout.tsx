@@ -4,11 +4,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell, User as UserIcon, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (status === "unauthenticated" || (session && (session.user as any).role !== "ADMIN")) {
+      router.push("/login");
+    }
+  }, [status, session, router]);
+
 
   useEffect(() => {
     // Básico: busca os últimos agendamentos para criar notificações simples
