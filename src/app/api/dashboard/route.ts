@@ -1,8 +1,22 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
 export async function GET() {
   try {
+    const session = await getServerSession(authOptions);
+    if (session && (session.user as any).role === 'CLIENT') {
+      const user = await prisma.user.findUnique({
+        where: { id: (session.user as any).id },
+        include: {
+          appointments: { include: { service: true }, orderBy: { date: 'asc' } }
+        }
+      });
+      return NextResponse.json({ isClient: true, appointments: user?.appointments || [] });
+    }
+
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());

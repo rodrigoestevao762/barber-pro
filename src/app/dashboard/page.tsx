@@ -3,9 +3,10 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { TrendingUp, Users, User, Scissors, Clock, ChevronRight, Star, CheckCircle, Clock3, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function DashboardPage() {
-  const [data, setData] = useState({ revenue: 0, todayCount: 0, clientsCount: 0, appointments: [] as any[] });
+  const [data, setData] = useState({ isClient: false, revenue: 0, todayCount: 0, clientsCount: 0, appointments: [] as any[] });
   const [loading, setLoading] = useState(true);
   
   // Modal states
@@ -22,8 +23,9 @@ export default function DashboardPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const fetchServices = async () => {
@@ -64,7 +66,47 @@ export default function DashboardPage() {
     fetchDashboard();
   };
 
-  if (loading) return <div className="text-white p-10 font-serif">Carregando Centro de Comando...</div>;
+  if (loading) {
+    return <div className="animate-pulse text-[#C88E70]">Carregando métricas...</div>;
+  }
+
+  if (data.isClient) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <h2 className="text-[#C88E70] text-xs uppercase tracking-widest mb-6 border-b border-white/10 pb-4">Seus Agendamentos</h2>
+        <div className="grid gap-4">
+          {data.appointments.length === 0 && (
+            <div className="p-8 text-center border border-white/10 rounded-2xl bg-white/5">
+              <p className="text-gray-400">Você ainda não tem nenhum agendamento.</p>
+              <Link href="/" className="text-[#C88E70] uppercase text-xs font-bold tracking-widest mt-4 inline-block hover:text-white">Agendar Agora</Link>
+            </div>
+          )}
+          {data.appointments.map((apt: any) => {
+            const isFuture = new Date(apt.date) > new Date();
+            return (
+              <div key={apt.id} className="p-6 border border-white/10 rounded-2xl bg-white/[0.02] flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-6">
+                   <div className="bg-black/30 p-4 rounded-full text-[#C88E70]"><Scissors className="w-6 h-6"/></div>
+                   <div>
+                     <h3 className="text-xl font-serif">{apt.service.name}</h3>
+                     <p className="text-sm text-gray-400 flex items-center gap-2 mt-1">
+                       <Clock className="w-3 h-3" /> 
+                       {new Date(apt.date).toLocaleDateString('pt-BR')} às {new Date(apt.date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
+                     </p>
+                   </div>
+                </div>
+                <div className="flex items-center gap-4">
+                   <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${apt.status === 'CONFIRMED' ? 'bg-green-500/20 text-green-400' : apt.status === 'CANCELLED' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                     {apt.status === 'CONFIRMED' ? 'Confirmado' : apt.status === 'CANCELLED' ? 'Cancelado' : 'Pendente'}
+                   </span>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    );
+  }
 
   const nextApt = data.appointments.find((a: any) => a.status === 'CONFIRMED' || a.status === 'PENDING');
 

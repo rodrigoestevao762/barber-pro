@@ -16,10 +16,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
-    } else if (session && (session.user as any).role === "CLIENT") {
-      router.push("/cliente");
     }
-  }, [status, session, router]);
+  }, [status, router]);
 
 
   useEffect(() => {
@@ -51,13 +49,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </Link>
 
         <div className="flex flex-col gap-8">
-          {[ 
+          {((session?.user as any)?.role === 'CLIENT' ? [ 
+            { id: "/dashboard", icon: LayoutDashboard, label: "Meus Agendamentos" },
+            { id: "/dashboard/settings", icon: Settings, label: "Meus Dados" },
+          ] : [ 
             { id: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
             { id: "/dashboard/agenda", icon: Calendar, label: "Agenda" },
             { id: "/dashboard/financeiro", icon: Wallet, label: "Financeiro" },
             { id: "/dashboard/clientes", icon: Users, label: "Clientes" },
             { id: "/dashboard/settings", icon: Settings, label: "Ajustes" },
-          ].map((item) => (
+          ]).map((item) => (
             <Link
               key={item.id}
               href={item.id}
@@ -86,7 +87,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             animate={{ opacity: 1, y: 0 }}
             className="text-5xl font-serif text-white tracking-tight"
           >
-            BOM DIA, <span className="text-[#C88E70] italic">GESTOR</span>
+            BOM DIA, <span className="text-[#C88E70] italic">{(session?.user as any)?.role === 'CLIENT' ? (session?.user?.name?.split(' ')[0] || 'CLIENTE').toUpperCase() : 'GESTOR'}</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -94,7 +95,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             transition={{ delay: 0.1 }}
             className="text-gray-400 text-sm mt-2 font-light tracking-wide"
           >
-            O seu império aguarda. Aqui está o resumo de hoje.
+            {(session?.user as any)?.role === 'CLIENT' ? 'Acompanhe seus agendamentos e histórico conosco.' : 'O seu império aguarda. Aqui está o resumo de hoje.'}
           </motion.p>
         </div>
 
