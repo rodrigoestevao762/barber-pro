@@ -5,8 +5,6 @@ import bcrypt from "bcryptjs";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || "super-secret-barber-key-123",
-  // @ts-ignore
-  trustHost: true,
   providers: [
     CredentialsProvider({
       name: "Credentials",
