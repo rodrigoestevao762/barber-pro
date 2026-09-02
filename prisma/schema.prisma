@@ -42,3 +42,11 @@ model Appointment {
   updatedAt   DateTime @updatedAt
 }
 
+model Expense {
+  id          String   @id @default(cuid())
+  description String
+  amount      Float
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+

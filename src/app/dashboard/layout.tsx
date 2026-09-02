@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell, User as UserIcon } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell, User as UserIcon, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
@@ -42,6 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {[ 
             { id: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
             { id: "/dashboard/agenda", icon: Calendar, label: "Agenda" },
+            { id: "/dashboard/financeiro", icon: Wallet, label: "Financeiro" },
             { id: "/dashboard/clientes", icon: Users, label: "Clientes" },
             { id: "/dashboard/settings", icon: Settings, label: "Ajustes" },
           ].map((item) => (
