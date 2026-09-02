@@ -4,10 +4,9 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    console.log("DASHBOARD API SESSION:", session);
     if (session && (session.user as any).role === 'CLIENT') {
       const user = await prisma.user.findUnique({
         where: { id: (session.user as any).id },
@@ -18,23 +17,14 @@ export async function GET() {
       return NextResponse.json({ isClient: true, appointments: user?.appointments || [] });
     }
 
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const { searchParams } = new URL(req.url);
+    const dateParam = searchParams.get('date');
+    const now = dateParam ? new Date(dateParam + 'T12:00:00Z') : new Date();
+    
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-    // 1. Faturamento Mensal (APENAS CONCLUÍDOS)
-    const completedThisMonth = await prisma.appointment.findMany({
-      where: { 
-        status: 'COMPLETED',
-        date: { gte: startOfMonth }
-      },
-      include: { service: true }
-    });
-    
-    const revenue = completedThisMonth.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
-
-    // 2. Agendamentos de Hoje
+    // 2. Agendamentos do Dia Selecionado
     const todayAppointments = await prisma.appointment.findMany({
       where: {
         date: { gte: startOfDay, lte: endOfDay }
@@ -42,6 +32,10 @@ export async function GET() {
       include: { service: true, user: true },
       orderBy: { date: 'asc' }
     });
+
+    // 1. Faturamento do Dia (APENAS CONCLUÍDOS)
+    const completedTodayList = todayAppointments.filter(apt => apt.status === 'COMPLETED');
+    const revenue = completedTodayList.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
 
     // 3. Clientes Únicos
     const uniqueClients = await prisma.user.count({ where: { role: 'CLIENT' } });

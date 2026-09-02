@@ -14,9 +14,15 @@ export default function DashboardPage() {
   const [services, setServices] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Date filter
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    return d.toISOString().split('T')[0];
+  });
+
   const fetchDashboard = async () => {
     try {
-      const res = await fetch('/api/dashboard');
+      const res = await fetch(`/api/dashboard?date=${selectedDate}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -143,6 +149,18 @@ export default function DashboardPage() {
 
   return (
     <>
+    <div className="max-w-[1400px] mx-auto flex justify-between items-center mb-6">
+        <h2 className="text-xl font-serif text-white">Visão Geral</h2>
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-gray-400 uppercase tracking-widest">Filtrar por data:</label>
+          <input 
+            type="date" 
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C88E70]"
+          />
+        </div>
+    </div>
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
         
@@ -153,7 +171,7 @@ export default function DashboardPage() {
               <div className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/10 blur-[80px] rounded-full pointer-events-none" />
               
               <p className="text-gray-400 text-xs tracking-[0.2em] uppercase mb-4 flex justify-between items-center">
-                Faturamento (Concluídos)
+                Faturamento (Dia Selecionado)
                 <button onClick={() => setIsModalOpen(true)} className="text-[#C88E70] border border-[#C88E70]/50 px-3 py-2 rounded-lg hover:bg-[#C88E70] hover:text-black transition-colors font-bold tracking-widest text-[10px]">+ CLIENTE BALCÃO</button>
               </p>
               <h2 className="text-5xl font-serif text-white mb-4">
@@ -167,7 +185,7 @@ export default function DashboardPage() {
             <div className="grid grid-rows-3 gap-4">
               <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-colors cursor-pointer">
                 <div>
-                  <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Agendamentos Hoje</p>
+                  <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Qtd. Cortes</p>
                   <p className="text-3xl font-serif text-white">{data.todayCount}</p>
                 </div>
                 <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
@@ -237,7 +255,7 @@ export default function DashboardPage() {
 
       {/* Agenda do Dia */}
       <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md flex flex-col h-full relative">
-        <h2 className="text-2xl font-serif text-white mb-8">Agenda Hoje</h2>
+        <h2 className="text-2xl font-serif text-white mb-8">Agenda</h2>
         <div className="flex-1 space-y-6 relative before:absolute before:inset-y-0 before:left-[19px] before:w-[1px] before:bg-white/10">
           
           {data.appointments.length === 0 && (
