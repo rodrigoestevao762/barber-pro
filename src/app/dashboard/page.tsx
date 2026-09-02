@@ -161,57 +161,80 @@ export default function DashboardPage() {
           />
         </div>
     </div>
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 space-y-6">
-        
-        {/* Bento Grid de Métricas */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md relative overflow-hidden flex flex-col justify-center">
-              {/* Background accent */}
-              <div className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/10 blur-[80px] rounded-full pointer-events-none" />
-              
-              <p className="text-gray-400 text-xs tracking-[0.2em] uppercase mb-4 flex justify-between items-center">
-                Faturamento (Dia Selecionado)
-                <button onClick={() => setIsModalOpen(true)} className="text-[#C88E70] border border-[#C88E70]/50 px-3 py-2 rounded-lg hover:bg-[#C88E70] hover:text-black transition-colors font-bold tracking-widest text-[10px]">+ CLIENTE BALCÃO</button>
-              </p>
-              <h2 className="text-5xl font-serif text-white mb-4">
-                R$ {data.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </h2>
-              <div className="flex items-center gap-2 text-green-400 bg-green-400/10 w-fit px-3 py-1 rounded-full text-xs font-semibold">
-                <TrendingUp className="w-3 h-3" /> Cálculo Real Automático
-              </div>
-            </div>
+    const containerVariants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+    const itemVariants = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } } };
 
-            <div className="grid grid-rows-3 gap-4">
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-colors cursor-pointer">
-                <div>
-                  <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Qtd. Cortes</p>
-                  <p className="text-3xl font-serif text-white">{data.todayCount}</p>
+    return (
+      <>
+      <div className="max-w-[1400px] mx-auto flex justify-between items-center mb-6">
+        <h2 className="text-xl font-serif text-white">Visão Geral</h2>
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-gray-400 uppercase tracking-widest">Filtrar por data:</label>
+          <input 
+            type="date" 
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C88E70] transition-colors"
+          />
+        </div>
+      </div>
+      <motion.div variants={containerVariants} initial="hidden" animate="show" className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* Bento Grid de Métricas */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <motion.div variants={itemVariants} whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2 }} className="lg:col-span-2 bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 rounded-3xl p-8 backdrop-blur-md relative overflow-hidden flex flex-col justify-center cursor-default shadow-2xl transition-all duration-300 hover:shadow-[#C88E70]/20 hover:border-[#C88E70]/30 style={{ transformStyle: 'preserve-3d' }}">
+                {/* Background accent animated */}
+                <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/10 blur-[80px] rounded-full pointer-events-none" />
+                
+                <p className="text-gray-400 text-xs tracking-[0.2em] uppercase mb-4 flex justify-between items-center relative z-10">
+                  Faturamento (Dia Selecionado)
+                  <button onClick={() => setIsModalOpen(true)} className="text-[#C88E70] border border-[#C88E70]/50 px-3 py-2 rounded-lg hover:bg-[#C88E70] hover:text-black transition-colors font-bold tracking-widest text-[10px] shadow-lg hover:shadow-[#C88E70]/50">+ CLIENTE BALCÃO</button>
+                </p>
+                <motion.h2 
+                  key={data.revenue} 
+                  initial={{ opacity: 0, scale: 0.5 }} 
+                  animate={{ opacity: 1, scale: 1 }} 
+                  transition={{ type: "spring", stiffness: 200, damping: 10 }}
+                  className="text-5xl font-serif text-white mb-4 relative z-10"
+                >
+                  R$ {data.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </motion.h2>
+                <div className="flex items-center gap-2 text-green-400 bg-green-400/10 w-fit px-3 py-1 rounded-full text-xs font-semibold relative z-10">
+                  <TrendingUp className="w-3 h-3" /> Cálculo Real Automático
                 </div>
-                <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
-                  <Scissors className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-colors cursor-pointer">
-                <div>
-                  <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Tempo Médio de Cortes</p>
-                  <p className="text-3xl font-serif text-white">{data.averageDuration} <span className="text-sm text-gray-500 font-sans">min</span></p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
-                  <Clock3 className="w-5 h-5" />
-                </div>
-              </div>
-              <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-white/20 transition-colors cursor-pointer">
-                <div>
-                  <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Total de Clientes</p>
-                  <p className="text-3xl font-serif text-white">{data.clientsCount}</p>
-                </div>
-                <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-300 group-hover:scale-110 transition-transform">
-                  <Users className="w-5 h-5" />
-                </div>
+              </motion.div>
+
+              <div className="grid grid-rows-3 gap-4">
+                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-all cursor-default shadow-lg">
+                  <div>
+                    <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Qtd. Cortes</p>
+                    <motion.p key={data.todayCount} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-serif text-white">{data.todayCount}</motion.p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
+                    <Scissors className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                  </div>
+                </motion.div>
+                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-all cursor-default shadow-lg">
+                  <div>
+                    <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Tempo Médio de Cortes</p>
+                    <motion.p key={data.averageDuration} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-serif text-white">{data.averageDuration} <span className="text-sm text-gray-500 font-sans">min</span></motion.p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
+                    <Clock3 className="w-5 h-5 group-hover:-rotate-12 transition-transform" />
+                  </div>
+                </motion.div>
+                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-white/20 transition-all cursor-default shadow-lg">
+                  <div>
+                    <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Total de Clientes</p>
+                    <motion.p key={data.clientsCount} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-serif text-white">{data.clientsCount}</motion.p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-300 group-hover:scale-110 transition-transform">
+                    <Users className="w-5 h-5 group-hover:scale-125 transition-transform" />
+                  </div>
+                </motion.div>
               </div>
             </div>
-          </div>
 
         {/* PRÓXIMO CLIENTE */}
         {nextApt && (
@@ -262,49 +285,59 @@ export default function DashboardPage() {
              <p className="text-gray-500 text-sm italic pl-12">Nenhum agendamento para hoje.</p>
           )}
 
-          {data.appointments.map((apt: any, i: number) => (
-            <div key={i} className="flex gap-6 group">
-              <div className={`w-10 h-10 rounded-full border-4 border-[#050B14] flex items-center justify-center relative z-10 transition-colors ${
-                apt.status === 'CONFIRMED' ? 'bg-[#C88E70]' : 
-                apt.status === 'COMPLETED' ? 'bg-white/20' : 'bg-yellow-500'
-              }`}>
-                {apt.status === 'CONFIRMED' && <div className="w-2 h-2 rounded-full bg-[#050B14]" />}
-              </div>
-              <div className="flex-1 bg-white/[0.02] border border-white/10 rounded-2xl p-4 transition-all -mt-2">
-                <div className="flex justify-between items-start mb-1">
-                  <h4 className="text-white font-medium">{apt.user?.name || "Cliente"}</h4>
-                  <span className="text-[#C88E70] font-serif">{new Date(apt.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' })}</span>
+          <AnimatePresence mode="popLayout">
+            {data.appointments.map((apt: any, i: number) => (
+              <motion.div 
+                key={apt.id || i} 
+                layout
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ delay: i * 0.05, type: "spring", stiffness: 200, damping: 20 }}
+                className="flex gap-6 group"
+              >
+                <div className={`w-10 h-10 rounded-full border-4 border-[#050B14] flex items-center justify-center relative z-10 transition-colors shadow-lg ${
+                  apt.status === 'CONFIRMED' ? 'bg-[#C88E70] shadow-[#C88E70]/20' : 
+                  apt.status === 'COMPLETED' ? 'bg-white/20' : 'bg-yellow-500 shadow-yellow-500/20'
+                }`}>
+                  {apt.status === 'CONFIRMED' && <motion.div layoutId={`dot-${apt.id}`} className="w-2 h-2 rounded-full bg-[#050B14]" />}
                 </div>
-                <p className="text-gray-400 text-sm font-light mb-3">{apt.service?.name}</p>
-                
-                <div className="flex gap-2 items-center">
-                  <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-md border ${
-                    apt.status === 'CONFIRMED' ? 'border-[#C88E70]/30 text-[#C88E70]' : 
-                    apt.status === 'COMPLETED' ? 'border-green-500/30 text-green-500' : 'border-yellow-500/30 text-yellow-500'
-                  }`}>
-                    {apt.status}
-                  </span>
-
-                  {apt.status === 'COMPLETED' && apt.durationSpent && (
-                    <span className="text-[10px] uppercase tracking-widest px-2 py-1 text-gray-400 flex items-center gap-1">
-                       <Clock3 className="w-3 h-3" /> {apt.durationSpent} min
-                    </span>
-                  )}
+                <motion.div whileHover={{ scale: 1.02, x: 5 }} className="flex-1 bg-white/[0.02] border border-white/10 hover:border-[#C88E70]/30 rounded-2xl p-4 transition-all -mt-2 cursor-default hover:bg-white/5 hover:shadow-lg">
+                  <div className="flex justify-between items-start mb-1">
+                    <h4 className="text-white font-medium">{apt.user?.name || "Cliente"}</h4>
+                    <span className="text-[#C88E70] font-serif">{new Date(apt.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' })}</span>
+                  </div>
+                  <p className="text-gray-400 text-sm font-light mb-3">{apt.service?.name}</p>
                   
-                  {apt.status === 'PENDING' && (
-                    <button onClick={() => updateStatus(apt.id, 'CONFIRMED')} className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-md bg-white/10 hover:bg-[#C88E70] hover:text-black transition-colors">
-                      Confirmar
-                    </button>
-                  )}
-                  {apt.status === 'CONFIRMED' && (
-                    <button onClick={() => updateStatus(apt.id, 'COMPLETED')} className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-md bg-white/10 hover:bg-green-500 hover:text-white transition-colors">
-                      Finalizar
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+                  <div className="flex gap-2 items-center">
+                    <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-md border ${
+                      apt.status === 'CONFIRMED' ? 'border-[#C88E70]/30 text-[#C88E70]' : 
+                      apt.status === 'COMPLETED' ? 'border-green-500/30 text-green-500' : 'border-yellow-500/30 text-yellow-500'
+                    }`}>
+                      {apt.status}
+                    </span>
+
+                    {apt.status === 'COMPLETED' && apt.durationSpent && (
+                      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[10px] uppercase tracking-widest px-2 py-1 text-gray-400 flex items-center gap-1">
+                         <Clock3 className="w-3 h-3" /> {apt.durationSpent} min
+                      </motion.span>
+                    )}
+                    
+                    {apt.status === 'PENDING' && (
+                      <button onClick={() => updateStatus(apt.id, 'CONFIRMED')} className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-md bg-white/10 hover:bg-[#C88E70] hover:text-black transition-colors hover:scale-105 active:scale-95">
+                        Confirmar
+                      </button>
+                    )}
+                    {apt.status === 'CONFIRMED' && (
+                      <button onClick={() => updateStatus(apt.id, 'COMPLETED')} className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-md bg-white/10 hover:bg-green-500 hover:text-white transition-colors hover:scale-105 active:scale-95">
+                        Finalizar
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       </div>
     </motion.div>
