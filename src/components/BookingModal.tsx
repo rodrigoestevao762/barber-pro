@@ -15,8 +15,10 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean; onC
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [clientName, setClientName] = useState("");
   const [clientPhone, setClientPhone] = useState("");
+  const [clientPassword, setClientPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     if (isOpen) {
@@ -41,22 +43,30 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean; onC
 
   const handleBooking = async () => {
     setIsLoading(true);
+    setErrorMsg("");
     try {
       const res = await fetch('/api/appointments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           serviceId: selectedService?.id,
-          date: `${selectedDate}T${selectedTime}:00Z`, // Simplified date handling
+          date: `${selectedDate}T${selectedTime}:00.000Z`,
           clientName,
-          clientPhone
+          clientPhone,
+          clientPassword
         })
       });
-      if (res.ok) setIsSuccess(true);
+      if (res.ok) {
+        setIsSuccess(true);
+      } else {
+        const data = await res.json();
+        setErrorMsg(data.error || "Erro ao agendar.");
+      }
     } catch (e) {
       console.error(e);
+      setErrorMsg("Erro de conexão.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   if (!isOpen) return null;
@@ -131,6 +141,7 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean; onC
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex-1">
                     <p className="text-[#C88E70] text-xs uppercase tracking-widest mb-6">Passo 2: Data e Hora</p>
                     
+                    {errorMsg && <p className="text-red-400 text-xs text-center mb-4 bg-red-500/10 py-2 rounded">{errorMsg}</p>}
                     <div className="grid md:grid-cols-2 gap-8 mb-6">
                       <div>
                         <label className="block text-gray-400 text-xs uppercase mb-2">Seu Nome</label>
@@ -143,6 +154,12 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean; onC
                         <input 
                           type="text" placeholder="(11) 99999-9999"
                           value={clientPhone} onChange={(e) => setClientPhone(e.target.value)}
+                          className="w-full bg-[#050B14] border border-white/10 rounded-xl py-3 px-4 text-white focus:border-[#C88E70] focus:outline-none mb-4"
+                        />
+                        <label className="block text-gray-400 text-xs uppercase mb-2">Crie/Digite sua Senha</label>
+                        <input 
+                          type="password" placeholder="Sua senha segura"
+                          value={clientPassword} onChange={(e) => setClientPassword(e.target.value)}
                           className="w-full bg-[#050B14] border border-white/10 rounded-xl py-3 px-4 text-white focus:border-[#C88E70] focus:outline-none"
                         />
                       </div>

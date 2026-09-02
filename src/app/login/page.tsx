@@ -1,18 +1,18 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Scissors, Lock, Mail, ArrowRight, User, ChevronLeft } from "lucide-react";
+import { Phone, Lock, ArrowRight, ChevronLeft, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
+  const [isManager, setIsManager] = useState(false);
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -20,24 +20,27 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    if (isLogin) {
-      const res = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
+    // Remove formatting from phone
+    const cleanPhone = phone.replace(/\D/g, "");
 
-      if (res?.error) {
-        setError("Credenciais inválidas. Tente novamente.");
-        setLoading(false);
-      } else {
-        // Redireciona corretamente para o dashboard
-        router.push("/dashboard");
-        router.refresh();
-      }
-    } else {
-      setError("Cadastro indisponível no momento. Use uma conta de teste.");
+    const res = await signIn("credentials", {
+      phone: cleanPhone,
+      password: isManager ? password : "",
+      redirect: false,
+    });
+
+    if (res?.error) {
+      setError(isManager ? "Credenciais inválidas." : "Número não encontrado. Faça um agendamento primeiro.");
       setLoading(false);
+    } else {
+      // Check session to route
+      const sessionRes = await fetch("/api/auth/session");
+      const session = await sessionRes.json();
+      if (session?.user?.role === "ADMIN") {
+        router.push("/dashboard");
+      } else {
+        router.push("/cliente");
+      }
     }
   };
 

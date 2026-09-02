@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { serviceId, date, isWalkIn, clientName, clientPhone } = body;
+    let { serviceId, date, isWalkIn, clientName, clientPhone, clientPassword } = body;
 
     // Pega o primeiro serviço caso venha ID genérico (como do botão Cliente Balcão)
     if (isWalkIn || serviceId === "1") {
@@ -14,22 +15,37 @@ export async function POST(req: Request) {
        }
     }
 
-    // Cria ou atualiza o cliente com base no telefone (se não for walk-in sem dados)
     let client;
     if (isWalkIn && !clientName) {
-       client = await prisma.user.findUnique({ where: { email: "cliente@teste.com" }});
+       // Walk-in sem nome atrela ao gestor temporariamente ou pega o primeiro admin (fallback)
+       client = await prisma.user.findFirst({ where: { role: "ADMIN" }});
     } else {
        const phone = clientPhone || "00000000000";
-       client = await prisma.user.upsert({
-         where: { email: `${phone}@barber.com` }, // Usando email fictício baseado no número
-         update: { name: clientName, phone: phone },
-         create: {
-           name: clientName || "Cliente",
-           email: `${phone}@barber.com`,
-           phone: phone,
-           role: "CLIENT"
-         }
-       });
+       const cleanPhone = phone.replace(/\D/g, "");
+       
+       const existingClient = await prisma.user.findUnique({ where: { phone: cleanPhone } });
+       if (existingClient) {
+           // Verifica a senha se o cliente existir
+           if (!clientPassword || !existingClient.password) {
+              return NextResponse.json({ error: 'Conta existente. Por favor, forneça sua senha.' }, { status: 401 });
+           }
+           const isValid = await bcrypt.compare(clientPassword, existingClient.password);
+           if (!isValid) {
+              return NextResponse.json({ error: 'Senha incorreta para este número.' }, { status: 401 });
+           }
+           client = existingClient;
+       } else {
+           // Cria novo cliente com senha
+           const hashedPassword = clientPassword ? await bcrypt.hash(clientPassword, 10) : await bcrypt.hash("123456", 10);
+           client = await prisma.user.create({
+             data: {
+               name: clientName || "Cliente",
+               phone: cleanPhone,
+               password: hashedPassword,
+               role: "CLIENT"
+             }
+           });
+       }
     }
 
     if (!serviceId || !client) {

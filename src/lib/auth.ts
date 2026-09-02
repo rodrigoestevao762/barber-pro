@@ -8,25 +8,30 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Senha", type: "password" }
+        phone: { label: "Telefone", type: "text" },
+        password: { label: "Senha (Somente Gestor)", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.phone) return null;
         
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { phone: credentials.phone }
         });
 
-        if (!user || !user.password) return null;
+        if (!user) return null;
 
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) return null;
+        // Gestor precisa de senha
+        if (user.role === "ADMIN") {
+           if (!credentials.password || !user.password) return null;
+           const isValid = await bcrypt.compare(credentials.password, user.password);
+           if (!isValid) return null;
+        }
 
         return {
           id: user.id,
           name: user.name,
           email: user.email,
+          phone: user.phone,
           role: user.role
         };
       }
