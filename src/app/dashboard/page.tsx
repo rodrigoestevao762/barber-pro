@@ -122,7 +122,7 @@ export default function DashboardPage() {
                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${apt.status === 'CONFIRMED' ? 'bg-green-500/20 text-green-400' : apt.status === 'CANCELLED' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
                        {apt.status === 'CONFIRMED' ? 'Confirmado' : apt.status === 'CANCELLED' ? 'Cancelado' : 'Pendente'}
                      </span>
-                     {isFuture && apt.status !== 'CANCELLED' && apt.status !== 'COMPLETED' && (
+                     {apt.status !== 'CANCELLED' && apt.status !== 'COMPLETED' && (
                         <button 
                           onClick={() => cancelClientAppointment(apt.id, apt.date, apt.service.name)}
                           className="text-xs text-red-400 hover:text-red-300 font-semibold uppercase tracking-widest underline underline-offset-4"
