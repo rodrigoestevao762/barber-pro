@@ -41,3 +41,4 @@ export default function CancelButton({ id, serviceName, dateStr }: { id: string,
     </button>
   );
 }
+
