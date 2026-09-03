@@ -2,18 +2,27 @@
 
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { Phone, Lock, ArrowRight, ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
   const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
 
   useEffect(() => {
     if (status === "authenticated") {
+      router.push("/dashboard");
+    }
+  }, [status, router]);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!phone || !password) {
       setError("Preencha todos os campos para continuar.");
       return;
@@ -31,7 +40,7 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        setError("Credenciais inv√°lidas ou n√∫mero n√£o encontrado.");
+        setError("Credenciais inv·lidas ou n˙mero n„o encontrado.");
         setLoading(false);
       } else if (res?.ok) {
         router.refresh();
@@ -41,7 +50,7 @@ export default function LoginPage() {
         setLoading(false);
       }
     } catch (err: any) {
-      setError("Erro de conex√£o: " + err.message);
+      setError("Erro de conex„o: " + err.message);
       setLoading(false);
     }
   };
