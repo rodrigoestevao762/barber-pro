@@ -17,6 +17,10 @@ export default function FinanceiroPage() {
   const [valeDesc, setValeDesc] = useState("");
   const [valeAmount, setValeAmount] = useState("");
 
+  const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
+  const [selectedBarber, setSelectedBarber] = useState<any>(null);
+  const [services, setServices] = useState<any[]>([]);
+
   // Estado das Abas: "GERAL" ou o ID do barbeiro
   const [activeTab, setActiveTab] = useState<string | number>("GERAL");
 
@@ -32,6 +36,7 @@ export default function FinanceiroPage() {
 
   const fetchData = async () => {
     try {
+      // Mock para as despesas (Temporário)
       setTimeout(() => {
         setExpenses([
           { id: 1, description: "Conta de Luz", amount: 450, type: "FIXO", date: new Date().toISOString() },
@@ -39,6 +44,13 @@ export default function FinanceiroPage() {
         ]);
         setLoading(false);
       }, 500);
+
+      // Buscar Serviços Reais da API
+      const resServices = await fetch('/api/services');
+      if (resServices.ok) {
+        const jsonServices = await resServices.json();
+        setServices(jsonServices);
+      }
     } catch (e) {
       console.error(e);
       setLoading(false);
@@ -48,6 +60,20 @@ export default function FinanceiroPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const handleRegisterService = (service: any) => {
+    if (!selectedBarber) return;
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setBarbers(prev => prev.map(b => 
+        b.id === selectedBarber.id 
+          ? { ...b, cutsToday: b.cutsToday + 1, totalEarned: b.totalEarned + service.price } 
+          : b
+      ));
+      setIsWalkInModalOpen(false);
+      setIsSubmitting(false);
+    }, 300);
+  };
 
   // Lançar Despesa Geral (Luz, Água)
   const handleAddExpense = async (e: React.FormEvent) => {
@@ -299,12 +325,20 @@ export default function FinanceiroPage() {
                       </div>
                       <p className="text-gray-400 text-sm">Resumo do dia e fechamento de comissões.</p>
                     </div>
-                    <button 
-                      onClick={() => setIsValeModalOpen(true)}
-                      className="relative z-10 px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold uppercase tracking-widest text-xs rounded-lg transition-colors flex items-center gap-2"
-                    >
-                      <Receipt className="w-4 h-4" /> Lançar Despesa / Vale
-                    </button>
+                    <div className="flex gap-3 relative z-10">
+                      <button 
+                        onClick={() => { setSelectedBarber(barber); setIsWalkInModalOpen(true); }}
+                        className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold uppercase tracking-widest text-xs rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <Plus className="w-4 h-4 text-[#C88E70]" /> Registrar Serviço
+                      </button>
+                      <button 
+                        onClick={() => setIsValeModalOpen(true)}
+                        className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold uppercase tracking-widest text-xs rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <Receipt className="w-4 h-4" /> Lançar Despesa / Vale
+                      </button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -366,7 +400,7 @@ export default function FinanceiroPage() {
 
       {/* ADD VALE DO BARBEIRO MODAL */}
       <AnimatePresence>
-        {isValeModalOpen && typeof activeTab === "number" && (
+        {isValeModalOpen && selectedBarber && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-red-500/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
               <div className="p-8 relative z-10">
@@ -378,6 +412,39 @@ export default function FinanceiroPage() {
                   <input required type="number" step="0.01" placeholder="Valor (R$)" value={valeAmount} onChange={(e) => setValeAmount(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-red-400" />
                   <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-red-500/20 border border-red-500/50 hover:bg-red-500 text-white font-bold uppercase tracking-widest text-xs rounded-xl mt-4">Descontar do Barbeiro</button>
                 </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* REGISTRAR SERVIÇO (WALK-IN) MODAL */}
+      <AnimatePresence>
+        {isWalkInModalOpen && selectedBarber && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-[#C88E70]/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative max-h-[80vh] flex flex-col">
+              <div className="p-8 pb-4 relative z-10 shrink-0">
+                <button onClick={() => setIsWalkInModalOpen(false)} className="absolute top-6 right-6 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
+                <h2 className="text-2xl font-serif text-white mb-2">Registrar <span className="text-[#C88E70] italic">Serviço</span></h2>
+                <p className="text-gray-400 text-xs mb-2">
+                  Adicionar serviço ao caixa de <strong className="text-white">{selectedBarber.name}</strong>.
+                </p>
+              </div>
+              <div className="p-8 pt-0 overflow-y-auto space-y-3 pb-8 relative z-10 flex-1">
+                {services.map(svc => (
+                  <button
+                    key={svc.id}
+                    onClick={() => handleRegisterService(svc)}
+                    disabled={isSubmitting}
+                    className="w-full flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-[#C88E70]/30 transition-all text-left disabled:opacity-50"
+                  >
+                    <div>
+                      <h3 className="text-white font-medium">{svc.name}</h3>
+                      <p className="text-xs text-gray-500 mt-1">{svc.duration} min</p>
+                    </div>
+                    <span className="text-[#C88E70] font-serif text-lg">R$ {svc.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </button>
+                ))}
               </div>
             </motion.div>
           </motion.div>
