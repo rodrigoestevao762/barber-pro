@@ -1,4 +1,4 @@
-"use client";
+Ôªø"use client";
 
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
@@ -40,7 +40,7 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        setError("Credenciais inv·lidas ou n˙mero n„o encontrado.");
+        setError("Credenciais inv√°lidas ou n√∫mero n√£o encontrado.");
         setLoading(false);
       } else if (res?.ok) {
         router.refresh();
@@ -50,7 +50,7 @@ export default function LoginPage() {
         setLoading(false);
       }
     } catch (err: any) {
-      setError("Erro de conex„o: " + err.message);
+      setError("Erro de conex√£o: " + err.message);
       setLoading(false);
     }
   };
