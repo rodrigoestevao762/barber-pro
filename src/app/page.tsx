@@ -68,6 +68,7 @@ export default function Home() {
   const [currentImage, setCurrentImage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { scrollYProgress } = useScroll();
   
   // Efeito Parallax suave para a imagem de fundo
@@ -145,7 +146,33 @@ export default function Home() {
             </MagneticButton>
           </div>
         </div>
-        <button className="md:hidden text-white"><Menu className="w-8 h-8" /></button>
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden text-white z-50">
+          <Menu className="w-8 h-8" />
+        </button>
+
+        {/* MOBILE MENU */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="absolute top-full left-0 w-full bg-[#050B14]/95 backdrop-blur-xl border-b border-white/10 p-6 flex flex-col gap-6 md:hidden z-40"
+            >
+              <a href="#servicos" onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">Serviços</a>
+              <a href="#experiencia" onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">A Experiência</a>
+              <Link href={session ? "/dashboard" : "/login"} onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">
+                {session ? "Painel" : "Login"}
+              </Link>
+              <button 
+                onClick={() => { setIsMobileMenuOpen(false); setIsModalOpen(true); }}
+                className="bg-[#C88E70] text-[#050B14] py-4 flex items-center justify-center gap-3 font-semibold tracking-widest uppercase"
+              >
+                <Calendar className="w-4 h-4" /> AGENDAR
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
 
       <BookingModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
@@ -155,7 +182,7 @@ export default function Home() {
         
         {/* Imagem de Fundo (Parallax + Slider) */}
         <motion.div style={{ y, opacity }} className="absolute inset-0 w-full h-[120%] -top-[10%]">
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.div
               key={currentImage}
               initial={{ opacity: 0, scale: 1.05 }}
@@ -166,7 +193,7 @@ export default function Home() {
               style={{ backgroundImage: `url(${HERO_IMAGES[currentImage]})` }}
             />
           </AnimatePresence>
-          <div className="absolute inset-0 bg-[#050B14]/60" />
+          <div className="absolute inset-0 bg-[#050B14]/60 pointer-events-none" />
         </motion.div>
 
         {/* Textos Centrais com Máscara */}
