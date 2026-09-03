@@ -31,30 +31,35 @@ export default function FinanceiroPage() {
   });
 
   // Dados Globais
-  const [expenses, setExpenses] = useState<any[]>([]); // Despesas Gerais (Inclui custos fixos e vales)
-  
-  // Dados dos Barbeiros
-  const [barbers, setBarbers] = useState([
-    { id: 1, name: "Maria (Dona)", cutsToday: 12, totalEarned: 840, personalExpenses: 0 },
-    { id: 2, name: "Pedro (Barbeiro)", cutsToday: 8, totalEarned: 400, personalExpenses: 0 },
-    { id: 3, name: "Lucas (Barbeiro)", cutsToday: 6, totalEarned: 300, personalExpenses: 0 }
-  ]);
+  const [expenses, setExpenses] = useState<any[]>([]); 
+  const [barbers, setBarbers] = useState<any[]>([]);
 
-  const fetchData = async () => {
+  // Carrega os dados específicos do dia
+  const loadDataForDate = async (dateStr: string) => {
     setLoading(true);
     try {
-      // Aqui no futuro será feito o fetch baseado no selectedDate
-      // ex: const res = await fetch(`/api/financeiro?date=${selectedDate}`);
+      // Tenta buscar do localStorage primeiro
+      const storedBarbers = localStorage.getItem(`barbers_${dateStr}`);
+      const storedExpenses = localStorage.getItem(`expenses_${dateStr}`);
       
-      setTimeout(() => {
-        setExpenses([
-          { id: 1, description: "Conta de Luz", amount: 450, type: "FIXO", date: new Date().toISOString() },
-          { id: 2, description: "Pomadas", amount: 600, type: "FIXO", date: new Date().toISOString() }
+      if (storedBarbers) {
+        setBarbers(JSON.parse(storedBarbers));
+      } else {
+        // Estado zerado para dias novos
+        setBarbers([
+          { id: 1, name: "Maria (Dona)", cutsToday: 0, totalEarned: 0, personalExpenses: 0 },
+          { id: 2, name: "Pedro (Barbeiro)", cutsToday: 0, totalEarned: 0, personalExpenses: 0 },
+          { id: 3, name: "Lucas (Barbeiro)", cutsToday: 0, totalEarned: 0, personalExpenses: 0 }
         ]);
-        setLoading(false);
-      }, 500);
+      }
 
-      // Buscar Serviços Reais da API
+      if (storedExpenses) {
+        setExpenses(JSON.parse(storedExpenses));
+      } else {
+        setExpenses([]);
+      }
+
+      // Buscar Serviços Reais da API para o Modal
       const resServices = await fetch('/api/services');
       if (resServices.ok) {
         const jsonServices = await resServices.json();
@@ -62,23 +67,34 @@ export default function FinanceiroPage() {
       }
     } catch (e) {
       console.error(e);
+    } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    loadDataForDate(selectedDate);
   }, [selectedDate]);
+
+  // Função helper para salvar estado atual no localStorage
+  const saveToLocal = (newBarbers: any[], newExpenses: any[]) => {
+    localStorage.setItem(`barbers_${selectedDate}`, JSON.stringify(newBarbers));
+    localStorage.setItem(`expenses_${selectedDate}`, JSON.stringify(newExpenses));
+  };
 
   const handleRegisterService = (service: any) => {
     if (!selectedBarber) return;
     setIsSubmitting(true);
+    
     setTimeout(() => {
-      setBarbers(prev => prev.map(b => 
+      const newBarbers = barbers.map(b => 
         b.id === selectedBarber.id 
           ? { ...b, cutsToday: b.cutsToday + 1, totalEarned: b.totalEarned + service.price } 
           : b
-      ));
+      );
+      setBarbers(newBarbers);
+      saveToLocal(newBarbers, expenses);
+      
       setIsWalkInModalOpen(false);
       setIsSubmitting(false);
     }, 300);
@@ -89,7 +105,12 @@ export default function FinanceiroPage() {
     e.preventDefault();
     setIsSubmitting(true);
     setTimeout(() => {
-      setExpenses([{ id: Date.now(), description: desc, amount: Number(amount), type: "FIXO", date: new Date().toISOString() }, ...expenses]);
+      const newExpense = { id: Date.now(), description: desc, amount: Number(amount), type: "FIXO", date: new Date().toISOString() };
+      const newExpenses = [newExpense, ...expenses];
+      
+      setExpenses(newExpenses);
+      saveToLocal(barbers, newExpenses);
+      
       setDesc("");
       setAmount("");
       setIsModalOpen(false);
@@ -106,20 +127,25 @@ export default function FinanceiroPage() {
       if (!activeBarber) return;
 
       // 1. Adiciona o vale na conta do barbeiro
-      setBarbers(prev => prev.map(b => 
+      const newBarbers = barbers.map(b => 
         b.id === activeTab 
           ? { ...b, personalExpenses: b.personalExpenses + Number(valeAmount) } 
           : b
-      ));
+      );
 
-      // 2. Adiciona o vale nas despesas gerais da barbearia (pois o dinheiro saiu do caixa físico hoje)
-      setExpenses([{ 
+      // 2. Adiciona o vale nas despesas gerais da barbearia
+      const newExpense = { 
         id: Date.now(), 
         description: `Vale/Desconto: ${activeBarber.name} (${valeDesc})`, 
         amount: Number(valeAmount), 
         type: "VALE",
         date: new Date().toISOString() 
-      }, ...expenses]);
+      };
+      const newExpenses = [newExpense, ...expenses];
+
+      setBarbers(newBarbers);
+      setExpenses(newExpenses);
+      saveToLocal(newBarbers, newExpenses);
 
       setValeDesc("");
       setValeAmount("");
