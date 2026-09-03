@@ -29,9 +29,9 @@ export default function FinanceiroPage() {
   
   // Dados dos Barbeiros
   const [barbers, setBarbers] = useState([
-    { id: 1, name: "Maria (Dona)", commissionRate: 0.6, cutsToday: 12, totalEarned: 840, personalExpenses: 0 },
-    { id: 2, name: "Pedro (Barbeiro)", commissionRate: 0.5, cutsToday: 8, totalEarned: 400, personalExpenses: 0 },
-    { id: 3, name: "Lucas (Barbeiro)", commissionRate: 0.5, cutsToday: 6, totalEarned: 300, personalExpenses: 0 }
+    { id: 1, name: "Maria (Dona)", cutsToday: 12, totalEarned: 840, personalExpenses: 0 },
+    { id: 2, name: "Pedro (Barbeiro)", cutsToday: 8, totalEarned: 400, personalExpenses: 0 },
+    { id: 3, name: "Lucas (Barbeiro)", cutsToday: 6, totalEarned: 300, personalExpenses: 0 }
   ]);
 
   const fetchData = async () => {
@@ -96,7 +96,7 @@ export default function FinanceiroPage() {
       const activeBarber = barbers.find(b => b.id === activeTab);
       if (!activeBarber) return;
 
-      // 1. Adiciona o vale na conta do barbeiro (para abater da comissão dele)
+      // 1. Adiciona o vale na conta do barbeiro
       setBarbers(prev => prev.map(b => 
         b.id === activeTab 
           ? { ...b, personalExpenses: b.personalExpenses + Number(valeAmount) } 
@@ -130,12 +130,11 @@ export default function FinanceiroPage() {
   // --- MATEMÁTICA DA VISÃO GERAL ---
   const faturamentoBruto = barbers.reduce((acc, curr) => acc + curr.totalEarned, 0); // Soma de tudo que todos produziram
   const totalExpenses = expenses.reduce((acc, curr) => acc + curr.amount, 0); // Todas as saídas de dinheiro (Custos + Vales)
-  const comissoesBrutasPagas = barbers.reduce((acc, curr) => acc + (curr.totalEarned * curr.commissionRate), 0);
   
-  // Lucro da casa = Tudo que entrou - Todas as comissões devidas - Custos Fixos. 
-  // (Vales não entram nessa dedução do lucro da casa, pois já foram deduzidos do bolso do barbeiro)
+  // Como o barbeiro recebe 100% da produção dele abatendo apenas vales, o valor total devido aos barbeiros é o Faturamento Bruto.
+  // O lucro da casa se houver entradas que não foram feitas por barbeiros específicos (ou aluguéis de cadeira).
   const despesasFixas = expenses.filter(e => e.type === "FIXO").reduce((acc, curr) => acc + curr.amount, 0);
-  const lucroBarbearia = faturamentoBruto - comissoesBrutasPagas - despesasFixas;
+  const lucroBarbearia = faturamentoBruto - faturamentoBruto - despesasFixas; // Isso ficará negativo se a barbearia só tiver despesas e não retiver % dos cortes.
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-[1200px] mx-auto space-y-8">
@@ -201,23 +200,23 @@ export default function FinanceiroPage() {
                  <p className="text-xs text-gray-500">Produção total de todos os barbeiros.</p>
               </div>
 
-              {/* Comissões Devidas */}
+              {/* Valores Pagos */}
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
                  <p className="text-gray-400 text-[10px] tracking-widest uppercase mb-4 flex items-center gap-2">
-                    <Scissors className="w-4 h-4" /> Comissões (A Pagar)
+                    <Scissors className="w-4 h-4" /> Total a Pagar (Barbeiros)
                  </p>
-                 <h2 className="text-3xl font-serif text-white/80 mb-1">R$ {comissoesBrutasPagas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                 <p className="text-xs text-gray-500">Parte destinada aos profissionais.</p>
+                 <h2 className="text-3xl font-serif text-white/80 mb-1">R$ {faturamentoBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
+                 <p className="text-xs text-gray-500">Valor 100% repassado (antes dos descontos).</p>
               </div>
 
               {/* Lucro da Casa */}
               <div className="bg-[#C88E70]/10 border border-[#C88E70]/40 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#C88E70]/20 blur-[50px]" />
                 <p className="text-[#C88E70] font-bold text-[10px] tracking-widest uppercase mb-4 flex items-center gap-2 relative z-10">
-                   <Wallet className="w-4 h-4" /> Lucro Líquido (Barbearia)
+                   <Wallet className="w-4 h-4" /> Saldo da Barbearia
                 </p>
                 <h2 className="text-4xl font-serif text-white mb-2 relative z-10">R$ {lucroBarbearia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                <p className="text-xs text-gray-400 relative z-10">O que sobra livre para o caixa do negócio.</p>
+                <p className="text-xs text-gray-400 relative z-10">Saldo líquido após repasses e custos fixos.</p>
               </div>
             </div>
 
@@ -260,8 +259,7 @@ export default function FinanceiroPage() {
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {barbers.map(barber => {
-                  const comissaoBruta = barber.totalEarned * barber.commissionRate;
-                  const liquidoAPagar = comissaoBruta - barber.personalExpenses;
+                  const liquidoAPagar = barber.totalEarned - barber.personalExpenses;
                   return (
                     <div key={`summary-${barber.id}`} className="bg-black/40 border border-white/5 rounded-2xl p-5 hover:border-white/20 transition-colors">
                       <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
@@ -275,12 +273,8 @@ export default function FinanceiroPage() {
                       </div>
                       <div className="space-y-2 mb-4">
                         <div className="flex justify-between text-xs text-gray-500">
-                          <span>Produziu Bruto:</span>
-                          <span className="text-white">R$ {barber.totalEarned.toLocaleString('pt-BR')}</span>
-                        </div>
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>Comissão ({(barber.commissionRate * 100)}%):</span>
-                          <span className="text-green-400">+ R$ {comissaoBruta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                          <span>Saldo dos Cortes:</span>
+                          <span className="text-green-400">+ R$ {barber.totalEarned.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                         </div>
                         <div className="flex justify-between text-xs text-gray-500">
                           <span>Vales/Descontos:</span>
@@ -288,7 +282,7 @@ export default function FinanceiroPage() {
                         </div>
                       </div>
                       <div className="pt-3 border-t border-white/10 flex justify-between items-center">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Líquido</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Líquido a Pagar</span>
                         <span className="text-xl font-serif text-white">R$ {liquidoAPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
@@ -310,8 +304,7 @@ export default function FinanceiroPage() {
           >
             {(() => {
               const barber = barbers.find(b => b.id === activeTab)!;
-              const comissaoBruta = barber.totalEarned * barber.commissionRate;
-              const aReceberLivre = comissaoBruta - barber.personalExpenses;
+              const aReceberLivre = barber.totalEarned - barber.personalExpenses;
 
               return (
                 <>
@@ -320,10 +313,10 @@ export default function FinanceiroPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <h2 className="text-3xl font-serif text-white">{barber.name}</h2>
                         <span className="text-[10px] bg-white/10 text-white px-3 py-1 rounded-full uppercase tracking-wider font-bold">
-                          {(barber.commissionRate * 100)}% Comissão
+                          CAIXA INDIVIDUAL
                         </span>
                       </div>
-                      <p className="text-gray-400 text-sm">Resumo do dia e fechamento de comissões.</p>
+                      <p className="text-gray-400 text-sm">Resumo do dia e fechamento.</p>
                     </div>
                     <div className="flex gap-3 relative z-10">
                       <button 
@@ -341,21 +334,17 @@ export default function FinanceiroPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="bg-white/5 border border-white/5 p-6 rounded-2xl">
                       <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Cortes Hoje</p>
                       <p className="text-2xl font-serif text-white">{barber.cutsToday}</p>
                     </div>
-                    <div className="bg-white/5 border border-white/5 p-6 rounded-2xl">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Produção Bruta</p>
-                      <p className="text-2xl font-serif text-white">R$ {barber.totalEarned.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    </div>
                     <div className="bg-green-500/5 border border-green-500/10 p-6 rounded-2xl">
-                      <p className="text-[10px] text-green-500 uppercase tracking-widest mb-1">Sua Comissão</p>
-                      <p className="text-2xl font-serif text-green-400">+ R$ {comissaoBruta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-[10px] text-green-500 uppercase tracking-widest mb-1">Produção (Saldo)</p>
+                      <p className="text-2xl font-serif text-green-400">+ R$ {barber.totalEarned.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                     <div className="bg-red-500/5 border border-red-500/10 p-6 rounded-2xl">
-                      <p className="text-[10px] text-red-500 uppercase tracking-widest mb-1">Vales Descontados</p>
+                      <p className="text-[10px] text-red-500 uppercase tracking-widest mb-1">Despesas/Vales</p>
                       <p className="text-2xl font-serif text-red-400">- R$ {barber.personalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
