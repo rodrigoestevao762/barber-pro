@@ -226,6 +226,50 @@ export default function FinanceiroPage() {
                 </div>
               )}
             </div>
+
+            {/* ADMIN RESUMO DOS BARBEIROS */}
+            <div>
+              <h3 className="text-xl font-serif text-white mb-6 mt-12 flex items-center gap-2">
+                <User className="w-5 h-5 text-[#C88E70]" /> Resumo para Pagamento (Fechamento)
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {barbers.map(barber => {
+                  const comissaoBruta = barber.totalEarned * barber.commissionRate;
+                  const liquidoAPagar = comissaoBruta - barber.personalExpenses;
+                  return (
+                    <div key={`summary-${barber.id}`} className="bg-black/40 border border-white/5 rounded-2xl p-5 hover:border-white/20 transition-colors">
+                      <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
+                        <h4 className="text-white font-bold">{barber.name}</h4>
+                        <button 
+                          onClick={() => setActiveTab(barber.id)}
+                          className="text-[10px] bg-white/5 hover:bg-white/10 text-gray-300 px-3 py-1.5 rounded-lg uppercase tracking-widest transition-colors"
+                        >
+                          Ver Detalhes
+                        </button>
+                      </div>
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>Produziu Bruto:</span>
+                          <span className="text-white">R$ {barber.totalEarned.toLocaleString('pt-BR')}</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>Comissão ({(barber.commissionRate * 100)}%):</span>
+                          <span className="text-green-400">+ R$ {comissaoBruta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div className="flex justify-between text-xs text-gray-500">
+                          <span>Vales/Descontos:</span>
+                          <span className="text-red-400">- R$ {barber.personalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                      </div>
+                      <div className="pt-3 border-t border-white/10 flex justify-between items-center">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Líquido</span>
+                        <span className="text-xl font-serif text-white">R$ {liquidoAPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </motion.div>
         )}
 
