@@ -16,6 +16,7 @@ model User {
   password      String?
   role          String    @default("CLIENT")
   appointments  Appointment[]
+  waitlists     Waitlist[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -30,14 +31,25 @@ model Service {
   appointments Appointment[]
 }
 
+model Barber {
+  id             String   @id @default(cuid())
+  name           String
+  commissionRate Float    @default(0.5)
+  appointments   Appointment[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
 model Appointment {
   id            String   @id @default(cuid())
   date          DateTime
-  status        String   @default("PENDING")
+  status        String   @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED
   userId        String
   user          User     @relation(fields: [userId], references: [id])
   serviceId     String
   service       Service  @relation(fields: [serviceId], references: [id])
+  barberId      String?
+  barber        Barber?  @relation(fields: [barberId], references: [id])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -50,3 +62,12 @@ model Expense {
   createdAt   DateTime @default(now())
 }
 
+model Waitlist {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  dateRequested DateTime
+  status        String   @default("WAITING") // WAITING, NOTIFIED, BOOKED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
