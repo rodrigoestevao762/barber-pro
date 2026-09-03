@@ -23,6 +23,12 @@ export default function FinanceiroPage() {
 
   // Estado das Abas: "GERAL" ou o ID do barbeiro
   const [activeTab, setActiveTab] = useState<string | number>("GERAL");
+  
+  // Date filter
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    return d.toISOString().split('T')[0];
+  });
 
   // Dados Globais
   const [expenses, setExpenses] = useState<any[]>([]); // Despesas Gerais (Inclui custos fixos e vales)
@@ -35,8 +41,11 @@ export default function FinanceiroPage() {
   ]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      // Mock para as despesas (Temporário)
+      // Aqui no futuro será feito o fetch baseado no selectedDate
+      // ex: const res = await fetch(`/api/financeiro?date=${selectedDate}`);
+      
       setTimeout(() => {
         setExpenses([
           { id: 1, description: "Conta de Luz", amount: 450, type: "FIXO", date: new Date().toISOString() },
@@ -59,7 +68,7 @@ export default function FinanceiroPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [selectedDate]);
 
   const handleRegisterService = (service: any) => {
     if (!selectedBarber) return;
@@ -141,9 +150,20 @@ export default function FinanceiroPage() {
       
       {/* HEADER & TABS */}
       <div className="flex flex-col space-y-6">
-        <div>
-          <h2 className="text-4xl font-serif text-white tracking-tight">Gestão <span className="text-[#C88E70] italic">Financeira</span></h2>
-          <p className="text-gray-400 mt-2 text-sm">Controle geral da barbearia e fechamento de caixa individual de cada profissional.</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h2 className="text-4xl font-serif text-white tracking-tight">Gestão <span className="text-[#C88E70] italic">Financeira</span></h2>
+            <p className="text-gray-400 mt-2 text-sm">Controle geral da barbearia e fechamento de caixa individual de cada profissional.</p>
+          </div>
+          <div className="flex flex-col gap-1 w-full md:w-auto">
+            <label className="text-xs text-gray-400 uppercase tracking-widest">Filtrar por data:</label>
+            <input 
+              type="date" 
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-[#C88E70] w-full md:w-auto [&::-webkit-calendar-picker-indicator]:invert"
+            />
+          </div>
         </div>
 
         {/* NAVEGAÇÃO DAS ABAS */}
