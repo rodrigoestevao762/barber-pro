@@ -71,3 +71,14 @@ model Waitlist {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+model CashClosing {
+  id             String   @id @default(cuid())
+  date           DateTime @default(now())
+  totalRevenue   Float
+  totalExpenses  Float?
+  closedBy       String?
+  notes          String?
+  barberRevenues String?  // Stored as JSON string for simplicity
+  createdAt      DateTime @default(now())
+}
