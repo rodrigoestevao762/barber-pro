@@ -22,6 +22,10 @@ export default function FechamentoPage() {
     getFechamentoData().then(result => {
       setData(result)
       setLoading(false)
+    }).catch(error => {
+      console.error(error)
+      alert("Erro ao carregar dados: " + error.message)
+      setLoading(false)
     })
   }, [])
 
