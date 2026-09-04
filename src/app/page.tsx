@@ -319,61 +319,63 @@ export default function Home() {
         
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-16 md:gap-32">
           
-          {/* Coluna do Leque de Fotos (Mega Brain Fan) */}
-          <div className="w-full md:w-1/2 relative h-[60vh] md:h-[80vh] flex items-center justify-center">
-             
-             {/* Container do Leque */}
-             <div className="relative w-full max-w-[280px] md:max-w-[320px] aspect-[3/4] group perspective-[1200px]">
+          {/* Coluna da Galeria Scatter (Mega Brain Collage) */}
+          <div className="w-full md:w-1/2 relative h-[600px] md:h-[800px] flex items-center justify-center">
+             <div className="relative w-full h-full">
                 {[
-                  { id: 1, src: "https://images.unsplash.com/photo-1512496015851-a1cbfc3a3642?q=80&w=800", rotate: -15, x: "-35%", y: "5%", z: -10 },
-                  { id: 2, src: "https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?q=80&w=1000", rotate: 0, x: "0%", y: "0%", z: 10 },
-                  { id: 3, src: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=800", rotate: 15, x: "35%", y: "5%", z: -10 },
+                  { src: "https://images.unsplash.com/photo-1593702275687-f8b402bf1fb5?q=80&w=600", w: "w-[40%]", h: "h-[30%]", t: "5%", l: "0%", z: 20, rotate: -4, delay: 0.1 },
+                  { src: "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=600", w: "w-[30%]", h: "h-[25%]", t: "0%", l: "45%", z: 10, rotate: 6, delay: 0.2 },
+                  { src: "https://images.unsplash.com/photo-1512496015851-a1cbfc3a3642?q=80&w=600", w: "w-[35%]", h: "h-[35%]", t: "20%", l: "60%", z: 30, rotate: 12, delay: 0.3 },
+                  { src: "https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=600", w: "w-[45%]", h: "h-[40%]", t: "35%", l: "10%", z: 40, rotate: -8, delay: 0.4 },
+                  { src: "https://images.unsplash.com/photo-1622286342621-4bd786c2447c?q=80&w=600", w: "w-[25%]", h: "h-[20%]", t: "30%", l: "35%", z: 15, rotate: 2, delay: 0.5 },
+                  { src: "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=600", w: "w-[35%]", h: "h-[35%]", t: "55%", l: "55%", z: 35, rotate: -5, delay: 0.6 },
+                  { src: "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=600", w: "w-[30%]", h: "h-[30%]", t: "65%", l: "0%", z: 25, rotate: 10, delay: 0.7 },
+                  { src: "https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=600", w: "w-[20%]", h: "h-[20%]", t: "80%", l: "35%", z: 12, rotate: -12, delay: 0.8 },
+                  { src: "https://images.unsplash.com/photo-1633362141505-188849b29158?q=80&w=600", w: "w-[25%]", h: "h-[25%]", t: "75%", l: "70%", z: 22, rotate: 4, delay: 0.9 },
+                  { src: "https://images.unsplash.com/photo-1532710093739-9470acff878b?q=80&w=600", w: "w-[35%]", h: "h-[20%]", t: "45%", l: "60%", z: 5, rotate: -15, delay: 1.0 },
                 ].map((img, i) => (
                   <motion.div
-                    key={img.id}
-                    initial={{ opacity: 0, y: 150, rotate: 0, x: 0 }}
-                    whileInView={{ opacity: 1, y: img.y, rotate: img.rotate, x: img.x }}
+                    key={i}
+                    initial={{ opacity: 0, scale: 0.5, y: 50, rotate: img.rotate + (Math.random() * 20 - 10) }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0, rotate: img.rotate }}
                     viewport={{ once: true, margin: "-100px" }}
                     transition={{ 
                       duration: 1.2, 
-                      delay: 0.2 + (i * 0.1), 
+                      delay: img.delay, 
                       type: "spring", 
-                      stiffness: 70, 
+                      stiffness: 80, 
                       damping: 20 
                     }}
                     whileHover={{ 
                       scale: 1.15, 
                       rotate: 0, 
-                      x: img.x === "0%" ? 0 : (img.x.includes("-") ? "-40%" : "40%"), 
-                      y: "-5%", 
-                      zIndex: 50,
-                      boxShadow: "0 25px 50px -12px rgba(0,0,0,0.7)"
+                      zIndex: 100,
+                      boxShadow: "0 30px 60px -15px rgba(0,0,0,0.8)"
                     }}
-                    className="absolute inset-0 rounded-2xl overflow-hidden shadow-2xl border-4 border-[#050B14] cursor-pointer grayscale-[40%] hover:grayscale-0 transition-all duration-500 will-change-transform"
-                    style={{ transformOrigin: "bottom center", zIndex: img.z }}
+                    className={"absolute " + img.w + " " + img.h + " rounded-xl overflow-hidden shadow-2xl border-[3px] border-[#050B14] cursor-crosshair grayscale-[60%] hover:grayscale-0 transition-all duration-300 will-change-transform"}
+                    style={{ top: img.t, left: img.l, zIndex: img.z }}
                   >
                     <div 
                       className="absolute inset-0 bg-cover bg-center"
                       style={{ backgroundImage: 'url(' + img.src + ')' }}
                     />
-                    {/* Inner Shadow for depth */}
-                    <div className="absolute inset-0 shadow-[inset_0_0_50px_rgba(5,11,20,0.5)] pointer-events-none transition-opacity group-hover:opacity-0" />
+                    <div className="absolute inset-0 bg-[#C88E70]/20 opacity-0 hover:opacity-100 transition-opacity duration-300 mix-blend-overlay pointer-events-none" />
                   </motion.div>
                 ))}
              </div>
              
-             {/* Bloco de Valores flutuante */}
+             {/* Bloco de Valores flutuante - Posicionado sobre a bagunça */}
              <motion.div
-               initial={{ opacity: 0, x: -50 }}
-               whileInView={{ opacity: 1, x: 0 }}
+               initial={{ opacity: 0, y: 50 }}
+               whileInView={{ opacity: 1, y: 0 }}
                viewport={{ once: true }}
-               transition={{ delay: 0.8, duration: 1, ease: "easeOut" }}
-               className="absolute -bottom-8 md:bottom-12 -left-4 md:-left-8 bg-[#C88E70] text-[#050B14] p-8 rounded-xl shadow-[0_20px_50px_rgba(200,142,112,0.15)] backdrop-blur-md max-w-[280px] z-[60]"
+               transition={{ delay: 1.5, duration: 1, ease: "easeOut" }}
+               className="absolute -bottom-8 md:bottom-12 -left-4 md:-left-8 bg-[#C88E70] text-[#050B14] p-8 rounded-xl shadow-[0_30px_60px_rgba(200,142,112,0.3)] backdrop-blur-md max-w-[300px] z-[120]"
              >
                 <Star className="w-8 h-8 mb-4" />
-                <p className="font-serif text-xl leading-tight mb-2">Tradição & Respeito</p>
+                <p className="font-serif text-xl leading-tight mb-2">A Essência da Tradição</p>
                 <p className="text-xs font-sans font-medium opacity-80 uppercase tracking-widest leading-relaxed">
-                  O cuidado que passa de geração em geração, moldando o homem moderno com raízes clássicas.
+                  Uma rede de histórias interligadas, moldando o homem moderno com raízes clássicas e excelência implacável.
                 </p>
              </motion.div>
           </div>
