@@ -1,0 +1,1 @@
+const fs = require("fs"); fs.writeFileSync(".env", `DATABASE_URL="postgresql://postgres.cbskdvfwivtzcvkzwrtj:%40Familia435%23@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"\nDATABASE_URL_UNPOOLED="postgresql://postgres.cbskdvfwivtzcvkzwrtj:%40Familia435%23@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"`, "utf8");
