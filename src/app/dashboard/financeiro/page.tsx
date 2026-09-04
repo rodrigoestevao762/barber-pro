@@ -249,10 +249,10 @@ export default function FinanceiroPage() {
               {/* Valores Pagos */}
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
                  <p className="text-gray-400 text-[10px] tracking-widest uppercase mb-4 flex items-center gap-2">
-                    <Scissors className="w-4 h-4" /> Total a Pagar (Barbeiros)
+                    <Scissors className="w-4 h-4" /> Produção da Equipe
                  </p>
                  <h2 className="text-3xl font-serif text-white/80 mb-1">R$ {faturamentoBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                 <p className="text-xs text-gray-500">Valor 100% repassado (antes dos descontos).</p>
+                 <p className="text-xs text-gray-500">Valor total movimentado nos caixas individuais.</p>
               </div>
 
               {/* Lucro da Casa */}
@@ -262,14 +262,14 @@ export default function FinanceiroPage() {
                    <Wallet className="w-4 h-4" /> Saldo da Barbearia
                 </p>
                 <h2 className="text-4xl font-serif text-white mb-2 relative z-10">R$ {lucroBarbearia.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                <p className="text-xs text-gray-400 relative z-10">Saldo líquido após repasses e custos fixos.</p>
+                <p className="text-xs text-gray-400 relative z-10">Saldo líquido após custos fixos.</p>
               </div>
             </div>
 
             {/* EXPENSES LIST (CAIXA FÍSICO) */}
             <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
               <h3 className="text-xl font-serif text-white mb-6 flex items-center gap-2">
-                <TrendingDown className="w-5 h-5 text-red-400" /> Saídas do Caixa Físico (Hoje)
+                <TrendingDown className="w-5 h-5 text-red-400" /> Saídas do Caixa da Casa (Hoje)
               </h3>
               
               {expenses.length === 0 ? (
@@ -285,7 +285,7 @@ export default function FinanceiroPage() {
                         <div>
                           <h4 className="text-white font-medium text-sm">{exp.description}</h4>
                           <span className={`text-[9px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full mt-1 inline-block ${exp.type === 'VALE' ? 'bg-orange-500/20 text-orange-300' : 'bg-white/10 text-gray-400'}`}>
-                            {exp.type === 'VALE' ? 'Descontado do Barbeiro' : 'Custo Fixo'}
+                            {exp.type === 'VALE' ? 'Devido pelo Barbeiro' : 'Custo Fixo'}
                           </span>
                         </div>
                       </div>
@@ -301,7 +301,7 @@ export default function FinanceiroPage() {
             {/* ADMIN RESUMO DOS BARBEIROS */}
             <div>
               <h3 className="text-xl font-serif text-white mb-6 mt-12 flex items-center gap-2">
-                <User className="w-5 h-5 text-[#C88E70]" /> Resumo para Pagamento (Fechamento)
+                <User className="w-5 h-5 text-[#C88E70]" /> Resumo de Fechamento da Equipe
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {barbers.map(barber => {
@@ -328,7 +328,7 @@ export default function FinanceiroPage() {
                         </div>
                       </div>
                       <div className="pt-3 border-t border-white/10 flex justify-between items-center">
-                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Líquido a Pagar</span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Saldo Líquido</span>
                         <span className="text-xl font-serif text-white">R$ {liquidoAPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
@@ -396,10 +396,10 @@ export default function FinanceiroPage() {
                   </div>
 
                   <div className="bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 rounded-3xl p-10 flex flex-col items-center justify-center text-center">
-                    <p className="text-blue-400 text-[10px] uppercase tracking-[0.3em] font-bold mb-4">Líquido a Pagar Hoje</p>
+                    <p className="text-blue-400 text-[10px] uppercase tracking-[0.3em] font-bold mb-4">Saldo Líquido do Dia</p>
                     <h1 className="text-6xl font-serif text-white mb-8">R$ {aReceberLivre.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h1>
                     <button className="bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-widest text-sm px-12 py-4 rounded-full transition-all hover:scale-105 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
-                      Finalizar e Pagar
+                      Fechar Caixa do Dia
                     </button>
                   </div>
                 </>
