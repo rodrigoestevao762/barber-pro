@@ -11,7 +11,7 @@ export async function GET(req: Request) {
       const user = await prisma.user.findUnique({
         where: { id: (session.user as any).id },
         include: {
-          appointments: { include: { service: true }, orderBy: { date: 'asc' } }
+          appointments: { include: { service: true, barber: true }, orderBy: { date: 'asc' } }
         }
       });
       return NextResponse.json({ isClient: true, appointments: user?.appointments || [] });
