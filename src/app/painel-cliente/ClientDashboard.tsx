@@ -10,7 +10,7 @@ export default function ClientDashboard() {
   const { data: session } = useSession();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
-  const [appointments, setAppointments] = useState<{id: string, date: string, service: {name: string, id: string}, barber?: {name: string}, status: string}[]>([]);
+  const [appointments, setAppointments] = useState<{id: string, date: string, serviceId: string, service: {name: string, id: string}, barber?: {name: string}, status: string}[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Pega o nome real do usuário logado
@@ -106,7 +106,7 @@ export default function ClientDashboard() {
                   <Clock className="w-5 h-5 text-[#C88E70]" /> Seu Histórico
                 </h3>
                 <div className="space-y-4">
-                  {appointments.map((apt: {id: string, date: string, service: {name: string, id: string}, barber?: {name: string}, status: string}) => (
+                  {appointments.map((apt: {id: string, date: string, serviceId: string, service: {name: string, id: string}, barber?: {name: string}, status: string}) => (
                     <div key={apt.id} className="bg-white/5 border border-white/10 p-5 rounded-2xl flex justify-between items-center opacity-80 hover:opacity-100 transition-opacity">
                       <div className="flex gap-4 items-center">
                         <div className="hidden md:flex w-10 h-10 bg-black/50 rounded-full items-center justify-center">
