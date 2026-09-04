@@ -18,9 +18,12 @@ export default function FechamentoPage() {
   }
 
   useEffect(() => {
-    // Avoid synchronous state updates in effect
     getFechamentoData().then(result => {
-      setData(result)
+      if (result.success) {
+        setData(result.data)
+      } else {
+        alert("Erro do Servidor: " + result.error)
+      }
       setLoading(false)
     }).catch(error => {
       console.error(error)
@@ -33,13 +36,17 @@ export default function FechamentoPage() {
     if (!data) return;
     if (!confirm("Tem certeza que deseja fechar o caixa de hoje?")) return;
     
-    await closeCashRegister({
+    const result = await closeCashRegister({
       totalRevenue: data.totalRevenue,
       barberRevenues: JSON.stringify(data.barberRevenues),
       closedBy: "Gestor" // In a real app, we would get this from session
     })
     
-    fetchData()
+    if (result.success) {
+      fetchData()
+    } else {
+      alert("Erro ao fechar caixa: " + result.error)
+    }
   }
 
   if (loading || !data) return <div className="text-white p-8 animate-pulse">Carregando dados do caixa...</div>
