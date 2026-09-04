@@ -10,9 +10,8 @@ export default function ClientDashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
 
-  // MOCK DATA PARA DEMONSTRAO DA IDEIA 1
+  // MOCK DATA PARA DEMONSTRAÇÃO DA IDEIA 1
   const clientName = "Rodrigo";
-  const points = 120;
   
   const lastAppointment = {
     date: "15/08/2026",
@@ -56,29 +55,19 @@ export default function ClientDashboard() {
           <div className="relative z-10 space-y-2">
             <h2 className="text-3xl font-serif text-white">Hora de renovar o visual?</h2>
             <p className="text-gray-300 max-w-md text-sm leading-relaxed">
-              Faz quase um ms desde o seu ltimo {lastAppointment.serviceName.toLowerCase()} com {lastAppointment.barber}. Que tal garantir seu horrio agora mesmo?
+              Faz quase um mês desde o seu último {lastAppointment.serviceName.toLowerCase()} com {lastAppointment.barber}. Que tal garantir seu horário agora mesmo?
             </p>
           </div>
           <button 
             onClick={handleRebook}
             className="relative z-10 w-full md:w-auto bg-[#C88E70] text-[#050B14] hover:bg-white transition-colors px-8 py-4 rounded-xl font-bold uppercase tracking-widest text-sm flex items-center justify-center gap-3 whitespace-nowrap shadow-[0_0_30px_rgba(200,142,112,0.3)] hover:scale-105 transform duration-300"
           >
-            <RotateCcw className="w-4 h-4" /> Repetir ltimo Corte
+            <RotateCcw className="w-4 h-4" /> Repetir Último Corte
           </button>
         </motion.div>
 
         {/* STATUS DO CLIENTE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white/5 border border-white/10 p-6 rounded-2xl flex items-center gap-4">
-            <div className="w-12 h-12 bg-yellow-500/10 rounded-full flex items-center justify-center border border-yellow-500/30">
-              <Star className="w-5 h-5 text-yellow-500" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 uppercase tracking-widest">Seus Pontos</p>
-              <p className="text-2xl font-serif">{points} <span className="text-sm text-gray-400">pts</span></p>
-            </div>
-          </div>
-          
+        <div className="grid grid-cols-1 gap-6">
           <div className="bg-white/5 border border-white/10 p-6 rounded-2xl flex items-center gap-4 cursor-pointer hover:bg-white/10 transition-colors" onClick={() => { setSelectedServiceId(undefined); setIsModalOpen(true); }}>
             <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center border border-blue-500/30">
               <Calendar className="w-5 h-5 text-blue-500" />
@@ -90,10 +79,10 @@ export default function ClientDashboard() {
           </div>
         </div>
 
-        {/* HISTRICO */}
+        {/* HISTÓRICO */}
         <div>
           <h3 className="text-xl font-serif text-white mb-6 mt-12 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-[#C88E70]" /> Seu Histrico
+            <Clock className="w-5 h-5 text-[#C88E70]" /> Seu Histórico
           </h3>
           <div className="space-y-4">
             {[1, 2, 3].map((item, idx) => (
@@ -127,23 +116,5 @@ export default function ClientDashboard() {
   );
 }
 
-// Dummy Star icon component missing from lucide-react import above
-function Star(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  )
-}
+
 
