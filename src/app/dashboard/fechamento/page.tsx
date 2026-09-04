@@ -74,7 +74,7 @@ export default function FechamentoPage() {
           <div>
             <h3 className="text-green-500 font-semibold text-lg">Caixa Fechado</h3>
             <p className="text-green-500/80 text-sm">
-              Fechado em {new Date(lastClosing.createdAt).toLocaleDateString('pt-BR')} às {new Date(lastClosing.createdAt).toLocaleTimeString('pt-BR')} por {lastClosing.closedBy}
+              Fechado em {new Date(lastClosing!.createdAt).toLocaleDateString('pt-BR')} às {new Date(lastClosing!.createdAt).toLocaleTimeString('pt-BR')} por {lastClosing!.closedBy}
             </p>
           </div>
         </motion.div>
