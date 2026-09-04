@@ -47,9 +47,9 @@ export default function FinanceiroPage() {
       } else {
         // Estado zerado para dias novos
         setBarbers([
-          { id: 1, name: "Maria (Dona)", cutsToday: 0, totalEarned: 0, personalExpenses: 0 },
-          { id: 2, name: "Pedro (Barbeiro)", cutsToday: 0, totalEarned: 0, personalExpenses: 0 },
-          { id: 3, name: "Lucas (Barbeiro)", cutsToday: 0, totalEarned: 0, personalExpenses: 0 }
+          { id: 1, name: "Maria (Dona)", cutsToday: 0, totalEarned: 0, personalExpenses: 0, isClosed: false },
+          { id: 2, name: "Pedro (Barbeiro)", cutsToday: 0, totalEarned: 0, personalExpenses: 0, isClosed: false },
+          { id: 3, name: "Lucas (Barbeiro)", cutsToday: 0, totalEarned: 0, personalExpenses: 0, isClosed: false }
         ]);
       }
 
@@ -98,6 +98,21 @@ export default function FinanceiroPage() {
       setIsWalkInModalOpen(false);
       setIsSubmitting(false);
     }, 300);
+  };
+
+  const handleCloseCaixa = () => {
+    const activeBarber = barbers.find(b => b.id === activeTab);
+    if (!activeBarber || activeBarber.isClosed) return;
+
+    if (window.confirm(`Tem certeza que deseja fechar o caixa de ${activeBarber.name} para o dia ${selectedDate.split('-').reverse().join('/')}? Isso travará novos lançamentos hoje.`)) {
+      const newBarbers = barbers.map(b => 
+        b.id === activeTab 
+          ? { ...b, isClosed: true } 
+          : b
+      );
+      setBarbers(newBarbers);
+      saveToLocal(newBarbers, expenses);
+    }
   };
 
   // Lançar Despesa Geral (Luz, Água)
@@ -365,18 +380,22 @@ export default function FinanceiroPage() {
                       <p className="text-gray-400 text-sm">Resumo do dia e fechamento.</p>
                     </div>
                     <div className="flex gap-3 relative z-10">
-                      <button 
-                        onClick={() => { setSelectedBarber(barber); setIsWalkInModalOpen(true); }}
-                        className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold uppercase tracking-widest text-xs rounded-lg transition-colors flex items-center gap-2"
-                      >
-                        <Plus className="w-4 h-4 text-[#C88E70]" /> Registrar Serviço
-                      </button>
-                      <button 
-                        onClick={() => setIsValeModalOpen(true)}
-                        className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold uppercase tracking-widest text-xs rounded-lg transition-colors flex items-center gap-2"
-                      >
-                        <Receipt className="w-4 h-4" /> Lançar Despesa / Vale
-                      </button>
+                      {!barber.isClosed && (
+                        <>
+                          <button 
+                            onClick={() => { setSelectedBarber(barber); setIsWalkInModalOpen(true); }}
+                            className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold uppercase tracking-widest text-xs rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            <Plus className="w-4 h-4 text-[#C88E70]" /> Registrar Serviço
+                          </button>
+                          <button 
+                            onClick={() => setIsValeModalOpen(true)}
+                            className="px-6 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold uppercase tracking-widest text-xs rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            <Receipt className="w-4 h-4" /> Lançar Despesa / Vale
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -395,11 +414,20 @@ export default function FinanceiroPage() {
                     </div>
                   </div>
 
-                  <div className="bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 rounded-3xl p-10 flex flex-col items-center justify-center text-center">
-                    <p className="text-blue-400 text-[10px] uppercase tracking-[0.3em] font-bold mb-4">Saldo Líquido do Dia</p>
-                    <h1 className="text-6xl font-serif text-white mb-8">R$ {aReceberLivre.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h1>
-                    <button className="bg-blue-600 hover:bg-blue-500 text-white font-bold uppercase tracking-widest text-sm px-12 py-4 rounded-full transition-all hover:scale-105 shadow-[0_0_30px_rgba(37,99,235,0.3)]">
-                      Fechar Caixa do Dia
+                  <div className={`bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 rounded-3xl p-10 flex flex-col items-center justify-center text-center relative overflow-hidden ${barber.isClosed ? 'opacity-70' : ''}`}>
+                    {barber.isClosed && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10 backdrop-blur-[2px]">
+                        <h2 className="text-4xl font-serif text-white/50 transform -rotate-12 uppercase tracking-[0.3em] font-bold border-4 border-white/20 px-8 py-4 rounded-xl">Caixa Fechado</h2>
+                      </div>
+                    )}
+                    <p className="text-blue-400 text-[10px] uppercase tracking-[0.3em] font-bold mb-4 relative z-0">Saldo Líquido do Dia</p>
+                    <h1 className="text-6xl font-serif text-white mb-8 relative z-0">R$ {aReceberLivre.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h1>
+                    <button 
+                      onClick={handleCloseCaixa}
+                      disabled={barber.isClosed}
+                      className={`text-white font-bold uppercase tracking-widest text-sm px-12 py-4 rounded-full transition-all relative z-0 ${barber.isClosed ? 'bg-gray-700 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-500 hover:scale-105 shadow-[0_0_30px_rgba(37,99,235,0.3)]'}`}
+                    >
+                      {barber.isClosed ? 'CAIXA FECHADO' : 'Fechar Caixa do Dia'}
                     </button>
                   </div>
                 </>
