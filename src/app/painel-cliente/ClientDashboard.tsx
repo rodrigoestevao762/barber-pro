@@ -128,7 +128,7 @@ export default function ClientDashboard() {
 }
 
 // Dummy Star icon component missing from lucide-react import above
-function Star(props: any) {
+function Star(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

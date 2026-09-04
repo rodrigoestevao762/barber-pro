@@ -6,7 +6,15 @@ import { useState, useEffect } from "react";
 
 type Service = { id: string; name: string; price: number; duration: number };
 
-export default function BookingModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function BookingModal({ 
+  isOpen, 
+  onClose,
+  initialServiceId
+}: { 
+  isOpen: boolean; 
+  onClose: () => void;
+  initialServiceId?: string;
+}) {
   const [step, setStep] = useState(1);
   const [services, setServices] = useState<Service[]>([]);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -22,15 +30,26 @@ export default function BookingModal({ isOpen, onClose }: { isOpen: boolean; onC
 
   useEffect(() => {
     if (isOpen) {
-      fetch('/api/services').then(res => res.json()).then(data => setServices(data));
-      setStep(1);
-      setSelectedService(null);
-      setSelectedDate("");
-      setSelectedTime("");
-      setAvailableTimes([]);
-      setIsSuccess(false);
+      fetch('/api/services').then(res => res.json()).then(data => {
+        setServices(data);
+        if (initialServiceId) {
+          const s = data.find((d: Service) => d.id === initialServiceId);
+          if (s) {
+            setSelectedService(s);
+            setStep(2); // Pula direto pra etapa de data
+          }
+        } else {
+          setStep(1);
+          setSelectedService(null);
+        }
+        
+        setSelectedDate("");
+        setSelectedTime("");
+        setAvailableTimes([]);
+        setIsSuccess(false);
+      });
     }
-  }, [isOpen]);
+  }, [isOpen, initialServiceId]);
 
   // Busca horários disponíveis quando a data muda
   useEffect(() => {
