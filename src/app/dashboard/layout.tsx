@@ -16,8 +16,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
+    } else if (status === "authenticated" && (session?.user as any)?.role === "CLIENT") {
+      router.push("/painel-cliente");
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
 
   useEffect(() => {
