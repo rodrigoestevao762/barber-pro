@@ -1,18 +1,21 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Scissors, Calendar, Clock, RotateCcw, MapPin, User, LogOut } from "lucide-react";
+import { Scissors, Calendar, Clock, RotateCcw, User, LogOut } from "lucide-react";
 import { useState } from "react";
 import BookingModal from "@/components/BookingModal";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 
 export default function ClientDashboard() {
+  const { data: session } = useSession();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
 
-  // MOCK DATA PARA DEMONSTRAÇÃO DA IDEIA 1
-  const clientName = "Rodrigo";
+  // Pega o nome real do usuário logado
+  const clientName = session?.user?.name || "Cliente";
   
+  // MOCK DATA PARA DEMONSTRAÇÃO DA IDEIA 1
   const lastAppointment = {
     date: "15/08/2026",
     serviceName: "Corte Cabelo e Barba",
@@ -40,9 +43,9 @@ export default function ClientDashboard() {
               <h1 className="text-2xl font-serif">{clientName}</h1>
             </div>
           </div>
-          <Link href="/" className="text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-sm">
+          <button onClick={() => signOut({ callbackUrl: '/' })} className="text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-sm">
             <LogOut className="w-4 h-4" /> Sair
-          </Link>
+          </button>
         </div>
       </header>
 
