@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { Archive, DollarSign, Clock, Calendar as CalendarIcon, User as UserIcon } from "lucide-react"
 
 type BarberRevenue = { name: string; total: number; commission: number };
-type FechamentoData = { totalRevenue: number; barberRevenues: BarberRevenue[]; closings: any[] };
+type FechamentoData = { totalRevenue: number; barberRevenues: BarberRevenue[]; closings: { createdAt: string | Date; closedBy: string | null }[] };
 
 export default function FechamentoPage() {
   const [data, setData] = useState<FechamentoData | null>(null)
@@ -13,7 +13,11 @@ export default function FechamentoPage() {
 
   const fetchData = async () => {
     const result = await getFechamentoData()
-    setData(result)
+    if (result.success) {
+      setData(result.data)
+    } else {
+      alert("Erro do Servidor: " + result.error)
+    }
     setLoading(false)
   }
 

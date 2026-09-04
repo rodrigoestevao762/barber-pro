@@ -60,11 +60,12 @@ export async function getFechamentoData() {
         closings
       }
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Action error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
     return {
       success: false as const,
-      error: error.message || String(error)
+      error: msg
     }
   }
 }
@@ -79,7 +80,8 @@ export async function closeCashRegister(data: { totalRevenue: number, barberReve
       }
     })
     return { success: true, data: closing }
-  } catch (error: any) {
-    return { success: false, error: error.message || String(error) }
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return { success: false, error: msg }
   }
 }
