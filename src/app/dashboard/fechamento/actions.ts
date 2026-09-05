@@ -72,9 +72,13 @@ export async function getFechamentoData() {
 
 export async function closeCashRegister(data: { totalRevenue: number, barberRevenues: string, closedBy: string }) {
   try {
+    const parsedRevenues = JSON.parse(data.barberRevenues);
+    const totalCommissions = parsedRevenues.reduce((acc: number, b: any) => acc + b.commission, 0);
+
     const closing = await prisma.cashClosing.create({
       data: {
         totalRevenue: data.totalRevenue,
+        totalExpenses: totalCommissions,
         barberRevenues: data.barberRevenues,
         closedBy: data.closedBy,
       }

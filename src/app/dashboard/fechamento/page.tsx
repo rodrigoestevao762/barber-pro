@@ -80,7 +80,7 @@ export default function FechamentoPage() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -92,9 +92,29 @@ export default function FechamentoPage() {
               <DollarSign className="w-6 h-6 text-[#C88E70]" />
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Faturamento do Dia</p>
-              <h3 className="text-3xl font-bold text-white">
+              <p className="text-gray-400 text-xs uppercase tracking-widest">Faturamento Bruto</p>
+              <h3 className="text-2xl font-bold text-white mt-1">
                 R$ {data.totalRevenue.toFixed(2)}
+              </h3>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-green-500/5 border border-green-500/20 rounded-3xl p-6 relative overflow-hidden"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl" />
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+              <DollarSign className="w-6 h-6 text-green-500" />
+            </div>
+            <div>
+              <p className="text-green-500/80 text-xs uppercase tracking-widest">Lucro Líquido</p>
+              <h3 className="text-2xl font-bold text-green-400 mt-1">
+                R$ {(data.totalRevenue - data.barberRevenues.reduce((acc, b) => acc + b.commission, 0)).toFixed(2)}
               </h3>
             </div>
           </div>
