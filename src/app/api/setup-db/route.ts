@@ -18,8 +18,15 @@ export async function GET() {
       );
     `);
     
-    return NextResponse.json({ message: "Tabela CashClosing criada com sucesso!" });
+    // Test if we can read it
+    const closings = await prisma.cashClosing.findMany();
+    
+    return NextResponse.json({ 
+      message: "Tabela CashClosing criada com sucesso!",
+      closingsCount: closings.length
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || String(error) }, { status: 500 });
   }
 }
+
