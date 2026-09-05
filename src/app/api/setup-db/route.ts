@@ -4,7 +4,7 @@ import prisma from "@/lib/prisma";
 export async function GET() {
   try {
     await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "CashClosing" (
+      CREATE TABLE IF NOT EXISTS public."CashClosing" (
           "id" TEXT NOT NULL,
           "date" TIMESTAMP(3) NOT NULL,
           "totalRevenue" DOUBLE PRECISION NOT NULL,
