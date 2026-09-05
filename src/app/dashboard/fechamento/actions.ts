@@ -1,11 +1,11 @@
 "use server"
 
 import prisma from "@/lib/prisma"
-export async function getFechamentoData() {
+export async function getFechamentoData(dateStr?: string) {
   try {
-    const today = new Date()
-    const start = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+    const targetDate = dateStr ? new Date(dateStr + "T12:00:00") : new Date();
+    const start = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+    const end = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
 
     const appointments = await prisma.appointment.findMany({
       where: {
@@ -70,13 +70,17 @@ export async function getFechamentoData() {
   }
 }
 
-export async function closeCashRegister(data: { totalRevenue: number, barberRevenues: string, closedBy: string }) {
+export async function closeCashRegister(data: { totalRevenue: number, barberRevenues: string, closedBy: string, dateStr: string }) {
   try {
     const parsedRevenues = JSON.parse(data.barberRevenues);
     const totalCommissions = parsedRevenues.reduce((acc: number, b: any) => acc + b.commission, 0);
 
+    const targetDate = new Date(data.dateStr + "T12:00:00");
+    const closingDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59);
+
     const closing = await prisma.cashClosing.create({
       data: {
+        date: closingDate,
         totalRevenue: data.totalRevenue,
         totalExpenses: totalCommissions,
         barberRevenues: data.barberRevenues,

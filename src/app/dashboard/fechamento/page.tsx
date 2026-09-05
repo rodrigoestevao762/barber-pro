@@ -11,8 +11,14 @@ export default function FechamentoPage() {
   const [data, setData] = useState<FechamentoData | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    return d.toISOString().split('T')[0];
+  });
+
   const fetchData = async () => {
-    const result = await getFechamentoData()
+    setLoading(true)
+    const result = await getFechamentoData(selectedDate)
     if (result.success) {
       setData(result.data)
     } else {
@@ -22,28 +28,19 @@ export default function FechamentoPage() {
   }
 
   useEffect(() => {
-    getFechamentoData().then(result => {
-      if (result.success) {
-        setData(result.data)
-      } else {
-        alert("Erro do Servidor: " + result.error)
-      }
-      setLoading(false)
-    }).catch(error => {
-      console.error(error)
-      alert("Erro ao carregar dados: " + error.message)
-      setLoading(false)
-    })
-  }, [])
+    fetchData()
+  }, [selectedDate])
 
   const handleClose = async () => {
     if (!data) return;
-    if (!confirm("Tem certeza que deseja fechar o caixa de hoje?")) return;
+    const dateFormatted = new Date(selectedDate + "T12:00:00").toLocaleDateString('pt-BR');
+    if (!confirm(`Tem certeza que deseja fechar o caixa do dia ${dateFormatted}?`)) return;
     
     const result = await closeCashRegister({
       totalRevenue: data.totalRevenue,
       barberRevenues: JSON.stringify(data.barberRevenues),
-      closedBy: "Gestor" // In a real app, we would get this from session
+      closedBy: "Gestor", // In a real app, we would get this from session
+      dateStr: selectedDate
     })
     
     if (result.success) {
@@ -60,7 +57,18 @@ export default function FechamentoPage() {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-3xl font-serif text-white mb-8">Fechamento de Caixa</h2>
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <h2 className="text-3xl font-serif text-white">Fechamento de Caixa</h2>
+        <div className="flex items-center gap-3">
+          <label className="text-xs text-gray-400 uppercase tracking-widest">Data:</label>
+          <input 
+            type="date" 
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-[#C88E70] [&::-webkit-calendar-picker-indicator]:invert"
+          />
+        </div>
+      </div>
       
       {isClosed && (
         <motion.div 
@@ -131,11 +139,9 @@ export default function FechamentoPage() {
               <CalendarIcon className="w-6 h-6 text-gray-300" />
             </div>
             <div>
-              <p className="text-gray-400 text-sm">Data Atual</p>
+              <p className="text-gray-400 text-sm">Data do Caixa</p>
               <h3 className="text-xl font-medium text-white flex items-center gap-2">
-                {new Date().toLocaleDateString('pt-BR')}
-                <Clock className="w-4 h-4 text-gray-500 ml-2" />
-                <span className="text-gray-400 text-sm">{new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' })}</span>
+                {new Date(selectedDate + "T12:00:00").toLocaleDateString('pt-BR')}
               </h3>
             </div>
           </div>
@@ -145,7 +151,7 @@ export default function FechamentoPage() {
       <h3 className="text-xl font-serif text-white mb-4">Faturamento por Profissional</h3>
       <div className="space-y-4 mb-8">
         {data.barberRevenues.length === 0 ? (
-          <p className="text-gray-500 italic p-4 bg-white/5 rounded-2xl border border-white/5">Nenhum faturamento registrado hoje.</p>
+          <p className="text-gray-500 italic p-4 bg-white/5 rounded-2xl border border-white/5">Nenhum faturamento registrado nesta data.</p>
         ) : (
           data.barberRevenues.map((barber: BarberRevenue, idx: number) => (
             <motion.div 
@@ -184,7 +190,7 @@ export default function FechamentoPage() {
       ) : (
         <div className="w-full bg-white/5 border border-white/10 text-gray-400 font-medium py-4 rounded-2xl flex items-center justify-center gap-2 mt-4 opacity-50 cursor-not-allowed">
           <Archive className="w-5 h-5" />
-          Caixa já foi fechado hoje
+          Caixa já foi fechado para esta data
         </div>
       )}
     </div>
