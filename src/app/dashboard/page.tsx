@@ -169,9 +169,9 @@ export default function DashboardPage() {
           
           {/* Bento Grid de Métricas */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <motion.div variants={itemVariants} whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2 }} className="lg:col-span-2 bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 rounded-3xl p-8 backdrop-blur-md relative overflow-hidden flex flex-col justify-center cursor-default shadow-2xl transition-all duration-300 hover:shadow-[#C88E70]/20 hover:border-[#C88E70]/30 style={{ transformStyle: 'preserve-3d' }}">
+              <motion.div variants={itemVariants} whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2 }} className="lg:col-span-2 bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 rounded-3xl p-8  relative overflow-hidden flex flex-col justify-center cursor-default shadow-2xl transition-all duration-300 hover:shadow-[#C88E70]/20 hover:border-[#C88E70]/30 style={{ transformStyle: 'preserve-3d' }}">
                 {/* Background accent animated */}
-                <motion.div animate={{ scale: [1, 1.2, 1], rotate: [0, 90, 0] }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/10 blur-[80px] rounded-full pointer-events-none" />
+                <motion.div   className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/10 blur-2xl rounded-full pointer-events-none" />
                 
                 <p className="text-gray-400 text-xs tracking-[0.2em] uppercase mb-4 flex justify-between items-center relative z-10">
                   Faturamento (Dia Selecionado)
@@ -192,7 +192,7 @@ export default function DashboardPage() {
               </motion.div>
 
               <div className="grid grid-rows-3 gap-4">
-                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-all cursor-default shadow-lg">
+                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6  flex items-center justify-between group hover:border-[#C88E70]/30 transition-all cursor-default shadow-lg">
                   <div>
                     <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Qtd. Cortes</p>
                     <motion.p key={data.todayCount} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-serif text-white">{data.todayCount}</motion.p>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
                     <Scissors className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                   </div>
                 </motion.div>
-                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-[#C88E70]/30 transition-all cursor-default shadow-lg">
+                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6  flex items-center justify-between group hover:border-[#C88E70]/30 transition-all cursor-default shadow-lg">
                   <div>
                     <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Tempo Médio de Cortes</p>
                     <motion.p key={data.averageDuration} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-serif text-white">{data.averageDuration} <span className="text-sm text-gray-500 font-sans">min</span></motion.p>
@@ -210,7 +210,7 @@ export default function DashboardPage() {
                     <Clock3 className="w-5 h-5 group-hover:-rotate-12 transition-transform" />
                   </div>
                 </motion.div>
-                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex items-center justify-between group hover:border-white/20 transition-all cursor-default shadow-lg">
+                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6  flex items-center justify-between group hover:border-white/20 transition-all cursor-default shadow-lg">
                   <div>
                     <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Total de Clientes</p>
                     <motion.p key={data.clientsCount} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-serif text-white">{data.clientsCount}</motion.p>
@@ -263,7 +263,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Agenda do Dia */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md flex flex-col h-full relative">
+      <div className="bg-white/5 border border-white/10 rounded-3xl p-8  flex flex-col h-full relative">
         <h2 className="text-2xl font-serif text-white mb-8">Agenda</h2>
         <div className="flex-1 space-y-6 relative before:absolute before:inset-y-0 before:left-[19px] before:w-[1px] before:bg-white/10">
           
@@ -335,7 +335,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 "
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}

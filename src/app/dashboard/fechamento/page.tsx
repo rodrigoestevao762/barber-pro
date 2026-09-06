@@ -94,7 +94,7 @@ export default function FechamentoPage() {
           animate={{ opacity: 1, y: 0 }}
           className="bg-white/5 border border-white/10 rounded-3xl p-6 relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-[#C88E70]/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-[#C88E70]/10 rounded-full blur-2xl" />
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-[#C88E70]/20 rounded-full flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-[#C88E70]" />
@@ -114,7 +114,7 @@ export default function FechamentoPage() {
           transition={{ delay: 0.1 }}
           className="bg-green-500/5 border border-green-500/20 rounded-3xl p-6 relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-2xl" />
           <div className="flex items-center gap-4 mb-4">
             <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
               <DollarSign className="w-6 h-6 text-green-500" />

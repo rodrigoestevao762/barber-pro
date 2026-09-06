@@ -186,7 +186,7 @@ export default function FinanceiroPage() {
 
   if (loading) return (
     <div className="flex h-[60vh] items-center justify-center">
-      <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }}>
+      <motion.div  >
         <Scissors className="w-12 h-12 text-[#C88E70]" />
       </motion.div>
     </div>
@@ -268,7 +268,7 @@ export default function FinanceiroPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Faturamento Bruto */}
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 ">
                  <p className="text-gray-400 text-[10px] tracking-widest uppercase mb-4 flex items-center gap-2">
                     <ArrowUpRight className="w-4 h-4" /> Entradas (Bruto)
                  </p>
@@ -277,7 +277,7 @@ export default function FinanceiroPage() {
               </div>
 
               {/* Valores Pagos */}
-              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-6 ">
                  <p className="text-gray-400 text-[10px] tracking-widest uppercase mb-4 flex items-center gap-2">
                     <Scissors className="w-4 h-4" /> Produção da Equipe
                  </p>
@@ -286,8 +286,8 @@ export default function FinanceiroPage() {
               </div>
 
               {/* Lucro da Casa */}
-              <div className="bg-[#C88E70]/10 border border-[#C88E70]/40 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#C88E70]/20 blur-[50px]" />
+              <div className="bg-[#C88E70]/10 border border-[#C88E70]/40 rounded-2xl p-6  relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#C88E70]/20 blur-2xl" />
                 <p className="text-[#C88E70] font-bold text-[10px] tracking-widest uppercase mb-4 flex items-center gap-2 relative z-10">
                    <Wallet className="w-4 h-4" /> Saldo da Barbearia
                 </p>
@@ -297,7 +297,7 @@ export default function FinanceiroPage() {
             </div>
 
             {/* EXPENSES LIST (CAIXA FÍSICO) */}
-            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
+            <div className="bg-white/5 border border-white/10 rounded-3xl p-8 ">
               <h3 className="text-xl font-serif text-white mb-6 flex items-center gap-2">
                 <TrendingDown className="w-5 h-5 text-red-400" /> Saídas do Caixa da Casa (Hoje)
               </h3>
@@ -431,7 +431,7 @@ export default function FinanceiroPage() {
 
                   <div className={`bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/30 rounded-3xl p-10 flex flex-col items-center justify-center text-center relative overflow-hidden ${barber.isClosed ? 'opacity-70' : ''}`}>
                     {barber.isClosed && (
-                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center z-10 backdrop-blur-[2px]">
+                      <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center z-10 ">
                         <h2 className="text-4xl font-serif text-white/50 transform -rotate-12 uppercase tracking-[0.3em] font-bold border-4 border-white/20 px-8 py-4 rounded-xl mb-6">Caixa Fechado</h2>
                         <button 
                           onClick={handleReopenCaixa}
@@ -465,7 +465,7 @@ export default function FinanceiroPage() {
       {/* ADD DESPESA DA CASA MODAL */}
       <AnimatePresence>
         {isModalOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 ">
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-[#C88E70]/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
               <div className="p-8 relative z-10">
                 <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
@@ -485,7 +485,7 @@ export default function FinanceiroPage() {
       {/* ADD VALE DO BARBEIRO MODAL */}
       <AnimatePresence>
         {isValeModalOpen && selectedBarber && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 ">
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-red-500/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
               <div className="p-8 relative z-10">
                 <button onClick={() => setIsValeModalOpen(false)} className="absolute top-6 right-6 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
@@ -505,7 +505,7 @@ export default function FinanceiroPage() {
       {/* REGISTRAR SERVIÇO (WALK-IN) MODAL */}
       <AnimatePresence>
         {isWalkInModalOpen && selectedBarber && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 ">
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-[#C88E70]/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative max-h-[80vh] flex flex-col">
               <div className="p-8 pb-4 relative z-10 shrink-0">
                 <button onClick={() => setIsWalkInModalOpen(false)} className="absolute top-6 right-6 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
