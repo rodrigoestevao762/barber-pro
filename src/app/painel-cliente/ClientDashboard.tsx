@@ -32,8 +32,12 @@ export default function ClientDashboard() {
   const lastApt = appointments.find(apt => new Date(apt.date) < new Date()) || null;
 
   const handleRebook = () => {
-    if (lastApt) setSelectedServiceId(lastApt.serviceId);
-    setIsModalOpen(true);
+    if (lastApt) {
+      const serviceName = lastApt.service?.name || "serviço";
+      const barberName = lastApt.barber?.name || "barbeiro";
+      const msg = `Olá! Quero repetir o meu último ${serviceName} com o(a) ${barberName}. Quais horários vocês têm disponíveis essa semana? Meu nome é ${clientName}.`;
+      window.open(`https://wa.me/5511999999999?text=${encodeURIComponent(msg)}`, '_blank');
+    }
   };
 
   return (
