@@ -52,11 +52,11 @@ export default function ExperienciaSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-100px" }}
         transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-5xl mx-auto p-8 md:p-16 lg:p-20 rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.9)] border border-white/5 backdrop-blur-xl bg-[#050B14]/40"
+        className="relative z-10 w-full max-w-5xl mx-auto p-8 md:p-16 lg:p-20 rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.9)] border border-white/5  bg-[#050B14]/90"
       >
         {/* LUZES VOLUMÉTRICAS (Flares) */}
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-[#C88E70]/20 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-[#C88E70]/20 blur-2xl rounded-full pointer-events-none" />
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 blur-2xl rounded-full pointer-events-none" />
         <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/80 pointer-events-none" />
 
         <div className="relative z-20 flex flex-col items-center text-center">
@@ -83,7 +83,7 @@ export default function ExperienciaSection() {
             style={{
               backgroundImage: "linear-gradient(135deg, #ffffff 10%, #a0a0a0 60%, #C88E70 100%)",
               WebkitTextStroke: "1px rgba(200, 142, 112, 0.4)",
-              filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.8))"
+              filter: "none"
             }}
           >
             A Arte de Forjar <br className="hidden md:block" /> Grandes Homens.
