@@ -44,7 +44,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#C88E70]/5 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Ultra Premium Floating Sidebar (Desktop) */}
-      <nav className="fixed left-8 top-1/2 -translate-y-1/2 h-[80vh] w-20 flex flex-col items-center py-10 bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl z-50">
+      <nav className="hidden md:flex fixed left-8 top-1/2 -translate-y-1/2 h-[80vh] w-20 flex-col items-center py-10 bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl z-50">
         
         <Link href="/" className="mb-auto group relative">
           <Scissors className="w-6 h-6 text-[#C88E70] group-hover:rotate-180 transition-transform duration-700" />
@@ -82,13 +82,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </button>
       </nav>
 
+      
+      {/* Mobile Bottom Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 w-full h-20 bg-[#050B14]/95 border-t border-white/10 z-[100] flex justify-around items-center px-4 pb-safe">
+        {((session?.user as any)?.role === 'CLIENT' ? [
+          { id: "/dashboard", icon: LayoutDashboard },
+          { id: "/dashboard/settings", icon: Settings },
+        ] : [
+          { id: "/dashboard", icon: LayoutDashboard },
+          { id: "/dashboard/agenda", icon: Calendar },
+          { id: "/dashboard/financeiro", icon: Wallet },
+          { id: "/dashboard/fechamento", icon: Archive },
+          { id: "/dashboard/clientes", icon: Users },
+        ]).map((item) => (
+          <Link key={item.id} href={item.id} className="p-3 text-gray-500 hover:text-[#C88E70] transition-colors">
+            <item.icon className="w-6 h-6" />
+          </Link>
+        ))}
+        <button onClick={() => signOut({ callbackUrl: '/' })} className="p-3 text-gray-500 hover:text-red-400 transition-colors">
+          <LogOut className="w-6 h-6" />
+        </button>
+      </nav>
+
       {/* Top Header */}
-      <header className="pl-40 pr-12 pt-12 flex justify-between items-end relative z-50">
+      <header className="px-6 pt-8 md:pl-40 md:pr-12 md:pt-12 flex flex-col md:flex-row md:justify-between items-start md:items-end gap-6 md:gap-0 relative z-50">
         <div>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-5xl font-serif text-white tracking-tight"
+            className="text-3xl md:text-5xl font-serif text-white tracking-tight"
           >
             BOM DIA, <span className="text-[#C88E70] italic">{(session?.user as any)?.role === 'CLIENT' ? (session?.user?.name?.split(' ')[0] || 'CLIENTE').toUpperCase() : 'GESTOR'}</span>
           </motion.h1>
@@ -150,7 +172,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </header>
 
       {/* Main Content Area */}
-      <main className="pl-40 pr-12 pt-12 pb-24 h-screen overflow-y-auto relative z-10 scrollbar-hide">
+      <main className="px-6 pt-8 pb-32 md:pl-40 md:pr-12 md:pt-12 md:pb-24 h-screen overflow-y-auto relative z-10 scrollbar-hide">
         {children}
       </main>
       
