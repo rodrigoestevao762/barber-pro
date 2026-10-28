@@ -208,10 +208,11 @@ export default function NossaAreaSection() {
                 </div>
                 <p className="text-gray-200 text-sm font-light leading-relaxed">
                   Av. Dantas Bião, s/n<br />
-                  <span className="text-gray-400">Estacionamento do Hiper Gbarbosa</span>
+                  <span className="text-gray-400">Estacionamento do Hiper Gbarbosa</span><br />
+                  <span className="text-[#C88E70] text-xs font-medium tracking-wide">Alagoinhas – BA</span>
                 </p>
                 <a
-                  href="https://maps.google.com/?q=Av+Dantas+Bião+Hiper+Gbarbosa"
+                  href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-4 inline-flex items-center gap-2 text-[#C88E70] text-xs uppercase tracking-[0.2em] font-semibold group"

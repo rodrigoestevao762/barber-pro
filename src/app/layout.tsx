@@ -15,7 +15,7 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "Mr. Bastos Barbearia | O Padrão de Excelência",
-  description: "Tradição, conforto e sofisticação em corte e barba. Avenida Dantas Bião s/n, Hiper Gbarbosa.",
+  description: "Tradição, conforto e sofisticação em corte e barba. Avenida Dantas Bião s/n, Hiper Gbarbosa - Alagoinhas, BA.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

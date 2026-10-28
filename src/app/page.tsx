@@ -408,7 +408,7 @@ export default function Home() {
            </p>
            <div className="flex gap-6 mt-4 md:mt-0">
               <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors">Instagram</a>
-              <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors"><MapPin className="w-4 h-4" /></a>
+              <a href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião" target="_blank" rel="noopener noreferrer" title="Alagoinhas - BA" className="text-gray-500 hover:text-[#C88E70] transition-colors"><MapPin className="w-4 h-4" /></a>
            </div>
         </motion.footer>
       </section>
