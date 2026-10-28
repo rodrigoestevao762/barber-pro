@@ -36,14 +36,14 @@ export default function ExperienciaSection() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 3, ease: "easeInOut" }}
-            className="absolute inset-0 bg-cover bg-top grayscale-[15%]"
+            className="absolute inset-0 bg-cover bg-top grayscale-0 md:grayscale-[15%]"
             style={{ backgroundImage: `url(${CINEMATIC_IMAGES[currentIndex]})` }}
           />
         </AnimatePresence>
         
         {/* OVERLAY DE CINEMA - Gradiente profundo e Vignette escura nas bordas */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(1,2,4,0.9)_100%)]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#010204] via-[#050B14]/70 to-[#010204] opacity-90" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(1,2,4,0.7)_100%)] md:bg-[radial-gradient(circle_at_center,transparent_0%,rgba(1,2,4,0.9)_100%)]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#010204] via-[#050B14]/50 md:via-[#050B14]/70 to-[#010204] opacity-90" />
       </div>
 
       {/* CAIXA DE TEXTO CINEMÁTICA (GLASSMORPHISM MONOLITH) */}

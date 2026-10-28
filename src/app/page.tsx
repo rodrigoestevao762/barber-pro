@@ -190,11 +190,11 @@ export default function Home() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.5, ease: "easeInOut" }}
-              className="absolute inset-0 bg-cover bg-center grayscale hover:grayscale-0 transition-all duration-1000"
+              className="absolute inset-0 bg-cover bg-center grayscale-0 md:grayscale md:hover:grayscale-0 transition-all duration-1000"
               style={{ backgroundImage: `url(${HERO_IMAGES[currentImage]})` }}
             />
           </AnimatePresence>
-          <div className="absolute inset-0 bg-[#050B14]/60 pointer-events-none" />
+          <div className="absolute inset-0 bg-[#050B14]/40 md:bg-[#050B14]/60 pointer-events-none" />
         </motion.div>
 
         {/* Textos Centrais com Máscara */}
@@ -291,19 +291,19 @@ export default function Home() {
               className={`group relative overflow-hidden bg-gray-900 cursor-pointer ${idx === 1 ? "md:-translate-y-12" : ""}`}
               style={{ height: idx === 1 ? '550px' : '450px' }}
             >
-              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] ease-out group-hover:scale-110 opacity-50 grayscale group-hover:grayscale-0" style={{ backgroundImage: `url(${service.img})` }} />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#050B14] via-[#050B14]/60 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] ease-out md:group-hover:scale-110 opacity-90 md:opacity-50 md:group-hover:opacity-100 grayscale-0 md:grayscale md:group-hover:grayscale-0" style={{ backgroundImage: `url(${service.img})` }} />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#050B14] via-[#050B14]/40 md:via-[#050B14]/60 to-transparent opacity-90 md:group-hover:opacity-100 transition-opacity" />
               
-              <div className="absolute bottom-0 left-0 w-full p-10 translate-y-8 group-hover:translate-y-0 transition-transform duration-700 ease-out">
+              <div className="absolute bottom-0 left-0 w-full p-6 md:p-10 translate-y-0 md:translate-y-8 md:group-hover:translate-y-0 transition-transform duration-700 ease-out">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-3xl font-serif text-white">{service.title}</h3>
                 </div>
-                <p className="text-gray-400 text-sm font-light mb-8 opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100 max-w-[80%]">
+                <p className="text-gray-300 md:text-gray-400 text-sm font-light mb-6 md:mb-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-700 delay-100 max-w-[90%] md:max-w-[80%]">
                   {service.desc}
                 </p>
                 <div className="flex justify-between items-center border-t border-white/10 pt-6">
                   <span className="text-[#C88E70] font-sans tracking-widest text-lg">{service.price}</span>
-                  <div className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center group-hover:bg-[#C88E70] group-hover:border-[#C88E70] group-hover:text-black transition-all duration-300">
+                  <div className="w-10 h-10 rounded-full border border-[#C88E70] md:border-white/20 bg-[#C88E70] md:bg-transparent text-black md:text-white flex items-center justify-center md:group-hover:bg-[#C88E70] md:group-hover:border-[#C88E70] md:group-hover:text-black transition-all duration-300">
                     <ChevronRight className="w-5 h-5" />
                   </div>
                 </div>
