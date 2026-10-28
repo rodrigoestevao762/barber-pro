@@ -7,6 +7,7 @@ import Link from "next/link";
 import BookingModal from "@/components/BookingModal";
 import { useSession } from "next-auth/react";
 import ExperienciaSection from "@/components/ExperienciaSection";
+import NossaAreaSection from "@/components/NossaAreaSection";
 
 // --- DADOS ---
 const HERO_IMAGES = [
@@ -315,6 +316,9 @@ export default function Home() {
 
       {/* SESSÃO: A EXPERIÊNCIA (REFINADA) */}
       <ExperienciaSection />
+
+      {/* NOSSA AREA */}
+      <NossaAreaSection />
 
       {/* MEGA BRAIN FINAL CTA & FOOTER */}
       <section className="relative bg-[#02050A] text-[#C88E70] min-h-screen flex flex-col items-center justify-center overflow-hidden">
