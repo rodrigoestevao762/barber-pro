@@ -154,7 +154,7 @@ export default function NossaAreaSection() {
 
           {/* Título */}
           <motion.div style={{ y: titleY, opacity: titleOpacity }}>
-            <p className="text-[#C88E70] uppercase tracking-[0.45em] text-xs font-semibold flex items-center gap-3 mb-5">
+            <p className="text-[#C88E70] uppercase tracking-[0.45em] text-xs font-semibold flex items-center gap-3 mb-8">
               <span className="w-10 h-[1px] bg-[#C88E70]" />
               Nossa Área
             </p>
