@@ -8,6 +8,7 @@ import BookingModal from "@/components/BookingModal";
 import { useSession } from "next-auth/react";
 import ExperienciaSection from "@/components/ExperienciaSection";
 import NossaAreaSection from "@/components/NossaAreaSection";
+import { LogoMrBastos } from "@/components/LogoMrBastos";
 
 // --- DADOS ---
 const HERO_IMAGES = [
@@ -105,13 +106,13 @@ export default function Home() {
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             >
-              <Scissors className="w-12 h-12 text-[#C88E70]" />
+              <LogoMrBastos size={80} color="#C88E70" />
             </motion.div>
             <motion.p 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
               className="mt-4 font-serif text-[#C88E70] tracking-[0.3em] uppercase text-sm"
             >
-              SUA BARBEARIA
+              MR. BASTOS
             </motion.p>
           </motion.div>
         )}
@@ -125,8 +126,8 @@ export default function Home() {
         className="fixed top-0 w-full px-8 py-6 flex justify-between items-center z-50 mix-blend-difference"
       >
         <div className="flex items-center gap-3 cursor-pointer group">
-           <Scissors className="w-6 h-6 text-[#C88E70] group-hover:rotate-180 transition-transform duration-700" />
-           <span className="text-xl font-serif tracking-[0.3em] text-white uppercase">SUA BARBEARIA</span>
+           <LogoMrBastos size={36} color="#C88E70" className="group-hover:scale-110 transition-transform duration-500" />
+           <span className="text-xl font-serif tracking-[0.25em] text-white uppercase">MR. BASTOS</span>
         </div>
         
         <div className="hidden md:flex items-center gap-12 text-xs uppercase tracking-[0.2em] text-gray-300 font-semibold">
@@ -136,6 +137,10 @@ export default function Home() {
           </a>
           <a href="#experiencia" className="hover:text-[#C88E70] transition-colors relative group">
             A Experiência
+            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
+          </a>
+          <a href="#nossa-area" className="hover:text-[#C88E70] transition-colors relative group">
+            Nossa Área
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
           </a>
           <Link href={session ? "/dashboard" : "/login"} className="hover:text-[#C88E70] transition-colors relative group">
@@ -163,6 +168,7 @@ export default function Home() {
             >
               <a href="#servicos" onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">Serviços</a>
               <a href="#experiencia" onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">A Experiência</a>
+              <a href="#nossa-area" onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">Nossa Área</a>
               <Link href={session ? "/dashboard" : "/login"} onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">
                 {session ? "Painel" : "Login"}
               </Link>
@@ -394,8 +400,8 @@ export default function Home() {
           className="w-full border-t border-white/5 py-8 flex flex-col md:flex-row items-center justify-between px-12 z-20 bg-[#02050A]/80 backdrop-blur-xl"
         >
            <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <Scissors className="w-4 h-4 text-[#C88E70]" />
-              <span className="text-white font-serif text-lg tracking-widest uppercase">SUA BARBEARIA</span>
+              <LogoMrBastos size={32} color="#C88E70" />
+              <span className="text-white font-serif text-lg tracking-widest uppercase">MR. BASTOS</span>
            </div>
            <p className="text-gray-600 text-[10px] tracking-[0.3em] uppercase">
              © {new Date().getFullYear()} O PADRÃO DE EXCELÊNCIA.

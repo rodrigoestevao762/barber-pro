@@ -3,6 +3,7 @@
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef, useState } from "react";
 import { MapPin, Clock, ChevronRight } from "lucide-react";
+import { LogoMrBastos } from "@/components/LogoMrBastos";
 
 const GALLERY = [
   {
@@ -49,6 +50,11 @@ const GALLERY = [
   },
 ];
 
+const HORARIOS = [
+  { dia: "Segunda – Sexta", hora: "09:00 – 20:00" },
+  { dia: "Sábado", hora: "09:00 – 19:00" },
+];
+
 function GalleryCard({
   item,
   index,
@@ -63,11 +69,7 @@ function GalleryCard({
       initial={{ opacity: 0, y: 60, scale: 0.96 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{
-        duration: 0.9,
-        delay: index * 0.1,
-        ease: [0.22, 1, 0.36, 1],
-      }}
+      transition={{ duration: 0.9, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`relative overflow-hidden rounded-2xl cursor-pointer ${item.col}`}
@@ -75,32 +77,23 @@ function GalleryCard({
         minHeight: item.col.includes("row-span-2") ? 500 : item.col.includes("col-span-2") ? 260 : 220,
       }}
     >
-      {/* Imagem */}
       <motion.div
         animate={{ scale: hovered ? 1.07 : 1 }}
         transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${item.src})` }}
       />
-
-      {/* Overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-[#050B14]/90 via-[#050B14]/20 to-transparent" />
-
-      {/* Brilho dourado hover */}
       <motion.div
         animate={{ opacity: hovered ? 1 : 0 }}
         transition={{ duration: 0.4 }}
         className="absolute inset-0 bg-gradient-to-br from-[#C88E70]/15 via-transparent to-transparent pointer-events-none"
       />
-
-      {/* Linha inferior dourada */}
       <motion.div
         animate={{ scaleX: hovered ? 1 : 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#C88E70] to-transparent origin-left"
       />
-
-      {/* Texto */}
       <div className="absolute bottom-0 left-0 w-full p-5 md:p-6">
         <motion.p
           animate={{ y: hovered ? 0 : 6, opacity: hovered ? 1 : 0 }}
@@ -144,16 +137,14 @@ export default function NossaAreaSection() {
       {/* Luzes atmosféricas */}
       <div className="absolute -top-60 -left-40 w-[600px] h-[600px] bg-[#C88E70]/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-[#C88E70]/7 rounded-full blur-[100px] pointer-events-none" />
-
-      {/* Linha decorativa vertical */}
       <div className="absolute left-5 md:left-12 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-white/5 to-transparent" />
 
-      {/* HEADER */}
+      {/* ── HEADER ── */}
       <div className="max-w-7xl mx-auto mb-16 md:mb-20">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-8">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-12">
 
           {/* Título */}
-          <motion.div style={{ y: titleY, opacity: titleOpacity }}>
+          <motion.div style={{ y: titleY, opacity: titleOpacity }} className="flex-1">
             <p className="text-[#C88E70] uppercase tracking-[0.45em] text-xs font-semibold flex items-center gap-3 mb-8">
               <span className="w-10 h-[1px] bg-[#C88E70]" />
               Nossa Área
@@ -166,32 +157,74 @@ export default function NossaAreaSection() {
               <br /> Para{" "}
               <span className="text-[#C88E70]">Você.</span>
             </h2>
-          </motion.div>
-
-          {/* Descrição + localização */}
-          <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.9, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-xs"
-          >
-            <p className="text-gray-400 font-light text-base leading-relaxed mb-6">
+            <p className="text-gray-400 font-light text-base leading-relaxed mt-8 max-w-md">
               Cada detalhe do nosso espaço foi pensado para que você se sinta em
               casa — com o conforto e o requinte que você merece.
             </p>
-            <a
-              href="#"
-              className="inline-flex items-center gap-2 text-[#C88E70] text-xs uppercase tracking-[0.2em] font-semibold group"
-            >
-              <MapPin className="w-4 h-4" />
-              Ver localização
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </a>
+          </motion.div>
+
+          {/* ── CARD DE LOCALIZAÇÃO & HORÁRIO ── */}
+          <motion.div
+            initial={{ opacity: 0, x: 50, y: 20 }}
+            whileInView={{ opacity: 1, x: 0, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 1, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full lg:w-[340px] shrink-0"
+          >
+            <div className="relative rounded-3xl border border-white/8 bg-white/[0.03] backdrop-blur-xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
+
+              {/* Fundo dourado sutil */}
+              <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#C88E70]/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+
+              {/* Cabeçalho do card — Logo + Nome */}
+              <div className="relative flex flex-col items-center py-8 px-6 border-b border-white/[0.06]">
+                <LogoMrBastos size={96} color="white" className="mb-3 opacity-90" />
+                <p className="text-white font-serif text-xl tracking-wide">Mr. Bastos</p>
+                <p className="text-[#C88E70] text-[10px] uppercase tracking-[0.45em] mt-1">Barbearia</p>
+              </div>
+
+              {/* Horários */}
+              <div className="relative px-6 pt-6 pb-5 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="w-4 h-4 text-[#C88E70]" />
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500">Horário de Funcionamento</span>
+                </div>
+                <div className="space-y-3">
+                  {HORARIOS.map((h, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <span className="text-gray-300 text-sm font-light">{h.dia}</span>
+                      <span className="text-white text-sm font-semibold font-mono tracking-wider">{h.hora}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Endereço */}
+              <div className="relative px-6 pt-5 pb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="w-4 h-4 text-[#C88E70]" />
+                  <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500">Localização</span>
+                </div>
+                <p className="text-gray-200 text-sm font-light leading-relaxed">
+                  Av. Dantas Bião, s/n<br />
+                  <span className="text-gray-400">Estacionamento do Hiper Gbarbosa</span>
+                </p>
+                <a
+                  href="https://maps.google.com/?q=Av+Dantas+Bião+Hiper+Gbarbosa"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 text-[#C88E70] text-xs uppercase tracking-[0.2em] font-semibold group"
+                >
+                  Ver no mapa
+                  <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </a>
+              </div>
+            </div>
           </motion.div>
         </div>
 
-        {/* FAIXA DE IDENTIDADE — mais editorial, sem cara de "gerado por IA" */}
+        {/* Faixa editorial */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -199,13 +232,7 @@ export default function NossaAreaSection() {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="mt-14 flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-t border-b border-white/[0.06] py-7"
         >
-          {/* Identidade textual */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-6 sm:gap-12">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.35em] text-gray-600 mb-1">Fundada em</p>
-              <p className="text-white font-serif text-2xl">2016</p>
-            </div>
-            <div className="hidden sm:block w-[1px] h-8 bg-white/10" />
             <div>
               <p className="text-[10px] uppercase tracking-[0.35em] text-gray-600 mb-1">Especialidade</p>
               <p className="text-white font-serif text-2xl">Corte & Barba</p>
@@ -213,11 +240,14 @@ export default function NossaAreaSection() {
             <div className="hidden sm:block w-[1px] h-8 bg-white/10" />
             <div>
               <p className="text-[10px] uppercase tracking-[0.35em] text-gray-600 mb-1">Atendimento</p>
-              <p className="text-white font-serif text-2xl">Seg – Dom</p>
+              <p className="text-white font-serif text-2xl">Seg – Sáb</p>
+            </div>
+            <div className="hidden sm:block w-[1px] h-8 bg-white/10" />
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.35em] text-gray-600 mb-1">Experiência</p>
+              <p className="text-white font-serif text-2xl">Premium</p>
             </div>
           </div>
-
-          {/* Assinatura do barbeiro */}
           <div className="flex items-center gap-4 max-w-xs">
             <div className="w-10 h-[1px] bg-[#C88E70]/50 shrink-0" />
             <p className="text-gray-400 text-sm font-light italic leading-snug">
@@ -227,10 +257,10 @@ export default function NossaAreaSection() {
         </motion.div>
       </div>
 
-      {/* GALERIA — Desktop Bento Grid */}
+      {/* ── GALERIA ── */}
       <div className="max-w-7xl mx-auto">
 
-        {/* Mobile: stack vertical */}
+        {/* Mobile */}
         <div className="flex flex-col gap-4 md:hidden">
           {GALLERY.map((item, i) => (
             <motion.div
@@ -248,16 +278,14 @@ export default function NossaAreaSection() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050B14]/80 via-[#050B14]/10 to-transparent" />
               <div className="absolute bottom-5 left-5">
-                <p className="text-[#C88E70] text-[10px] uppercase tracking-widest mb-1 font-semibold">
-                  {item.label}
-                </p>
+                <p className="text-[#C88E70] text-[10px] uppercase tracking-widest mb-1 font-semibold">{item.label}</p>
                 <p className="text-gray-200 text-sm font-light">{item.desc}</p>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Desktop: bento 3 cols */}
+        {/* Desktop Bento */}
         <div className="hidden md:grid grid-cols-3 gap-4" style={{ gridAutoRows: "220px" }}>
           {GALLERY.map((item, i) => (
             <GalleryCard key={i} item={item} index={i} />
@@ -265,7 +293,7 @@ export default function NossaAreaSection() {
         </div>
       </div>
 
-      {/* RODAPÉ DA SEÇÃO */}
+      {/* ── RODAPÉ DA SEÇÃO ── */}
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -276,11 +304,9 @@ export default function NossaAreaSection() {
         <div className="flex items-center gap-3 text-gray-400">
           <Clock className="w-4 h-4 text-[#C88E70]" />
           <span className="text-sm font-light tracking-wide">
-            Seg – Sáb:{" "}
-            <span className="text-white font-medium">08:00 – 20:00</span>
+            Seg – Sex: <span className="text-white font-medium">09:00 – 20:00</span>
             <span className="mx-3 text-white/20">·</span>
-            Dom:{" "}
-            <span className="text-white font-medium">09:00 – 15:00</span>
+            Sáb: <span className="text-white font-medium">09:00 – 19:00</span>
           </span>
         </div>
         <motion.a

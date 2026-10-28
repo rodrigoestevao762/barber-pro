@@ -14,14 +14,14 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Sua Barbearia | Template Premium",
+  title: "Mr. Bastos Barbearia | O Padrão de Excelência",
   description: "ExperiÃªncia premium para barbearias.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="en"
+      lang="pt-BR"
       className={`${inter.variable} ${playfair.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col bg-[#050B14] text-white font-sans">
