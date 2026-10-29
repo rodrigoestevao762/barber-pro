@@ -14,7 +14,7 @@ import { LogoMrBastos } from "@/components/LogoMrBastos";
 const HERO_IMAGES = [
   "/hero-mrbastos-salon.jpg",
   "/hero-mrbastos-interior.jpg",
-  "/hero-mrbastos-equipe.jpg",
+  "/hero-mrbastos-corte.jpg",
 ];
 
 const SERVICES_HIGHLIGHT = [
@@ -267,47 +267,12 @@ export default function Home() {
         <motion.div style={{ y, opacity }} className="absolute inset-0 w-full h-[120%] -top-[10%] pointer-events-none">
           {HERO_IMAGES.map((img, idx) => {
             const isActive = idx === currentImage;
-            const isOwnerSlide = idx === 2;
-
-            if (isOwnerSlide) {
-              return (
-                <div
-                  key={img}
-                  aria-hidden={!isActive}
-                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out will-change-[opacity] ${
-                    isActive ? "opacity-100 z-10" : "opacity-0 z-0"
-                  }`}
-                  style={{
-                    transform: "translate3d(0, 0, 0)",
-                    backfaceVisibility: "hidden",
-                    WebkitBackfaceVisibility: "hidden",
-                  }}
-                >
-                  {/* Fundo ambiental com tom suave azulado da barbearia */}
-                  <div
-                    className="absolute inset-[-40px] bg-cover bg-center filter blur-2xl opacity-30 brightness-75 scale-105"
-                    style={{ backgroundImage: `url(${img})` }}
-                  />
-                  {/* Foto do Dono com enquadramento recuado, elegante e sem ficar muito próxima */}
-                  <div className="absolute inset-0 flex items-center justify-center p-6 md:p-12">
-                    <div
-                      className="w-full h-full max-w-sm sm:max-w-md md:max-w-xl bg-contain bg-center bg-no-repeat transition-transform duration-700"
-                      style={{
-                        backgroundImage: `url(${img})`,
-                        backgroundPosition: "center 45%",
-                        transform: "translate3d(0, 0, 0) scale(0.82)",
-                      }}
-                    />
-                  </div>
-                </div>
-              );
-            }
 
             return (
               <div
                 key={img}
                 aria-hidden={!isActive}
-                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out will-change-[opacity] ${
+                className={`absolute inset-0 bg-cover ${idx === 2 ? "bg-[center_35%]" : "bg-center"} transition-opacity duration-1000 ease-in-out will-change-[opacity] ${
                   isActive ? "opacity-100 z-10" : "opacity-0 z-0"
                 }`}
                 style={{
