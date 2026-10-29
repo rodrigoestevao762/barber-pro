@@ -13,8 +13,8 @@ import { LogoMrBastos } from "@/components/LogoMrBastos";
 // --- DADOS ---
 const HERO_IMAGES = [
   "/hero-mrbastos-salon.jpg",
-  "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=2074&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?q=80&w=2074&auto=format&fit=crop"
+  "/hero-mrbastos-interior.jpg",
+  "/hero-mrbastos-equipe.jpg",
 ];
 
 const SERVICES_HIGHLIGHT = [
@@ -138,6 +138,11 @@ export default function Home() {
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
 
   useEffect(() => {
+    // Pré-carrega todas as fotos na GPU para transição perfeitamente fluida
+    HERO_IMAGES.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
     // Simula um carregamento premium inicial
     setTimeout(() => setIsLoading(false), 1500);
     const timer = setInterval(() => {
@@ -256,20 +261,30 @@ export default function Home() {
       {/* HERO SECTION COM PARALLAX E MÁSCARAS */}
       <main className="relative h-screen flex items-center justify-center overflow-hidden">
         
-        {/* Imagem de Fundo (Parallax + Slider) */}
-        <motion.div style={{ y, opacity }} className="absolute inset-0 w-full h-[120%] -top-[10%]">
-          <AnimatePresence>
-            <motion.div
-              key={currentImage}
-              initial={{ opacity: 0, scale: 1.05 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 1.5, ease: "easeInOut" }}
-              className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
-              style={{ backgroundImage: `url(${HERO_IMAGES[currentImage]})` }}
-            />
-          </AnimatePresence>
-          <div className="absolute inset-0 bg-gradient-to-b from-[#050B14]/60 via-[#050B14]/30 to-[#050B14]/80 pointer-events-none" />
+        {/* Imagem de Fundo (Parallax + Slider Ultra Suave Sem Tremor) */}
+        <motion.div style={{ y, opacity }} className="absolute inset-0 w-full h-[120%] -top-[10%] pointer-events-none">
+          {HERO_IMAGES.map((img, idx) => {
+            const isActive = idx === currentImage;
+            return (
+              <div
+                key={img}
+                aria-hidden={!isActive}
+                className={`absolute inset-0 bg-cover transition-opacity duration-1000 ease-in-out will-change-[opacity] ${
+                  isActive ? "opacity-100 z-10" : "opacity-0 z-0"
+                }`}
+                style={{
+                  backgroundImage: `url(${img})`,
+                  backgroundPosition: idx === 2 ? "center 20%" : "center center",
+                  transform: "translate3d(0, 0, 0)",
+                  backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
+                }}
+              />
+            );
+          })}
+          {/* Vinheta e Gradientes de Luxo Mr. Bastos */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#050B14]/70 via-[#050B14]/35 to-[#050B14]/85 pointer-events-none z-20" />
+          <div className="absolute inset-0 bg-[#050B14]/20 pointer-events-none z-20" />
         </motion.div>
 
         {/* Textos Centrais com Máscara */}
