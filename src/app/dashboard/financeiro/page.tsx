@@ -2,10 +2,17 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { TrendingUp, TrendingDown, DollarSign, Plus, X, Wallet, ArrowUpRight, Scissors, Receipt, User, Award, Shield } from "lucide-react";
-import { BARBERS } from "@/lib/barbers";
+import { TrendingUp, TrendingDown, DollarSign, Plus, X, Wallet, ArrowUpRight, Scissors, Receipt, User, Award, Shield, Lock } from "lucide-react";
+import { BARBERS, BarberData } from "@/lib/barbers";
+import { OFFICIAL_SERVICES, ServiceItem } from "@/lib/services";
+import { useSession } from "next-auth/react";
 
 export default function FinanceiroPage() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || "ADMIN";
+  const userBarberId = (session?.user as any)?.barberId;
+  const isAdmin = userRole === "ADMIN";
+
   const [loading, setLoading] = useState(true);
   
   // Modais
@@ -20,45 +27,86 @@ export default function FinanceiroPage() {
 
   const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
   const [selectedBarber, setSelectedBarber] = useState<any>(null);
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<ServiceItem[]>(OFFICIAL_SERVICES);
 
-  // Estado das Abas: "GERAL" ou o ID do barbeiro ("barbeiro-dono", "barbeiro-lucas", "barbeiro-felipe")
-  const [activeTab, setActiveTab] = useState<string>("GERAL");
+  // Estado das Abas: "GERAL" para o Dono, ou ID do barbeiro logado
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return isAdmin ? "GERAL" : (userBarberId || "barbeiro-lucas");
+  });
   
   // Date filter
   const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date();
-    return d.toISOString().split('T')[0];
+    return new Date().toISOString().split('T')[0];
   });
 
   // Dados Globais
   const [expenses, setExpenses] = useState<any[]>([]); 
   const [barbers, setBarbers] = useState<any[]>([]);
 
+  // Limpeza de cache antigo do localStorage (exclui resquícios de "Maria" ou "Pedro")
+  const purgeLegacyLocalStorage = () => {
+    try {
+      if (typeof window === "undefined") return;
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("barbers_") || key.startsWith("expenses_")) {
+          const val = localStorage.getItem(key) || "";
+          if (val.includes("Maria") || val.includes("Pedro") || !val.includes("barbeiro-dono")) {
+            localStorage.removeItem(key);
+          }
+        }
+      });
+    } catch (_) {}
+  };
+
   // Carrega os dados específicos do dia
   const loadDataForDate = async (dateStr: string) => {
     setLoading(true);
+    purgeLegacyLocalStorage();
+
     try {
       const storedBarbers = localStorage.getItem(`barbers_${dateStr}`);
       const storedExpenses = localStorage.getItem(`expenses_${dateStr}`);
       
-      if (storedBarbers) {
-        setBarbers(JSON.parse(storedBarbers));
+      let baseBarbers: any[] = [];
+
+      if (storedBarbers && storedBarbers.includes("barbeiro-dono")) {
+        baseBarbers = JSON.parse(storedBarbers);
       } else {
         // Inicializa com a equipe oficial Mr. Bastos (Dono 100%, Barbeiros 45%)
-        setBarbers(
-          BARBERS.map((b) => ({
-            id: b.id,
-            name: b.name,
-            role: b.role,
-            cutsToday: 0,
-            totalEarned: 0,
-            personalExpenses: 0,
-            isClosed: false,
-            commissionRate: b.role === "ADMIN" ? 1.0 : 0.45,
-          }))
-        );
+        baseBarbers = BARBERS.map((b) => ({
+          id: b.id,
+          name: b.name,
+          role: b.role,
+          cutsToday: 0,
+          totalEarned: 0,
+          personalExpenses: 0,
+          isClosed: false,
+          commissionRate: b.role === "ADMIN" ? 1.0 : 0.45,
+        }));
       }
+
+      // Sincroniza com agendamentos concluídos na API do dashboard
+      try {
+        const resDash = await fetch(`/api/dashboard?date=${dateStr}&barberId=all`);
+        if (resDash.ok) {
+          const dashData = await resDash.json();
+          if (dashData.barberBreakdown) {
+            baseBarbers = baseBarbers.map((b) => {
+              const matched = dashData.barberBreakdown.find((item: any) => item.id === b.id);
+              if (matched) {
+                return {
+                  ...b,
+                  cutsToday: Math.max(b.cutsToday, matched.completedApts || 0),
+                  totalEarned: Math.max(b.totalEarned, matched.revenue || 0),
+                };
+              }
+              return b;
+            });
+          }
+        }
+      } catch (_) {}
+
+      setBarbers(baseBarbers);
 
       if (storedExpenses) {
         setExpenses(JSON.parse(storedExpenses));
@@ -66,18 +114,20 @@ export default function FinanceiroPage() {
         setExpenses([]);
       }
 
-      // Buscar Serviços Reais da API para o Modal
-      const resServices = await fetch('/api/services');
-      if (resServices.ok) {
-        const jsonServices = await resServices.json();
-        setServices(jsonServices);
-      }
+      setServices(OFFICIAL_SERVICES);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    // Se for barbeiro funcionário, garante que a aba ativa é o seu ID
+    if (!isAdmin) {
+      setActiveTab(userBarberId || "barbeiro-lucas");
+    }
+  }, [isAdmin, userBarberId]);
 
   useEffect(() => {
     loadDataForDate(selectedDate);
@@ -90,12 +140,14 @@ export default function FinanceiroPage() {
   };
 
   const handleRegisterService = (service: any) => {
-    if (!selectedBarber) return;
+    const targetBarberId = isAdmin ? selectedBarber?.id : (userBarberId || "barbeiro-lucas");
+    if (!targetBarberId) return;
+
     setIsSubmitting(true);
     
     setTimeout(() => {
       const newBarbers = barbers.map(b => 
-        b.id === selectedBarber.id 
+        b.id === targetBarberId 
           ? { ...b, cutsToday: b.cutsToday + 1, totalEarned: b.totalEarned + service.price } 
           : b
       );
@@ -108,12 +160,13 @@ export default function FinanceiroPage() {
   };
 
   const handleReopenCaixa = () => {
-    const activeBarber = barbers.find(b => b.id === activeTab);
+    const targetId = isAdmin ? activeTab : (userBarberId || "barbeiro-lucas");
+    const activeBarber = barbers.find(b => b.id === targetId);
     if (!activeBarber || !activeBarber.isClosed) return;
 
     if (window.confirm(`Tem certeza que deseja REABRIR o caixa de ${activeBarber.name} para o dia ${selectedDate.split('-').reverse().join('/')}?`)) {
       const newBarbers = barbers.map(b => 
-        b.id === activeTab 
+        b.id === targetId 
           ? { ...b, isClosed: false } 
           : b
       );
@@ -123,12 +176,13 @@ export default function FinanceiroPage() {
   };
 
   const handleCloseCaixa = () => {
-    const activeBarber = barbers.find(b => b.id === activeTab);
+    const targetId = isAdmin ? activeTab : (userBarberId || "barbeiro-lucas");
+    const activeBarber = barbers.find(b => b.id === targetId);
     if (!activeBarber || activeBarber.isClosed) return;
 
     if (window.confirm(`Tem certeza que deseja fechar o caixa de ${activeBarber.name} para o dia ${selectedDate.split('-').reverse().join('/')}? Isso travará novos lançamentos hoje.`)) {
       const newBarbers = barbers.map(b => 
-        b.id === activeTab 
+        b.id === targetId 
           ? { ...b, isClosed: true } 
           : b
       );
@@ -137,9 +191,11 @@ export default function FinanceiroPage() {
     }
   };
 
-  // Lançar Despesa Geral (Luz, Água, Aluguel)
+  // Lançar Despesa Geral da Casa (apenas Dono)
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isAdmin) return;
+
     setIsSubmitting(true);
     setTimeout(() => {
       const newExpense = { id: Date.now(), description: desc, amount: Number(amount), type: "FIXO", date: new Date().toISOString() };
@@ -158,13 +214,14 @@ export default function FinanceiroPage() {
   // Lançar Vale/Despesa do Barbeiro
   const handleAddVale = async (e: React.FormEvent) => {
     e.preventDefault();
+    const targetId = isAdmin ? activeTab : (userBarberId || "barbeiro-lucas");
+    const activeBarber = barbers.find(b => b.id === targetId);
+    if (!activeBarber) return;
+
     setIsSubmitting(true);
     setTimeout(() => {
-      const activeBarber = barbers.find(b => b.id === activeTab);
-      if (!activeBarber) return;
-
       const newBarbers = barbers.map(b => 
-        b.id === activeTab 
+        b.id === targetId 
           ? { ...b, personalExpenses: b.personalExpenses + Number(valeAmount) } 
           : b
       );
@@ -218,7 +275,7 @@ export default function FinanceiroPage() {
   // Lucro bruto retido pela casa = Dono (100%) + 55% dos funcionários
   const lucroBrutoCasa = faturamentoProprioDono + repasseRetidoEquipe;
   
-  // Lucro líquido da barbearia após abater despesas fixas (Água, Luz, etc.)
+  // Lucro líquido da barbearia após abater despesas fixas
   const lucroLiquidoCasa = lucroBrutoCasa - despesasFixas;
 
   return (
@@ -229,14 +286,32 @@ export default function FinanceiroPage() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[10px] bg-[#C88E70]/20 text-[#C88E70] border border-[#C88E70]/40 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                Regra Oficial de Repasse
-              </span>
+              {isAdmin ? (
+                <span className="text-[10px] bg-[#C88E70] text-[#050B14] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <Shield className="w-3 h-3" /> Gestão Geral do Dono
+                </span>
+              ) : (
+                <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <Scissors className="w-3 h-3" /> Caixa Individual do Barbeiro · Comissão 45%
+                </span>
+              )}
               <span className="text-xs text-gray-400">45% Funcionários · 100% Dono</span>
             </div>
-            <h2 className="text-4xl font-serif text-white tracking-tight">Gestão <span className="text-[#C88E70] italic">Financeira</span></h2>
-            <p className="text-gray-400 mt-1 text-sm">Controle geral da barbearia, comissões de 45% e fechamento de caixa individual.</p>
+
+            <h2 className="text-3xl md:text-4xl font-serif text-white tracking-tight">
+              {isAdmin ? (
+                <>Gestão <span className="text-[#C88E70] italic">Financeira</span></>
+              ) : (
+                <>Meu Caixa <span className="text-[#C88E70] italic">Individual</span></>
+              )}
+            </h2>
+            <p className="text-gray-400 mt-1 text-sm">
+              {isAdmin
+                ? "Controle financeiro geral da casa, lucro retido e fechamento diário por barbeiro."
+                : "Acompanhe seus cortes, sua comissão líquida de 45% e o saldo disponível para você hoje."}
+            </p>
           </div>
+
           <div className="flex flex-col gap-1 w-full md:w-auto">
             <label className="text-xs text-gray-400 uppercase tracking-widest">Filtrar por data:</label>
             <input 
@@ -248,42 +323,44 @@ export default function FinanceiroPage() {
           </div>
         </div>
 
-        {/* NAVEGAÇÃO DAS ABAS */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-white/10">
-          <button 
-            onClick={() => setActiveTab("GERAL")}
-            className={`px-6 py-3 font-bold uppercase tracking-widest text-xs transition-colors relative whitespace-nowrap ${activeTab === "GERAL" ? "text-[#C88E70]" : "text-gray-500 hover:text-white"}`}
-          >
-            Visão Geral (Casa)
-            {activeTab === "GERAL" && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C88E70]" />}
-          </button>
-          
-          {barbers.map(barber => {
-            const isOwner = barber.role === "ADMIN";
-            return (
-              <button 
-                key={barber.id}
-                onClick={() => setActiveTab(barber.id)}
-                className={`px-6 py-3 font-bold uppercase tracking-widest text-xs transition-colors relative whitespace-nowrap flex items-center gap-2 ${activeTab === barber.id ? "text-white" : "text-gray-500 hover:text-white"}`}
-              >
-                {isOwner ? <Shield className="w-3.5 h-3.5 text-[#C88E70]" /> : <Scissors className="w-3.5 h-3.5 text-blue-400" />}
-                {barber.name.split(" ")[0]}
-                <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${isOwner ? "bg-[#C88E70] text-black" : "bg-white/10 text-gray-300"}`}>
-                  {isOwner ? "Dono" : "45%"}
-                </span>
-                {activeTab === barber.id && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-white" />}
-              </button>
-            );
-          })}
-        </div>
+        {/* NAVEGAÇÃO DAS ABAS (APENAS O DONO PODE MUDAR DE ABA; O BARBEIRO FICA ISOLADO NO SEU CAIXA) */}
+        {isAdmin && (
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-white/10">
+            <button 
+              onClick={() => setActiveTab("GERAL")}
+              className={`px-6 py-3 font-bold uppercase tracking-widest text-xs transition-colors relative whitespace-nowrap ${activeTab === "GERAL" ? "text-[#C88E70]" : "text-gray-500 hover:text-white"}`}
+            >
+              Visão Geral (Casa)
+              {activeTab === "GERAL" && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#C88E70]" />}
+            </button>
+            
+            {barbers.map(barber => {
+              const isOwner = barber.role === "ADMIN";
+              return (
+                <button 
+                  key={barber.id}
+                  onClick={() => setActiveTab(barber.id)}
+                  className={`px-6 py-3 font-bold uppercase tracking-widest text-xs transition-colors relative whitespace-nowrap flex items-center gap-2 ${activeTab === barber.id ? "text-white" : "text-gray-500 hover:text-white"}`}
+                >
+                  {isOwner ? <Shield className="w-3.5 h-3.5 text-[#C88E70]" /> : <Scissors className="w-3.5 h-3.5 text-blue-400" />}
+                  {barber.name.split(" ")[0]}
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded font-bold ${isOwner ? "bg-[#C88E70] text-black" : "bg-white/10 text-gray-300"}`}>
+                    {isOwner ? "Dono" : "45%"}
+                  </span>
+                  {activeTab === barber.id && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-white" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <AnimatePresence mode="wait">
         
         {/* =========================================================================
-                                 ABA: VISÃO GERAL (CASA)
+                     ABA: VISÃO GERAL (CASA) - EXCLUSIVO PARA O DONO (ADMIN)
            ========================================================================= */}
-        {activeTab === "GERAL" && (
+        {isAdmin && activeTab === "GERAL" && (
           <motion.div 
             key="geral"
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
@@ -369,7 +446,7 @@ export default function FinanceiroPage() {
               )}
             </div>
 
-            {/* ADMIN RESUMO DOS BARBEIROS (COMISSÕES EXATAS) */}
+            {/* ADMIN RESUMO DOS BARBEIROS (COMISSÕES EXATAS DOS 3 BARBEIROS OFICIAIS) */}
             <div>
               <h3 className="text-xl font-serif text-white mb-6 mt-12 flex items-center gap-2">
                 <User className="w-5 h-5 text-[#C88E70]" /> Fechamento Diário por Profissional
@@ -435,7 +512,7 @@ export default function FinanceiroPage() {
         )}
 
         {/* =========================================================================
-                                ABA: CAIXA INDIVIDUAL DO BARBEIRO
+                     ABA: CAIXA INDIVIDUAL (BARBEIRO FUNCIONÁRIO OU DONO)
            ========================================================================= */}
         {activeTab !== "GERAL" && (
           <motion.div 
@@ -444,7 +521,9 @@ export default function FinanceiroPage() {
             className="space-y-6"
           >
             {(() => {
-              const barber = barbers.find(b => b.id === activeTab);
+              // Barbeiro ativo na tela: se for funcionário, SEMPRE ele mesmo
+              const currentId = !isAdmin ? (userBarberId || "barbeiro-lucas") : activeTab;
+              const barber = barbers.find(b => b.id === currentId) || barbers[0];
               if (!barber) return null;
 
               const isOwner = barber.role === "ADMIN";
@@ -460,7 +539,7 @@ export default function FinanceiroPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <h2 className="text-3xl font-serif text-white">{barber.name}</h2>
                         <span className={`text-[10px] px-3 py-1 rounded-full uppercase tracking-wider font-bold ${isOwner ? "bg-[#C88E70] text-black" : "bg-blue-500/20 text-blue-400 border border-blue-500/30"}`}>
-                          {isOwner ? "DONO · 100%" : "COMISSÃO 45%"}
+                          {isOwner ? "DONO · 100%" : "COMISSÃO OFICIAL 45%"}
                         </span>
                       </div>
                       <p className="text-gray-400 text-sm">
@@ -477,7 +556,7 @@ export default function FinanceiroPage() {
                             onClick={() => { setSelectedBarber(barber); setIsWalkInModalOpen(true); }}
                             className="px-5 py-3 bg-[#C88E70] hover:bg-white text-black font-bold uppercase tracking-widest text-xs rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-[#C88E70]/20"
                           >
-                            <Plus className="w-4 h-4" /> Registrar Serviço
+                            <Plus className="w-4 h-4" /> Registrar Serviço Balcão
                           </button>
                           <button 
                             onClick={() => { setSelectedBarber(barber); setIsValeModalOpen(true); }}
@@ -521,12 +600,14 @@ export default function FinanceiroPage() {
                         <h2 className="text-3xl font-serif text-white transform -rotate-6 uppercase tracking-[0.2em] font-bold border-2 border-white/30 px-8 py-3 rounded-xl mb-6">
                           Caixa Fechado
                         </h2>
-                        <button 
-                          onClick={handleReopenCaixa}
-                          className="bg-white/10 hover:bg-white/20 text-white font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-full border border-white/20 transition-all hover:scale-105"
-                        >
-                          Reabrir Caixa
-                        </button>
+                        {isAdmin && (
+                          <button 
+                            onClick={handleReopenCaixa}
+                            className="bg-white/10 hover:bg-white/20 text-white font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-full border border-white/20 transition-all hover:scale-105"
+                          >
+                            Reabrir Caixa
+                          </button>
+                        )}
                       </div>
                     )}
                     <p className="text-[#C88E70] text-xs uppercase tracking-[0.25em] font-bold mb-3 relative z-0">
@@ -535,6 +616,8 @@ export default function FinanceiroPage() {
                     <h1 className="text-5xl md:text-6xl font-serif text-white mb-6 relative z-0">
                       R$ {aReceberLivre.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </h1>
+                    
+                    {/* Botão de Fechar Caixa */}
                     <button 
                       onClick={handleCloseCaixa}
                       disabled={barber.isClosed}
@@ -554,9 +637,9 @@ export default function FinanceiroPage() {
                                      MODAIS
          ========================================================================= */}
       
-      {/* ADD DESPESA DA CASA MODAL */}
+      {/* ADD DESPESA DA CASA MODAL (SOMENTE DONO) */}
       <AnimatePresence>
-        {isModalOpen && (
+        {isModalOpen && isAdmin && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80">
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-[#C88E70]/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
               <div className="p-8 relative z-10">
@@ -576,17 +659,17 @@ export default function FinanceiroPage() {
 
       {/* ADD VALE DO BARBEIRO MODAL */}
       <AnimatePresence>
-        {isValeModalOpen && selectedBarber && (
+        {isValeModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80">
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-red-500/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative">
               <div className="p-8 relative z-10">
                 <button onClick={() => setIsValeModalOpen(false)} className="absolute top-6 right-6 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
-                <h2 className="text-2xl font-serif text-white mb-2">Vale / <span className="text-red-400 italic">Despesa de {selectedBarber.name.split(" ")[0]}</span></h2>
-                <p className="text-gray-400 text-xs mb-6">Será descontado diretamente da comissão deste barbeiro no acerto de hoje.</p>
+                <h2 className="text-2xl font-serif text-white mb-2">Vale / <span className="text-red-400 italic">Desconto em Folha</span></h2>
+                <p className="text-gray-400 text-xs mb-6">Será descontado diretamente da comissão de 45% deste profissional no fechamento de hoje.</p>
                 <form onSubmit={handleAddVale} className="space-y-4">
                   <input required type="text" placeholder="Motivo do vale (ex: Adiantamento, Lanche)" value={valeDesc} onChange={(e) => setValeDesc(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-red-400" />
                   <input required type="number" step="0.01" placeholder="Valor (R$)" value={valeAmount} onChange={(e) => setValeAmount(e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-red-400" />
-                  <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-red-500/20 border border-red-500/50 hover:bg-red-500 text-white font-bold uppercase tracking-widest text-xs rounded-xl mt-4">Descontar da Comissão</button>
+                  <button type="submit" disabled={isSubmitting} className="w-full py-4 bg-red-500/20 border border-red-500/50 hover:bg-red-500 text-white font-bold uppercase tracking-widest text-xs rounded-xl mt-4">Descontar do Caixa</button>
                 </form>
               </div>
             </motion.div>
@@ -594,43 +677,48 @@ export default function FinanceiroPage() {
         )}
       </AnimatePresence>
 
-      {/* REGISTRAR SERVIÇO (WALK-IN) MODAL */}
+      {/* REGISTRAR SERVIÇO (WALK-IN) MODAL - TODOS OS 9 SERVIÇOS E COMBOS */}
       <AnimatePresence>
-        {isWalkInModalOpen && selectedBarber && (
+        {isWalkInModalOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80">
-            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-[#C88E70]/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative max-h-[80vh] flex flex-col">
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-[#C88E70]/30 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative max-h-[85vh] flex flex-col">
               <div className="p-8 pb-4 relative z-10 shrink-0">
                 <button onClick={() => setIsWalkInModalOpen(false)} className="absolute top-6 right-6 text-gray-500 hover:text-white"><X className="w-5 h-5" /></button>
-                <h2 className="text-2xl font-serif text-white mb-2">Registrar <span className="text-[#C88E70] italic">Serviço</span></h2>
+                <h2 className="text-2xl font-serif text-white mb-2">Registrar <span className="text-[#C88E70] italic">Serviço Balcão</span></h2>
                 <p className="text-gray-400 text-xs mb-2">
-                  Adicionar serviço ao caixa de <strong className="text-white">{selectedBarber.name}</strong>.
+                  Adicionar serviço ao caixa de <strong className="text-white">{isAdmin ? (selectedBarber?.name || "Barbeiro") : session?.user?.name}</strong>.
                 </p>
               </div>
               <div className="p-8 pt-0 overflow-y-auto space-y-3 pb-8 relative z-10 flex-1">
-                {[
-                  { id: "corte", name: "Corte", duration: 30, price: 35 },
-                  { id: "barba", name: "Barba", duration: 30, price: 25 },
-                  { id: "cabeca-navalha", name: "Cabeça raspada navalha", duration: 30, price: 25 },
-                  { id: "pezinho", name: "Pezinho", duration: 15, price: 20 },
-                  { id: "barba-maquina", name: "Barba raspada na máquina", duration: 20, price: 20 },
-                  { id: "sobrancelha", name: "Sobrancelha", duration: 15, price: 15 },
-                  { id: "combo-corte-barba", name: "Corte + Barba", duration: 50, price: 55 },
-                  { id: "combo-pezinho-barba", name: "Pezinho + Barba", duration: 40, price: 40 },
-                  { id: "combo-corte-sobrancelha", name: "Corte + Sobrancelha", duration: 40, price: 45 },
-                ].map(svc => (
-                  <button
-                    key={svc.id}
-                    onClick={() => handleRegisterService(svc)}
-                    disabled={isSubmitting}
-                    className="w-full flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-[#C88E70]/30 transition-all text-left disabled:opacity-50"
-                  >
-                    <div>
-                      <h3 className="text-white font-medium">{svc.name}</h3>
-                      <p className="text-xs text-gray-500 mt-1">{svc.duration} min · Comissão ({selectedBarber.role === "ADMIN" ? "100%" : "45%"}): R$ {(svc.price * (selectedBarber.role === "ADMIN" ? 1.0 : 0.45)).toFixed(2)}</p>
-                    </div>
-                    <span className="text-[#C88E70] font-serif text-lg">R$ {svc.price.toFixed(2)}</span>
-                  </button>
-                ))}
+                {OFFICIAL_SERVICES.map(svc => {
+                  const currentRole = isAdmin ? (selectedBarber?.role || "ADMIN") : "BARBER";
+                  const rate = currentRole === "ADMIN" ? 1.0 : 0.45;
+                  const commissionValue = svc.price * rate;
+
+                  return (
+                    <button
+                      key={svc.id}
+                      onClick={() => handleRegisterService(svc)}
+                      disabled={isSubmitting}
+                      className="w-full flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-[#C88E70]/30 transition-all text-left disabled:opacity-50"
+                    >
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-white font-medium">{svc.name}</h3>
+                          {svc.isCombo && (
+                            <span className="text-[9px] bg-[#C88E70]/20 text-[#C88E70] px-1.5 py-0.2 rounded font-bold uppercase">
+                              Combo
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {svc.duration} min · {currentRole === "ADMIN" ? "100% Dono" : `Comissão (45%): R$ ${commissionValue.toFixed(2)}`}
+                        </p>
+                      </div>
+                      <span className="text-[#C88E70] font-serif text-lg">R$ {svc.price.toFixed(2)}</span>
+                    </button>
+                  );
+                })}
               </div>
             </motion.div>
           </motion.div>

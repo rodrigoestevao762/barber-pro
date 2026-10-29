@@ -1,16 +1,18 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight } from "lucide-react";
+import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { BARBERS, BarberData } from "@/lib/barbers";
+import { OFFICIAL_SERVICES, ServiceItem } from "@/lib/services";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
   const userRole = (session?.user as any)?.role || "ADMIN";
   const userBarberId = (session?.user as any)?.barberId;
   const userName = session?.user?.name || "Gestor";
+  const isAdmin = userRole === "ADMIN";
 
   const [dashboardData, setDashboardData] = useState<any>({
     revenue: 0,
@@ -29,7 +31,7 @@ export default function DashboardPage() {
   
   // Modal de cliente balcão
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [services, setServices] = useState<any[]>([]);
+  const [services, setServices] = useState<ServiceItem[]>(OFFICIAL_SERVICES);
   const [walkInBarberId, setWalkInBarberId] = useState(userBarberId || "barbeiro-dono");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -41,7 +43,7 @@ export default function DashboardPage() {
 
   const fetchDashboard = async () => {
     try {
-      const bFilter = userRole === "ADMIN" ? selectedBarberFilter : (userBarberId || "barbeiro-lucas");
+      const bFilter = isAdmin ? selectedBarberFilter : (userBarberId || "barbeiro-lucas");
       const res = await fetch(`/api/dashboard?date=${selectedDate}&barberId=${bFilter}`);
       if (res.ok) {
         const json = await res.json();
@@ -54,21 +56,8 @@ export default function DashboardPage() {
     }
   };
 
-  const fetchServices = async () => {
-    try {
-      const res = await fetch('/api/services');
-      if (res.ok) {
-        const json = await res.json();
-        setServices(json);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   useEffect(() => {
     fetchDashboard();
-    fetchServices();
   }, [selectedDate, selectedBarberFilter, userRole]);
 
   const updateStatus = async (id: string, newStatus: string) => {
@@ -87,12 +76,15 @@ export default function DashboardPage() {
   const createWalkIn = async (serviceId: string) => {
     setIsSubmitting(true);
     try {
+      // Se não for ADM, o barbeiro é estritamente o usuário logado
+      const targetBarber = isAdmin ? walkInBarberId : (userBarberId || "barbeiro-lucas");
+      
       await fetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           serviceId, 
-          barberId: walkInBarberId, 
+          barberId: targetBarber, 
           date: new Date().toISOString(), 
           isWalkIn: true,
           clientName: "Cliente Balcão"
@@ -117,7 +109,6 @@ export default function DashboardPage() {
     );
   }
 
-  const isAdmin = userRole === "ADMIN";
   const selectedBarberObj = BARBERS.find((b) => b.id === (isAdmin ? selectedBarberFilter : userBarberId));
   const isSelectedBarberOwner = selectedBarberObj?.role === "ADMIN";
 
@@ -144,7 +135,7 @@ export default function DashboardPage() {
           <h2 className="text-2xl md:text-3xl font-serif text-white mt-2">
             {isAdmin 
               ? (selectedBarberFilter === "all" ? "Visão Geral de Toda a Barbearia" : `Gestão de ${selectedBarberObj?.name}`)
-              : `Meu Painel de Atendimentos & Comissões`}
+              : `Meus Atendimentos & Comissões`}
           </h2>
           <p className="text-xs text-gray-400 mt-1">
             {isAdmin 
@@ -182,7 +173,7 @@ export default function DashboardPage() {
               type="date" 
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#C88E70] transition-colors"
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#C88E70] transition-colors [&::-webkit-calendar-picker-indicator]:invert"
             />
           </div>
 
@@ -583,7 +574,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* ── MODAL: CLIENTE BALCÃO (WALK-IN) ── */}
+      {/* ── MODAL: CLIENTE BALCÃO (WALK-IN) COM TODAS AS 9 OPÇÕES DE SERVIÇOS E TRAVA DE BARBEIRO ── */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
@@ -592,59 +583,76 @@ export default function DashboardPage() {
               initial={{ scale: 0.95, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl"
+              className="relative w-full max-w-lg bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[85vh] flex flex-col"
             >
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
-                <h3 className="text-2xl font-serif text-white">Lançar Cliente Balcão</h3>
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10 shrink-0">
+                <div>
+                  <h3 className="text-2xl font-serif text-white">Lançar Cliente Balcão</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Registre o serviço concluído diretamente no caixa.</p>
+                </div>
                 <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Escolha do Barbeiro que está atendendo */}
-              <div className="mb-6">
-                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
-                  Barbeiro Responsável
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {BARBERS.map((b) => (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => setWalkInBarberId(b.id)}
-                      className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${walkInBarberId === b.id ? "border-[#C88E70] bg-[#C88E70] text-[#050B14]" : "border-white/10 text-gray-300 hover:border-white/30"}`}
-                    >
-                      {b.name.split(" ")[0]}
-                    </button>
-                  ))}
-                </div>
+              {/* Escolha ou Trava do Barbeiro */}
+              <div className="mb-6 shrink-0">
+                {isAdmin ? (
+                  <>
+                    <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
+                      Barbeiro Responsável
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {BARBERS.map((b) => (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => setWalkInBarberId(b.id)}
+                          className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${walkInBarberId === b.id ? "border-[#C88E70] bg-[#C88E70] text-[#050B14]" : "border-white/10 text-gray-300 hover:border-white/30"}`}
+                        >
+                          {b.name.split(" ")[0]}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Barbeiro Atendente</p>
+                      <p className="text-sm font-serif text-white font-medium">{userName}</p>
+                    </div>
+                    <span className="text-[10px] bg-[#C88E70]/20 text-[#C88E70] border border-[#C88E70]/30 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+                      Comissão 45%
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Escolha do Serviço */}
-              <div className="mb-6">
+              {/* Escolha do Serviço: TODOS OS 9 SERVIÇOS E COMBOS OFICIAIS */}
+              <div className="mb-6 flex-1 overflow-y-auto pr-1">
                 <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
                   Selecione o Serviço Prestado
                 </label>
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                  {[
-                    { id: "corte", name: "Corte", price: 35 },
-                    { id: "barba", name: "Barba", price: 25 },
-                    { id: "cabeca-navalha", name: "Cabeça raspada navalha", price: 25 },
-                    { id: "pezinho", name: "Pezinho", price: 20 },
-                    { id: "barba-maquina", name: "Barba raspada na máquina", price: 20 },
-                    { id: "sobrancelha", name: "Sobrancelha", price: 15 },
-                    { id: "combo-corte-barba", name: "Corte + Barba", price: 55 },
-                    { id: "combo-pezinho-barba", name: "Pezinho + Barba", price: 40 },
-                    { id: "combo-corte-sobrancelha", name: "Corte + Sobrancelha", price: 45 },
-                  ].map((s) => (
+                <div className="space-y-2">
+                  {OFFICIAL_SERVICES.map((s) => (
                     <button
                       key={s.id}
                       type="button"
                       disabled={isSubmitting}
                       onClick={() => createWalkIn(s.id)}
-                      className="w-full p-3 rounded-xl border border-white/10 hover:border-[#C88E70] bg-white/[0.02] hover:bg-[#C88E70]/10 flex items-center justify-between text-left transition-all"
+                      className="w-full p-3.5 rounded-xl border border-white/10 hover:border-[#C88E70] bg-white/[0.02] hover:bg-[#C88E70]/10 flex items-center justify-between text-left transition-all disabled:opacity-50"
                     >
-                      <span className="text-white text-sm font-medium">{s.name}</span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-white text-sm font-medium">{s.name}</span>
+                          {s.isCombo && (
+                            <span className="text-[9px] bg-[#C88E70]/20 text-[#C88E70] px-1.5 py-0.2 rounded font-bold uppercase">
+                              Combo
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">{s.duration} min</p>
+                      </div>
                       <span className="text-[#C88E70] font-mono font-bold text-sm">R$ {s.price}</span>
                     </button>
                   ))}
@@ -654,7 +662,7 @@ export default function DashboardPage() {
               <button 
                 type="button" 
                 onClick={() => setIsModalOpen(false)}
-                className="w-full text-center text-xs uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+                className="w-full text-center text-xs uppercase tracking-widest text-gray-500 hover:text-white transition-colors shrink-0 pt-2"
               >
                 Cancelar
               </button>

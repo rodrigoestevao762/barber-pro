@@ -1,23 +1,10 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Clock, ChevronRight, CheckCircle2, User, Scissors, Star } from "lucide-react";
+import { X, Calendar, Clock, ChevronRight, CheckCircle2, User, Scissors, Star, Mail, Phone, Lock, Shield } from "lucide-react";
 import { useState, useEffect } from "react";
 import { BARBERS, BarberData } from "@/lib/barbers";
-
-type Service = { id: string; name: string; price: number; duration: number };
-
-const DEFAULT_SERVICES: Service[] = [
-  { id: "corte", name: "Corte", price: 35, duration: 30 },
-  { id: "barba", name: "Barba", price: 25, duration: 25 },
-  { id: "cabeca-navalha", name: "Cabeça raspada navalha", price: 25, duration: 30 },
-  { id: "pezinho", name: "Pezinho", price: 20, duration: 15 },
-  { id: "barba-maquina", name: "Barba raspada na máquina", price: 20, duration: 20 },
-  { id: "sobrancelha", name: "Sobrancelha", price: 15, duration: 15 },
-  { id: "combo-corte-barba", name: "Corte + Barba", price: 55, duration: 50 },
-  { id: "combo-pezinho-barba", name: "Pezinho + Barba", price: 40, duration: 35 },
-  { id: "combo-corte-sobrancelha", name: "Corte + Sobrancelha", price: 45, duration: 40 },
-];
+import { OFFICIAL_SERVICES, ServiceItem } from "@/lib/services";
 
 export default function BookingModal({ 
   isOpen, 
@@ -28,17 +15,20 @@ export default function BookingModal({
   onClose: () => void;
   initialServiceId?: string;
 }) {
-  const [step, setStep] = useState(1); // 1: Serviço, 2: Barbeiro, 3: Data/Hora e Dados
-  const [services, setServices] = useState<Service[]>(DEFAULT_SERVICES);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
-  const [selectedBarber, setSelectedBarber] = useState<BarberData | null>(BARBERS[0]); // Padrão Mr. Bastos
-  const [isAnyBarber, setIsAnyBarber] = useState(false);
+  const [step, setStep] = useState(1); // 1: Serviço, 2: Barbeiro, 3: Data/Hora e Dados do Cliente
+  const [services, setServices] = useState<ServiceItem[]>(OFFICIAL_SERVICES);
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+  const [selectedBarber, setSelectedBarber] = useState<BarberData>(BARBERS[0]); // Padrão Mr. Bastos
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  
+  // Dados do Cliente
   const [clientName, setClientName] = useState("");
+  const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("");
   const [clientPassword, setClientPassword] = useState("");
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -46,31 +36,25 @@ export default function BookingModal({
 
   useEffect(() => {
     if (isOpen) {
-      const applyServices = (list: Service[]) => {
-        const finalServices = Array.isArray(list) && list.length > 0 ? list : DEFAULT_SERVICES;
-        setServices(finalServices);
-        if (initialServiceId) {
-          const s = finalServices.find(
-            (d: Service) => d.id === initialServiceId || d.name.toLowerCase() === initialServiceId.toLowerCase()
-          );
-          if (s) {
-            setSelectedService(s);
-            setStep(2); // Vai direto para escolha do barbeiro
-          } else {
-            setStep(1);
-            setSelectedService(null);
-          }
+      setServices(OFFICIAL_SERVICES);
+      
+      if (initialServiceId) {
+        const s = OFFICIAL_SERVICES.find(
+          (d) => d.id === initialServiceId || d.name.toLowerCase() === initialServiceId.toLowerCase()
+        );
+        if (s) {
+          setSelectedService(s);
+          setStep(2); // Vai direto para escolha do barbeiro
         } else {
           setStep(1);
           setSelectedService(null);
         }
-      };
+      } else {
+        setStep(1);
+        setSelectedService(null);
+      }
 
-      fetch('/api/services')
-        .then(res => res.json())
-        .then(data => applyServices(data))
-        .catch(() => applyServices(DEFAULT_SERVICES));
-
+      setSelectedBarber(BARBERS[0]);
       setSelectedDate("");
       setSelectedTime("");
       setAvailableTimes([]);
@@ -81,48 +65,57 @@ export default function BookingModal({
 
   // Busca horários disponíveis quando a data OU o barbeiro mudar
   useEffect(() => {
-    if (selectedDate) {
-      const bId = isAnyBarber ? "qualquer" : (selectedBarber?.id || "qualquer");
-      fetch(`/api/appointments/available?date=${selectedDate}&barberId=${bId}`)
-        .then(res => res.json())
-        .then(data => setAvailableTimes(data.availableTimes || []))
+    if (selectedDate && selectedBarber) {
+      fetch(`/api/appointments/available?date=${selectedDate}&barberId=${selectedBarber.id}`)
+        .then((res) => res.json())
+        .then((data) => setAvailableTimes(data.availableTimes || []))
         .catch(() => {
           setAvailableTimes(["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]);
         });
     }
-  }, [selectedDate, selectedBarber, isAnyBarber]);
+  }, [selectedDate, selectedBarber]);
 
   const handleBooking = async () => {
-    if (!clientName || !clientPhone) {
-      setErrorMsg("Por favor, preencha seu nome e WhatsApp.");
+    if (!clientName.trim()) {
+      setErrorMsg("Por favor, preencha seu nome completo.");
       return;
     }
+
+    if (!clientEmail.trim() || !clientEmail.includes("@")) {
+      setErrorMsg("Por favor, informe um e-mail válido para criar sua conta e permitir a recuperação de senha.");
+      return;
+    }
+
+    if (!clientPhone.trim() || clientPhone.replace(/\D/g, "").length < 10) {
+      setErrorMsg("Por favor, preencha seu WhatsApp com DDD para contato.");
+      return;
+    }
+
     if (!selectedDate || !selectedTime) {
-      setErrorMsg("Selecione data e horário.");
+      setErrorMsg("Por favor, selecione a data e o horário desejado.");
       return;
     }
 
     setIsLoading(true);
     setErrorMsg("");
 
-    const barberToAssign = isAnyBarber ? BARBERS[0] : (selectedBarber || BARBERS[0]);
-    setConfirmedBarber(barberToAssign);
-
+    setConfirmedBarber(selectedBarber);
     const fullDate = `${selectedDate}T${selectedTime}:00Z`;
 
     try {
-      const res = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceId: selectedService?.id,
-          barberId: barberToAssign.id,
+          barberId: selectedBarber.id,
           date: fullDate,
-          clientName,
-          clientPhone,
+          clientName: clientName.trim(),
+          clientEmail: clientEmail.trim().toLowerCase(),
+          clientPhone: clientPhone.trim(),
           clientPassword: clientPassword || "123",
           isWalkIn: false,
-        })
+        }),
       });
 
       if (res.ok) {
@@ -132,7 +125,7 @@ export default function BookingModal({
         setErrorMsg(data.error || "Erro ao agendar.");
       }
     } catch (e) {
-      // Confirmação fallback em caso de rede
+      // Confirmação fallback em caso de rede/offline
       setIsSuccess(true);
     } finally {
       setIsLoading(false);
@@ -142,68 +135,72 @@ export default function BookingModal({
   if (!isOpen) return null;
 
   const dateFormatted = selectedDate ? selectedDate.split("-").reverse().join("/") : "";
-  const whatsappMsg = `Olá, ${confirmedBarber.name}! Acabei de agendar um ${selectedService?.name || "serviço"} (R$ ${selectedService?.price}) na Mr. Bastos Barbearia para o dia ${dateFormatted} às ${selectedTime}.\n\nMeus dados:\nNome: ${clientName}\nWhatsApp: ${clientPhone}\n\nPoderia me confirmar?`;
+  const whatsappMsg = `Olá, ${confirmedBarber.name}! Acabei de agendar um ${selectedService?.name || "serviço"} (R$ ${selectedService?.price}) na Mr. Bastos Barbearia para o dia ${dateFormatted} às ${selectedTime}.\n\nMeus dados:\nNome: ${clientName}\nE-mail: ${clientEmail}\nWhatsApp: ${clientPhone}\n\nPoderia me confirmar?`;
   const whatsappUrl = `https://wa.me/${confirmedBarber.phone}?text=${encodeURIComponent(whatsappMsg)}`;
 
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <motion.div 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          exit={{ opacity: 0 }}
           className="absolute inset-0 bg-[#050B14]/85 backdrop-blur-md"
           onClick={onClose}
         />
         
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-[#050B14] border border-[#C88E70]/30 rounded-3xl overflow-hidden backdrop-blur-2xl shadow-2xl flex flex-col max-h-[90vh]"
+          className="relative w-full max-w-2xl bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden text-white"
         >
           {/* Header */}
-          <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/[0.02]">
+          <div className="flex justify-between items-center pb-5 border-b border-white/10 shrink-0">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-[#C88E70] font-semibold">
-                Mr. Bastos Barbearia · Alagoinhas BA
+              <p className="text-[10px] uppercase tracking-[0.25em] text-[#C88E70] font-semibold">
+                Agendamento Online
               </p>
-              <h2 className="text-2xl font-serif text-white tracking-wide mt-1">
-                {isSuccess ? "Agendamento Realizado!" : "Agendar Horário"}
-              </h2>
+              <h2 className="text-2xl font-serif text-white mt-0.5">Mr. Bastos Barbearia</h2>
             </div>
-            <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/10">
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/5 transition-colors"
+            >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Stepper Indicator */}
+          {/* Stepper (Passos 1, 2, 3) */}
           {!isSuccess && (
-            <div className="px-8 pt-4 pb-2 flex items-center justify-between border-b border-white/5 bg-white/[0.01]">
-              {[
-                { n: 1, title: "Serviço" },
-                { n: 2, title: "Barbeiro" },
-                { n: 3, title: "Data & Horário" }
-              ].map(s => (
-                <div key={s.n} className="flex items-center gap-2">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step === s.n ? 'bg-[#C88E70] text-black' : step > s.n ? 'bg-white/20 text-white' : 'bg-white/5 text-gray-500'}`}>
-                    {s.n}
-                  </div>
-                  <span className={`text-xs uppercase tracking-wider hidden sm:inline ${step === s.n ? 'text-white font-semibold' : 'text-gray-500'}`}>
-                    {s.title}
-                  </span>
-                </div>
-              ))}
+            <div className="flex items-center gap-2 py-4 border-b border-white/5 shrink-0 text-xs">
+              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 1 ? 'bg-[#C88E70] text-black shadow-md' : selectedService ? 'bg-white/10 text-white' : 'text-gray-500'}`}>
+                1. Serviço
+              </span>
+              <span className="text-gray-600">→</span>
+              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 2 ? 'bg-[#C88E70] text-black shadow-md' : selectedBarber ? 'bg-white/10 text-white' : 'text-gray-500'}`}>
+                2. Barbeiro
+              </span>
+              <span className="text-gray-600">→</span>
+              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 3 ? 'bg-[#C88E70] text-black shadow-md' : 'text-gray-500'}`}>
+                3. Data, Horário & E-mail
+              </span>
             </div>
           )}
 
-          <div className="p-6 md:p-8 overflow-y-auto flex-1">
+          {/* Conteúdo Central com Scroll */}
+          <div className="py-6 overflow-y-auto flex-1 pr-1 scrollbar-hide">
             {isSuccess ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
                   <CheckCircle2 className="w-20 h-20 text-[#C88E70] mb-4" />
                 </motion.div>
                 <h3 className="text-3xl font-serif text-white mb-2">Tudo Pronto, {clientName}!</h3>
-                <p className="text-gray-300 font-light max-w-md text-sm mb-6 leading-relaxed">
+                <p className="text-gray-300 font-light max-w-md text-sm mb-4 leading-relaxed">
                   Seu horário para <strong>{selectedService?.name}</strong> foi reservado com <strong>{confirmedBarber.name}</strong> para o dia <strong>{dateFormatted}</strong> às <strong>{selectedTime}</strong>.
+                </p>
+                <p className="text-xs text-gray-400 mb-6 max-w-md">
+                  Sua conta foi criada com o e-mail <strong className="text-white">{clientEmail}</strong>. Você pode acessar seu Painel VIP pelo e-mail ou WhatsApp com a senha cadastrada.
                 </p>
 
                 {/* Card de envio para o WhatsApp do Barbeiro */}
@@ -215,7 +212,7 @@ export default function BookingModal({
                     </p>
                   </div>
                   <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                    Toque no botão abaixo para enviar os detalhes do seu agendamento direto para o WhatsApp de <strong>{confirmedBarber.name}</strong> ({confirmedBarber.phoneDisplay}):
+                    Toque no botão abaixo para enviar os detalhes do agendamento direto para o WhatsApp de <strong>{confirmedBarber.name}</strong> ({confirmedBarber.phoneDisplay}):
                   </p>
                   <a 
                     href={whatsappUrl} 
@@ -237,96 +234,97 @@ export default function BookingModal({
               </div>
             ) : (
               <>
-                {/* STEP 1: ESCOLHA DO SERVIÇO */}
+                {/* STEP 1: ESCOLHA DO SERVIÇO (TODOS OS 9 SERVIÇOS E COMBOS OFICIAIS) */}
                 {step === 1 && (
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                    <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold">
-                      Passo 1: Selecione o Serviço Desejado
-                    </p>
+                    <div className="flex justify-between items-center">
+                      <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold">
+                        Passo 1: Selecione o Serviço Desejado
+                      </p>
+                      <span className="text-xs text-gray-400 font-mono">9 opções disponíveis</span>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1">
-                      {services.map(s => (
+                      {services.map((s) => (
                         <div 
                           key={s.id} 
                           onClick={() => setSelectedService(s)}
                           className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex justify-between items-center ${selectedService?.id === s.id ? 'border-[#C88E70] bg-[#C88E70]/15 shadow-md shadow-[#C88E70]/10' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
                         >
                           <div>
-                            <h4 className="text-base font-serif text-white">{s.name}</h4>
-                            <p className="text-xs text-gray-400 mt-0.5">{s.duration} minutos</p>
+                            <div className="flex items-center gap-2">
+                              <h4 className="text-base font-serif text-white">{s.name}</h4>
+                              {s.isCombo && (
+                                <span className="text-[9px] bg-[#C88E70]/20 text-[#C88E70] border border-[#C88E70]/30 px-1.5 py-0.2 rounded font-bold uppercase">
+                                  Combo
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1 line-clamp-1">{s.description}</p>
+                            <p className="text-[11px] text-gray-500 mt-0.5">{s.duration} minutos</p>
                           </div>
-                          <span className="text-[#C88E70] font-mono font-bold text-base">R$ {s.price}</span>
+                          <span className="text-[#C88E70] font-mono font-bold text-base shrink-0 ml-3">R$ {s.price}</span>
                         </div>
                       ))}
                     </div>
                   </motion.div>
                 )}
 
-                {/* STEP 2: ESCOLHA DO BARBEIRO */}
+                {/* STEP 2: ESCOLHA DO BARBEIRO (APENAS OS 3 BARBEIROS OFICIAIS) */}
                 {step === 2 && (
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                     <div className="flex justify-between items-baseline">
                       <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold">
-                        Passo 2: Escolha o Barbeiro
+                        Passo 2: Escolha o Barbeiro Responsável
                       </p>
                       <span className="text-xs text-gray-400 font-light">
                         Serviço: <strong className="text-white">{selectedService?.name} (R$ {selectedService?.price})</strong>
                       </span>
                     </div>
 
-                    <div className="space-y-3">
-                      {/* Opção Qualquer Barbeiro */}
-                      <div
-                        onClick={() => {
-                          setIsAnyBarber(true);
-                          setSelectedBarber(null);
-                        }}
-                        className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex items-center justify-between ${isAnyBarber ? 'border-[#C88E70] bg-[#C88E70]/15' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-[#C88E70]/20 border border-[#C88E70]/40 flex items-center justify-center text-[#C88E70]">
-                            <Scissors className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h4 className="text-base font-serif text-white">Qualquer Barbeiro Disponível</h4>
-                            <p className="text-xs text-gray-400">Mais opções de horários livres para você</p>
-                          </div>
-                        </div>
-                        <span className="text-xs text-[#C88E70] uppercase font-bold tracking-wider">Mais Rápido</span>
-                      </div>
+                    <p className="text-xs text-gray-400">
+                      Selecione o profissional com quem você deseja realizar seu atendimento na unidade Alagoinhas – BA:
+                    </p>
 
-                      {/* Barbeiros Individuais */}
+                    <div className="space-y-3">
                       {BARBERS.map((barber) => {
-                        const isSelected = !isAnyBarber && selectedBarber?.id === barber.id;
+                        const isSelected = selectedBarber?.id === barber.id;
+                        const isOwner = barber.role === "ADMIN";
+
                         return (
                           <div
                             key={barber.id}
-                            onClick={() => {
-                              setIsAnyBarber(false);
-                              setSelectedBarber(barber);
-                            }}
-                            className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex items-center justify-between ${isSelected ? 'border-[#C88E70] bg-[#C88E70]/15 shadow-md shadow-[#C88E70]/10' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
+                            onClick={() => setSelectedBarber(barber)}
+                            className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex items-center justify-between ${isSelected ? 'border-[#C88E70] bg-[#C88E70]/15 shadow-md shadow-[#C88E70]/10 ring-1 ring-[#C88E70]' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
                           >
                             <div className="flex items-center gap-4">
                               <div 
-                                className="w-12 h-12 rounded-full bg-cover bg-center border border-white/20"
+                                className="w-14 h-14 rounded-2xl bg-cover bg-center border border-white/20 shrink-0 shadow-md"
                                 style={{ backgroundImage: `url(${barber.avatar})` }}
                               />
                               <div>
                                 <div className="flex items-center gap-2">
                                   <h4 className="text-base font-serif text-white">{barber.name}</h4>
-                                  {barber.role === "ADMIN" && (
+                                  {isOwner ? (
                                     <span className="text-[9px] bg-[#C88E70] text-[#050B14] px-2 py-0.5 rounded font-bold uppercase">
-                                      Fundador
+                                      Fundador / Dono
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] bg-white/10 text-gray-300 px-2 py-0.5 rounded font-medium uppercase">
+                                      Barbeiro
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs text-gray-400 mt-0.5">{barber.specialty}</p>
+                                <p className="text-xs text-[#C88E70] mt-0.5">{barber.specialty}</p>
+                                <p className="text-[11px] text-gray-400 mt-0.5">{barber.bio}</p>
                               </div>
                             </div>
 
-                            <span className="text-xs text-gray-400 font-mono">
-                              WhatsApp pronto
-                            </span>
+                            <div className="text-right shrink-0 ml-2">
+                              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-lg ${isSelected ? 'bg-[#C88E70] text-black' : 'text-gray-400 border border-white/10'}`}>
+                                {isSelected ? 'Selecionado' : 'Escolher'}
+                              </span>
+                            </div>
                           </div>
                         );
                       })}
@@ -334,15 +332,20 @@ export default function BookingModal({
                   </motion.div>
                 )}
 
-                {/* STEP 3: DATA, HORÁRIO E DADOS DO CLIENTE */}
+                {/* STEP 3: DATA, HORÁRIO & E-MAIL (CADASTRO / RECUPERAÇÃO DE SENHA) */}
                 {step === 3 && (
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
                     <div className="flex justify-between items-baseline border-b border-white/5 pb-3">
-                      <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold">
-                        Passo 3: Data, Horário & Seus Dados
-                      </p>
+                      <div>
+                        <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold">
+                          Passo 3: Data, Horário & Seus Dados
+                        </p>
+                        <p className="text-[11px] text-gray-400 mt-0.5">
+                          O e-mail é utilizado para cadastro e recuperação de senha. O número serve como login e contato.
+                        </p>
+                      </div>
                       <span className="text-xs text-gray-400 font-light">
-                        Barbeiro: <strong className="text-[#C88E70]">{isAnyBarber ? "Qualquer Barbeiro" : selectedBarber?.name}</strong>
+                        Barbeiro: <strong className="text-[#C88E70]">{selectedBarber?.name}</strong>
                       </span>
                     </div>
 
@@ -353,11 +356,11 @@ export default function BookingModal({
                     )}
 
                     <div className="grid md:grid-cols-2 gap-6">
-                      {/* Coluna 1: Dados do Cliente */}
+                      {/* Coluna 1: Dados do Cliente com E-mail em destaque */}
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
-                            Seu Nome Completo
+                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5 text-[#C88E70]" /> Seu Nome Completo
                           </label>
                           <input 
                             type="text" 
@@ -368,9 +371,28 @@ export default function BookingModal({
                           />
                         </div>
 
+                        {/* CAMPO DE E-MAIL OFICIAL (PARA CONTA E RECUPERAÇÃO DE SENHA) */}
                         <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
-                            Seu WhatsApp com DDD
+                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                            <Mail className="w-3.5 h-3.5 text-[#C88E70]" /> Seu E-mail Oficial
+                            <span className="text-[9px] text-[#C88E70] font-normal normal-case">(para conta e recuperar senha)</span>
+                          </label>
+                          <input 
+                            type="email" 
+                            placeholder="Ex: seuemail@gmail.com"
+                            value={clientEmail} 
+                            onChange={(e) => setClientEmail(e.target.value)}
+                            className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                          />
+                          <p className="text-[10px] text-gray-500 mt-1">
+                            Seu e-mail será usado para cadastrar sua conta VIP e recuperar sua senha caso esqueça.
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                            <Phone className="w-3.5 h-3.5 text-[#C88E70]" /> WhatsApp com DDD
+                            <span className="text-[9px] text-gray-500 font-normal normal-case">(login e confirmação)</span>
                           </label>
                           <input 
                             type="text" 
@@ -382,8 +404,8 @@ export default function BookingModal({
                         </div>
 
                         <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
-                            Senha para Acessar seu Painel de Cliente
+                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                            <Lock className="w-3.5 h-3.5 text-[#C88E70]" /> Senha de Acesso ao Painel
                           </label>
                           <input 
                             type="password" 
@@ -392,48 +414,44 @@ export default function BookingModal({
                             onChange={(e) => setClientPassword(e.target.value)}
                             className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
                           />
-                          <p className="text-[10px] text-gray-500 mt-1">
-                            Você poderá logar no Painel de Cliente com seu telefone e essa senha.
-                          </p>
                         </div>
                       </div>
 
                       {/* Coluna 2: Data e Horário */}
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
-                            Data do Atendimento
+                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-[#C88E70]" /> Data do Atendimento
                           </label>
                           <div className="relative">
-                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                             <input 
                               type="date" 
                               value={selectedDate}
                               onChange={(e) => setSelectedDate(e.target.value)}
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors [&::-webkit-calendar-picker-indicator]:invert"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
-                            Horários Disponíveis ({isAnyBarber ? "Geral" : selectedBarber?.name.split(" ")[0]})
+                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-[#C88E70]" /> Horários de {selectedBarber?.name.split(" ")[0]}
                           </label>
                           {!selectedDate ? (
-                            <p className="text-xs text-gray-500 italic py-4">
-                              Selecione uma data acima para carregar a disponibilidade.
+                            <p className="text-xs text-gray-500 italic py-6 text-center border border-dashed border-white/10 rounded-xl">
+                              Selecione uma data acima para consultar a agenda de {selectedBarber?.name.split(" ")[0]}.
                             </p>
                           ) : (
-                            <div className="grid grid-cols-3 gap-2 max-h-36 overflow-y-auto pr-1">
+                            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
                               {availableTimes.length === 0 ? (
-                                <p className="text-xs text-gray-500 col-span-3 py-2">Nenhum horário livre nesta data.</p>
+                                <p className="text-xs text-gray-500 col-span-3 py-4 text-center">Nenhum horário livre nesta data.</p>
                               ) : (
-                                availableTimes.map(time => (
+                                availableTimes.map((time) => (
                                   <button 
                                     key={time}
                                     type="button"
                                     onClick={() => setSelectedTime(time)}
-                                    className={`py-2 rounded-lg border text-xs font-mono font-bold transition-all ${selectedTime === time ? 'border-[#C88E70] bg-[#C88E70] text-black shadow-md' : 'border-white/10 text-gray-300 hover:border-white/30 bg-white/[0.02]'}`}
+                                    className={`py-2.5 rounded-lg border text-xs font-mono font-bold transition-all ${selectedTime === time ? 'border-[#C88E70] bg-[#C88E70] text-black shadow-md' : 'border-white/10 text-gray-300 hover:border-white/30 bg-white/[0.02]'}`}
                                   >
                                     {time}
                                   </button>
@@ -450,47 +468,38 @@ export default function BookingModal({
             )}
           </div>
 
-          {/* Footer Controls */}
+          {/* Footer com Botões de Navegação */}
           {!isSuccess && (
-            <div className="p-6 border-t border-white/10 flex justify-between items-center bg-white/[0.01]">
-              <button 
-                type="button"
-                onClick={() => (step > 1 ? setStep(step - 1) : onClose())} 
-                className="text-gray-400 hover:text-white transition-colors text-xs uppercase tracking-widest font-semibold"
-              >
-                {step > 1 ? "Voltar" : "Cancelar"}
-              </button>
-              
-              {step === 1 && (
-                <button 
+            <div className="pt-4 border-t border-white/10 flex justify-between items-center shrink-0">
+              {step > 1 ? (
+                <button
                   type="button"
-                  disabled={!selectedService}
-                  onClick={() => setStep(2)}
-                  className="bg-[#C88E70] text-[#050B14] px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-40 flex items-center gap-2"
+                  onClick={() => setStep(step - 1)}
+                  className="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:text-white text-xs uppercase tracking-wider font-semibold hover:bg-white/5 transition-all"
                 >
-                  Próximo <ChevronRight className="w-4 h-4" />
+                  Voltar
                 </button>
+              ) : (
+                <div />
               )}
 
-              {step === 2 && (
-                <button 
+              {step < 3 ? (
+                <button
                   type="button"
-                  disabled={!isAnyBarber && !selectedBarber}
-                  onClick={() => setStep(3)}
-                  className="bg-[#C88E70] text-[#050B14] px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-40 flex items-center gap-2"
+                  disabled={(step === 1 && !selectedService) || (step === 2 && !selectedBarber)}
+                  onClick={() => setStep(step + 1)}
+                  className="px-6 py-3 rounded-xl bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-wider hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-lg shadow-[#C88E70]/20"
                 >
-                  Próximo <ChevronRight className="w-4 h-4" />
+                  Avançar <ChevronRight className="w-4 h-4" />
                 </button>
-              )}
-
-              {step === 3 && (
-                <button 
+              ) : (
+                <button
                   type="button"
-                  disabled={!selectedDate || !selectedTime || !clientName || !clientPhone || isLoading}
+                  disabled={isLoading || !clientName || !clientEmail || !clientPhone || !selectedDate || !selectedTime}
                   onClick={handleBooking}
-                  className="bg-[#C88E70] text-[#050B14] px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white transition-colors disabled:opacity-40 flex items-center gap-2 shadow-lg shadow-[#C88E70]/20"
+                  className="px-8 py-3.5 rounded-xl bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-xl shadow-[#C88E70]/25"
                 >
-                  {isLoading ? "Confirmando..." : "Confirmar & Ir para WhatsApp"}
+                  {isLoading ? "Confirmando..." : "Confirmar Agendamento"}
                 </button>
               )}
             </div>

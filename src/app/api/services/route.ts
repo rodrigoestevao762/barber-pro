@@ -1,13 +1,24 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { OFFICIAL_SERVICES } from '@/lib/services';
 
 export async function GET() {
   try {
-    const services = await prisma.service.findMany();
+    try {
+      const dbServices = await prisma.service.findMany({
+        orderBy: { price: 'asc' }
+      });
 
-    return NextResponse.json(services);
+      if (dbServices && dbServices.length > 0) {
+        return NextResponse.json(dbServices);
+      }
+    } catch (dbErr) {
+      console.warn("DB offline, retornando serviços oficiais padrão");
+    }
+
+    // Retorna todos os serviços e combos oficiais
+    return NextResponse.json(OFFICIAL_SERVICES);
   } catch (error) {
-    return NextResponse.json({ error: 'Erro ao buscar serviços' }, { status: 500 });
+    return NextResponse.json(OFFICIAL_SERVICES);
   }
 }
-

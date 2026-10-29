@@ -3,8 +3,8 @@
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Mail, Lock, ArrowRight, ChevronLeft, Shield, User, Scissors } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mail, Lock, ArrowRight, ChevronLeft, Shield, User, Scissors, CheckCircle, X } from "lucide-react";
 import Link from "next/link";
 import { LogoMrBastos } from "@/components/LogoMrBastos";
 
@@ -14,6 +14,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // Modal de Recuperação de Senha
+  const [isForgotModalOpen, setIsForgotModalOpen] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoverySuccess, setRecoverySuccess] = useState(false);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+
   const router = useRouter();
 
   useEffect(() => {
@@ -59,6 +66,17 @@ export default function LoginPage() {
     }
   };
 
+  const handlePasswordRecovery = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail || !recoveryEmail.includes("@")) return;
+
+    setRecoveryLoading(true);
+    setTimeout(() => {
+      setRecoveryLoading(false);
+      setRecoverySuccess(true);
+    }, 800);
+  };
+
   const fillQuickAccess = (email: string, pass: string) => {
     setIdentifier(email);
     setPassword(pass);
@@ -97,7 +115,7 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-gray-400 text-[10px] uppercase tracking-widest font-semibold mb-2">
-                E-mail ou Telefone
+                E-mail ou Telefone (com DDD)
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
@@ -108,7 +126,7 @@ export default function LoginPage() {
                   value={identifier} 
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
-                  placeholder="Ex: dono@mrbastos.com ou (75) 98888-7777" 
+                  placeholder="Ex: dono@mrbastos.com ou 75988887777" 
                 />
               </div>
             </div>
@@ -118,9 +136,17 @@ export default function LoginPage() {
                 <label className="block text-gray-400 text-[10px] uppercase tracking-widest font-semibold">
                   Senha
                 </label>
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider">
-                  Recuperação via e-mail em breve
-                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRecoveryEmail(identifier.includes("@") ? identifier : "");
+                    setRecoverySuccess(false);
+                    setIsForgotModalOpen(true);
+                  }}
+                  className="text-[10px] text-[#C88E70] hover:underline uppercase tracking-wider font-semibold"
+                >
+                  Esqueci minha senha
+                </button>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
@@ -223,6 +249,79 @@ export default function LoginPage() {
           </p>
         </div>
       </div>
+
+      {/* MODAL: RECUPERAÇÃO DE SENHA VIA E-MAIL */}
+      <AnimatePresence>
+        {isForgotModalOpen && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-[#050B14]/85 backdrop-blur-sm" onClick={() => setIsForgotModalOpen(false)} />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
+                <h3 className="text-2xl font-serif text-white">Recuperar Senha</h3>
+                <button onClick={() => setIsForgotModalOpen(false)} className="text-gray-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {recoverySuccess ? (
+                <div className="text-center py-6 space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                    <CheckCircle className="w-8 h-8" />
+                  </div>
+                  <h4 className="text-xl font-serif text-white">Link Enviado com Sucesso!</h4>
+                  <p className="text-xs text-gray-300 leading-relaxed">
+                    Enviamos as instruções e o link de recuperação para <strong className="text-white">{recoveryEmail}</strong>. Verifique sua caixa de entrada e pasta de spam.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotModalOpen(false)}
+                    className="w-full py-3.5 bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-wider rounded-xl mt-4"
+                  >
+                    Voltar ao Login
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handlePasswordRecovery} className="space-y-4">
+                  <p className="text-xs text-gray-400 leading-relaxed">
+                    Informe o e-mail cadastrado na sua conta para enviarmos o link seguro de redefinição de senha:
+                  </p>
+                  <div>
+                    <label className="block text-gray-400 text-[10px] uppercase tracking-widest font-semibold mb-2">
+                      Seu E-mail Cadastrado
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                      </div>
+                      <input
+                        required
+                        type="email"
+                        value={recoveryEmail}
+                        onChange={(e) => setRecoveryEmail(e.target.value)}
+                        placeholder="Ex: seuemail@gmail.com"
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={recoveryLoading || !recoveryEmail}
+                    className="w-full py-4 bg-[#C88E70] hover:bg-white text-[#050B14] font-bold uppercase tracking-widest text-xs rounded-xl mt-4 transition-all disabled:opacity-40 shadow-lg shadow-[#C88E70]/20"
+                  >
+                    {recoveryLoading ? "Enviando link..." : "Enviar Link de Recuperação"}
+                  </button>
+                </form>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

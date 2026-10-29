@@ -1,13 +1,20 @@
 "use client"
+
 import { useEffect, useState } from "react"
 import { getFechamentoData, closeCashRegister } from "./actions"
 import { motion } from "framer-motion"
-import { Archive, DollarSign, Calendar as CalendarIcon, User as UserIcon, Scissors, Wallet, Shield } from "lucide-react"
+import { Archive, DollarSign, Calendar as CalendarIcon, User as UserIcon, Scissors, Wallet, Shield, Lock, ArrowLeft } from "lucide-react"
+import { useSession } from "next-auth/react"
+import Link from "next/link"
 
 type BarberRevenue = { id?: string; name: string; total: number; commission: number; rate?: number; isOwner?: boolean };
 type FechamentoData = { totalRevenue: number; barberRevenues: BarberRevenue[]; closings: { createdAt: string | Date; closedBy: string | null }[] };
 
 export default function FechamentoPage() {
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || "ADMIN";
+  const isAdmin = userRole === "ADMIN";
+
   const [data, setData] = useState<FechamentoData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -17,6 +24,7 @@ export default function FechamentoPage() {
   });
 
   const fetchData = async () => {
+    if (!isAdmin) return;
     setLoading(true)
     const result = await getFechamentoData(selectedDate)
     if (result.success) {
@@ -28,8 +36,12 @@ export default function FechamentoPage() {
   }
 
   useEffect(() => {
-    fetchData()
-  }, [selectedDate])
+    if (isAdmin) {
+      fetchData()
+    } else {
+      setLoading(false)
+    }
+  }, [selectedDate, isAdmin])
 
   const handleClose = async () => {
     if (!data) return;
@@ -39,7 +51,7 @@ export default function FechamentoPage() {
     const result = await closeCashRegister({
       totalRevenue: data.totalRevenue,
       barberRevenues: JSON.stringify(data.barberRevenues),
-      closedBy: "Gestor",
+      closedBy: session?.user?.name || "Mr. Bastos (Dono)",
       dateStr: selectedDate
     })
     
@@ -48,6 +60,29 @@ export default function FechamentoPage() {
     } else {
       alert("Erro ao fechar caixa: " + result.error)
     }
+  }
+
+  // ── PROTEÇÃO DE ACESSO: BARBEIRO NÃO PODE ACESSAR FECHAMENTO GERAL ──
+  if (!isAdmin) {
+    return (
+      <div className="max-w-2xl mx-auto py-16 text-center space-y-6">
+        <div className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto text-red-400">
+          <Lock className="w-10 h-10" />
+        </div>
+        <div>
+          <h2 className="text-3xl font-serif text-white">Acesso Restrito ao Dono</h2>
+          <p className="text-gray-400 text-sm mt-2 max-w-md mx-auto leading-relaxed">
+            O fechamento oficial do caixa da barbearia é uma função exclusiva do administrador/proprietário.
+          </p>
+        </div>
+        <Link 
+          href="/dashboard" 
+          className="inline-flex items-center gap-2 bg-[#C88E70] text-[#050B14] px-6 py-3 rounded-xl font-bold uppercase tracking-wider text-xs hover:bg-white transition-all shadow-lg"
+        >
+          <ArrowLeft className="w-4 h-4" /> Voltar ao Meu Painel
+        </Link>
+      </div>
+    );
   }
 
   if (loading || !data) return <div className="text-white p-8 animate-pulse text-[#C88E70]">Carregando dados do caixa...</div>
@@ -64,6 +99,11 @@ export default function FechamentoPage() {
     <div className="max-w-4xl pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-[10px] bg-[#C88E70] text-[#050B14] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <Shield className="w-3 h-3" /> Exclusivo do Dono
+            </span>
+          </div>
           <h2 className="text-3xl font-serif text-white">Fechamento de Caixa</h2>
           <p className="text-xs text-gray-400 mt-1">Conferência final do dia com repasse de 45% aos barbeiros e 100% ao Dono.</p>
         </div>

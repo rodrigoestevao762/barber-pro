@@ -6,12 +6,12 @@ import { BARBERS, getBarberById } from '@/lib/barbers';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { serviceId, barberId, date, isWalkIn, clientName, clientPhone, clientPassword } = body;
+    let { serviceId, barberId, date, isWalkIn, clientName, clientEmail, clientPhone, clientPassword } = body;
 
-    // Se o barbeiro for "qualquer" ou vazio, escolhe o Dono ou distribui
+    // Se o barbeiro for vazio ou inválido, seleciona o Mr. Bastos (Dono)
     let assignedBarber = getBarberById(barberId);
     if (!assignedBarber) {
-      assignedBarber = BARBERS[0]; // Mr. Bastos como padrão
+      assignedBarber = BARBERS[0];
       barberId = assignedBarber.id;
     }
 
@@ -31,18 +31,27 @@ export async function POST(req: Request) {
       } else {
         const phone = clientPhone || "00000000000";
         const cleanPhone = phone.replace(/\D/g, "");
+        const formattedEmail = clientEmail ? clientEmail.trim().toLowerCase() : undefined;
 
         const existingClient = await prisma.user.findFirst({
           where: {
             OR: [
-              { phone: cleanPhone },
-              { email: body.clientEmail ? body.clientEmail.toLowerCase() : undefined },
+              ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+              ...(formattedEmail ? [{ email: formattedEmail }] : []),
             ],
           },
         });
 
         if (existingClient) {
           client = existingClient;
+          if (formattedEmail && (!client.email || client.email !== formattedEmail)) {
+            try {
+              await prisma.user.update({
+                where: { id: client.id },
+                data: { email: formattedEmail },
+              });
+            } catch (_) {}
+          }
         } else {
           const hashedPassword = clientPassword
             ? await bcrypt.hash(clientPassword, 10)
@@ -51,7 +60,7 @@ export async function POST(req: Request) {
             data: {
               name: clientName || "Cliente",
               phone: cleanPhone,
-              email: body.clientEmail ? body.clientEmail.toLowerCase() : null,
+              email: formattedEmail || null,
               password: hashedPassword,
               role: "CLIENT",
             },
@@ -67,7 +76,7 @@ export async function POST(req: Request) {
           create: {
             id: assignedBarber.id,
             name: assignedBarber.name,
-            commissionRate: 0.5,
+            commissionRate: assignedBarber.commissionRate,
           },
         });
       } catch (barberErr) {
@@ -91,7 +100,6 @@ export async function POST(req: Request) {
         barber: assignedBarber,
       });
     } catch (dbErr) {
-      // Fallback em caso de banco offline para não travar o cliente
       console.warn("Agendamento processado em modo fallback:", dbErr);
       return NextResponse.json({
         success: true,
