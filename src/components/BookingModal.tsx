@@ -1,7 +1,9 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Calendar, Clock, ChevronRight, CheckCircle2, User, Scissors, Star, Mail, Phone, Lock, Shield } from "lucide-react";
+import { createPortal } from "react-dom";
+import { useSession } from "next-auth/react";
+import { X, Calendar, Clock, ChevronRight, CheckCircle2, User, Scissors, Star, Mail, Phone, Lock, Shield, Sparkles, Check, Edit3 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { BARBERS, BarberData } from "@/lib/barbers";
 import { OFFICIAL_SERVICES, ServiceItem } from "@/lib/services";
@@ -9,12 +11,18 @@ import { OFFICIAL_SERVICES, ServiceItem } from "@/lib/services";
 export default function BookingModal({ 
   isOpen, 
   onClose,
-  initialServiceId
+  initialServiceId,
+  initialUserData,
 }: { 
   isOpen: boolean; 
   onClose: () => void;
   initialServiceId?: string;
+  initialUserData?: { name?: string; email?: string; phone?: string };
 }) {
+  const { data: session, status } = useSession();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
+
   const [step, setStep] = useState(1); // 1: Serviço, 2: Barbeiro, 3: Data/Hora e Dados do Cliente
   const [services, setServices] = useState<ServiceItem[]>(OFFICIAL_SERVICES);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
@@ -27,12 +35,31 @@ export default function BookingModal({
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("");
-  const [clientPassword, setClientPassword] = useState("");
+  const [clientPassword, setClientPassword] = useState("123");
+  const [isEditingData, setIsEditingData] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [confirmedBarber, setConfirmedBarber] = useState<BarberData>(BARBERS[0]);
+
+  const isLoggedIn = status === "authenticated" || !!initialUserData?.name || !!(session as any)?.user?.name;
+
+  // Auto preenchimento dos dados do cliente logado
+  useEffect(() => {
+    if (isOpen) {
+      const u = session?.user as any;
+      const effectiveName = initialUserData?.name || u?.name || "";
+      const effectiveEmail = initialUserData?.email || u?.email || "";
+      const effectivePhone = initialUserData?.phone || u?.phone || "";
+
+      if (effectiveName) setClientName(effectiveName);
+      if (effectiveEmail) setClientEmail(effectiveEmail);
+      if (effectivePhone) setClientPhone(effectivePhone);
+      setClientPassword("123");
+      setIsEditingData(false);
+    }
+  }, [isOpen, session, initialUserData]);
 
   useEffect(() => {
     if (isOpen) {
@@ -132,15 +159,35 @@ export default function BookingModal({
     }
   };
 
+
+  const getTodayStr = () => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const getTomorrowStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
   if (!isOpen) return null;
 
   const dateFormatted = selectedDate ? selectedDate.split("-").reverse().join("/") : "";
   const whatsappMsg = `Olá, ${confirmedBarber.name}! Acabei de agendar um ${selectedService?.name || "serviço"} (R$ ${selectedService?.price}) na Mr. Bastos Barbearia para o dia ${dateFormatted} às ${selectedTime}.\n\nMeus dados:\nNome: ${clientName}\nE-mail: ${clientEmail}\nWhatsApp: ${clientPhone}\n\nPoderia me confirmar?`;
   const whatsappUrl = `https://wa.me/${confirmedBarber.phone}?text=${encodeURIComponent(whatsappMsg)}`;
 
-  return (
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
@@ -332,16 +379,23 @@ export default function BookingModal({
                   </motion.div>
                 )}
 
-                {/* STEP 3: DATA, HORÁRIO & E-MAIL (CADASTRO / RECUPERAÇÃO DE SENHA) */}
+                {/* STEP 3: DATA, HORÁRIO & E-MAIL */}
                 {step === 3 && (
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
                     <div className="flex justify-between items-baseline border-b border-white/5 pb-3">
                       <div>
-                        <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold">
-                          Passo 3: Data, Horário & Seus Dados
+                        <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold flex items-center gap-2">
+                          <span>Passo 3: Data, Horário & Identificação</span>
+                          {isLoggedIn && (
+                            <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                              Conta VIP Conectada
+                            </span>
+                          )}
                         </p>
                         <p className="text-[11px] text-gray-400 mt-0.5">
-                          O e-mail é utilizado para cadastro e recuperação de senha. O número serve como login e contato.
+                          {isLoggedIn 
+                            ? "Seus dados estão vinculados à sua conta. Basta escolher o melhor dia e horário."
+                            : "Preencha seus dados para criar sua conta VIP e garantir o agendamento."}
                         </p>
                       </div>
                       <span className="text-xs text-gray-400 font-light">
@@ -356,76 +410,173 @@ export default function BookingModal({
                     )}
 
                     <div className="grid md:grid-cols-2 gap-6">
-                      {/* Coluna 1: Dados do Cliente com E-mail em destaque */}
+                      {/* Coluna 1: Dados do Cliente com Tratamento Especial para Usuário Logado */}
                       <div className="space-y-4">
-                        <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-[#C88E70]" /> Seu Nome Completo
-                          </label>
-                          <input 
-                            type="text" 
-                            placeholder="Ex: Rodrigo Estêvão"
-                            value={clientName} 
-                            onChange={(e) => setClientName(e.target.value)}
-                            className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
-                          />
-                        </div>
+                        {isLoggedIn && !isEditingData ? (
+                          <div className="p-5 rounded-2xl bg-gradient-to-br from-[#C88E70]/15 via-white/[0.02] to-transparent border border-[#C88E70]/40 space-y-4 shadow-xl">
+                            <div className="flex items-start justify-between border-b border-white/10 pb-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-2xl bg-[#C88E70] text-[#050B14] flex items-center justify-center font-serif text-xl font-bold shadow-lg shadow-[#C88E70]/30">
+                                  {(clientName || "C")[0].toUpperCase()}
+                                </div>
+                                <div>
+                                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 w-fit mb-1">
+                                    <Sparkles className="w-3 h-3" /> Conta VIP Logada
+                                  </span>
+                                  <h4 className="text-white font-serif text-lg font-bold leading-tight">{clientName || "Cliente Mr. Bastos"}</h4>
+                                </div>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setIsEditingData(true)}
+                                className="text-[11px] text-[#C88E70] hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                                title="Editar dados para este agendamento"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" /> Editar
+                              </button>
+                            </div>
 
-                        {/* CAMPO DE E-MAIL OFICIAL (PARA CONTA E RECUPERAÇÃO DE SENHA) */}
-                        <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                            <Mail className="w-3.5 h-3.5 text-[#C88E70]" /> Seu E-mail Oficial
-                            <span className="text-[9px] text-[#C88E70] font-normal normal-case">(para conta e recuperar senha)</span>
-                          </label>
-                          <input 
-                            type="email" 
-                            placeholder="Ex: seuemail@gmail.com"
-                            value={clientEmail} 
-                            onChange={(e) => setClientEmail(e.target.value)}
-                            className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
-                          />
-                          <p className="text-[10px] text-gray-500 mt-1">
-                            Seu e-mail será usado para cadastrar sua conta VIP e recuperar sua senha caso esqueça.
-                          </p>
-                        </div>
+                            <div className="space-y-2.5 text-xs">
+                              <div className="flex items-center gap-2.5 text-gray-200 bg-white/[0.03] p-2.5 rounded-xl border border-white/5">
+                                <Phone className="w-4 h-4 text-[#C88E70] shrink-0" />
+                                <div>
+                                  <span className="text-[10px] text-gray-500 uppercase block font-medium">WhatsApp Cadastrado</span>
+                                  <strong className="text-white font-mono text-sm">{clientPhone || "(75) 98888-7777"}</strong>
+                                </div>
+                              </div>
 
-                        <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                            <Phone className="w-3.5 h-3.5 text-[#C88E70]" /> WhatsApp com DDD
-                            <span className="text-[9px] text-gray-500 font-normal normal-case">(login e confirmação)</span>
-                          </label>
-                          <input 
-                            type="text" 
-                            placeholder="Ex: (75) 98888-7777"
-                            value={clientPhone} 
-                            onChange={(e) => setClientPhone(e.target.value)}
-                            className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
-                          />
-                        </div>
+                              <div className="flex items-center gap-2.5 text-gray-200 bg-white/[0.03] p-2.5 rounded-xl border border-white/5">
+                                <Mail className="w-4 h-4 text-[#C88E70] shrink-0" />
+                                <div className="truncate">
+                                  <span className="text-[10px] text-gray-500 uppercase block font-medium">E-mail Oficial da Conta</span>
+                                  <strong className="text-white truncate block text-xs">{clientEmail || "cliente@mrbastos.com"}</strong>
+                                </div>
+                              </div>
+                            </div>
 
-                        <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                            <Lock className="w-3.5 h-3.5 text-[#C88E70]" /> Senha de Acesso ao Painel
-                          </label>
-                          <input 
-                            type="password" 
-                            placeholder="Crie uma senha (ex: 123)"
-                            value={clientPassword} 
-                            onChange={(e) => setClientPassword(e.target.value)}
-                            className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
-                          />
-                        </div>
+                            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-[11px] text-emerald-300 flex items-start gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                              <p className="leading-relaxed">
+                                <strong>Seus dados já estão preenchidos!</strong> Basta escolher o dia e horário ao lado para concluir seu agendamento em 1 clique.
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            {isLoggedIn && (
+                              <div className="flex justify-between items-center pb-1">
+                                <span className="text-xs text-gray-400">Editando dados do agendamento:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setIsEditingData(false)}
+                                  className="text-xs text-[#C88E70] hover:underline"
+                                >
+                                  Usar dados da minha conta
+                                </button>
+                              </div>
+                            )}
+
+                            <div>
+                              <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                                <User className="w-3.5 h-3.5 text-[#C88E70]" /> Seu Nome Completo
+                              </label>
+                              <input 
+                                type="text" 
+                                placeholder="Ex: Rodrigo Estêvão"
+                                value={clientName} 
+                                onChange={(e) => setClientName(e.target.value)}
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                              />
+                            </div>
+
+                            {/* CAMPO DE E-MAIL OFICIAL (PARA CONTA E RECUPERAÇÃO DE SENHA) */}
+                            <div>
+                              <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                                <Mail className="w-3.5 h-3.5 text-[#C88E70]" /> Seu E-mail Oficial
+                                <span className="text-[9px] text-[#C88E70] font-normal normal-case">(para conta e recuperar senha)</span>
+                              </label>
+                              <input 
+                                type="email" 
+                                placeholder="Ex: seuemail@gmail.com"
+                                value={clientEmail} 
+                                onChange={(e) => setClientEmail(e.target.value)}
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                              />
+                              <p className="text-[10px] text-gray-500 mt-1">
+                                Seu e-mail será usado para cadastrar sua conta VIP e recuperar sua senha caso esqueça.
+                              </p>
+                            </div>
+
+                            <div>
+                              <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                                <Phone className="w-3.5 h-3.5 text-[#C88E70]" /> WhatsApp com DDD
+                                <span className="text-[9px] text-gray-500 font-normal normal-case">(login e confirmação)</span>
+                              </label>
+                              <input 
+                                type="text" 
+                                placeholder="Ex: (75) 98888-7777"
+                                value={clientPhone} 
+                                onChange={(e) => setClientPhone(e.target.value)}
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                              />
+                            </div>
+
+                            {!isLoggedIn && (
+                              <div>
+                                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                                  <Lock className="w-3.5 h-3.5 text-[#C88E70]" /> Senha de Acesso ao Painel
+                                </label>
+                                <input 
+                                  type="password" 
+                                  placeholder="Crie uma senha (ex: 123)"
+                                  value={clientPassword} 
+                                  onChange={(e) => setClientPassword(e.target.value)}
+                                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                                />
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
 
-                      {/* Coluna 2: Data e Horário */}
+                      {/* Coluna 2: Data e Horário com Atalhos Rápidos */}
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                            <Calendar className="w-3.5 h-3.5 text-[#C88E70]" /> Data do Atendimento
-                          </label>
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="text-gray-400 text-xs uppercase tracking-wider font-medium flex items-center gap-1.5">
+                              <Calendar className="w-3.5 h-3.5 text-[#C88E70]" /> Data do Atendimento
+                            </label>
+                            {/* Atalhos Rápidos: Hoje e Amanhã */}
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDate(getTodayStr())}
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
+                                  selectedDate === getTodayStr()
+                                    ? "bg-[#C88E70] text-[#050B14] border-[#C88E70]"
+                                    : "border-white/10 text-gray-400 hover:text-white hover:border-white/30"
+                                }`}
+                              >
+                                Hoje
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDate(getTomorrowStr())}
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
+                                  selectedDate === getTomorrowStr()
+                                    ? "bg-[#C88E70] text-[#050B14] border-[#C88E70]"
+                                    : "border-white/10 text-gray-400 hover:text-white hover:border-white/30"
+                                }`}
+                              >
+                                Amanhã
+                              </button>
+                            </div>
+                          </div>
+
                           <div className="relative">
                             <input 
                               type="date" 
+                              min={getTodayStr()}
                               value={selectedDate}
                               onChange={(e) => setSelectedDate(e.target.value)}
                               className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors [&::-webkit-calendar-picker-indicator]:invert"
@@ -506,6 +657,7 @@ export default function BookingModal({
           )}
         </motion.div>
       </div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }

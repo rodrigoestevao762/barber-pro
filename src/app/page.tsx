@@ -242,7 +242,16 @@ export default function Home() {
         </AnimatePresence>
       </motion.nav>
 
-      <BookingModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); setSelectedServiceId(undefined); }} initialServiceId={selectedServiceId} />
+      <BookingModal 
+        isOpen={isModalOpen} 
+        onClose={() => { setIsModalOpen(false); setSelectedServiceId(undefined); }} 
+        initialServiceId={selectedServiceId} 
+        initialUserData={session?.user ? {
+          name: session.user.name || undefined,
+          email: session.user.email || undefined,
+          phone: (session.user as any)?.phone || undefined,
+        } : undefined}
+      />
 
       {/* HERO SECTION COM PARALLAX E MÁSCARAS */}
       <main className="relative h-screen flex items-center justify-center overflow-hidden">
