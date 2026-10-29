@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, UserCheck, DollarSign } from "lucide-react";
+import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { BARBERS, BarberData } from "@/lib/barbers";
@@ -14,10 +14,14 @@ export default function DashboardPage() {
 
   const [dashboardData, setDashboardData] = useState<any>({
     revenue: 0,
+    totalGrossShop: 0,
+    houseNetProfit: 0,
+    totalEmployeeCommissions: 0,
+    myCommission: 0,
+    houseShare: 0,
     todayCount: 0,
     completedCount: 0,
     clientsCount: 0,
-    averageDuration: 0,
     appointments: [] as any[],
     barberBreakdown: [] as any[],
   });
@@ -114,6 +118,8 @@ export default function DashboardPage() {
   }
 
   const isAdmin = userRole === "ADMIN";
+  const selectedBarberObj = BARBERS.find((b) => b.id === (isAdmin ? selectedBarberFilter : userBarberId));
+  const isSelectedBarberOwner = selectedBarberObj?.role === "ADMIN";
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 pb-12">
@@ -122,12 +128,12 @@ export default function DashboardPage() {
         <div>
           <div className="flex items-center gap-3">
             {isAdmin ? (
-              <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-[#C88E70] text-[#050B14] flex items-center gap-1.5">
+              <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-[#C88E70] text-[#050B14] flex items-center gap-1.5 shadow-md shadow-[#C88E70]/20">
                 <Shield className="w-3 h-3" /> Painel do Dono / ADM
               </span>
             ) : (
-              <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
-                <Scissors className="w-3 h-3" /> Painel Individual do Barbeiro
+              <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-[#C88E70]/20 text-[#C88E70] border border-[#C88E70]/30 flex items-center gap-1.5">
+                <Scissors className="w-3 h-3" /> Painel do Barbeiro · Comissão 45%
               </span>
             )}
             <span className="text-gray-400 text-xs font-light">
@@ -137,9 +143,14 @@ export default function DashboardPage() {
 
           <h2 className="text-2xl md:text-3xl font-serif text-white mt-2">
             {isAdmin 
-              ? (selectedBarberFilter === "all" ? "Visão Geral de Toda a Barbearia" : `Gestão de ${BARBERS.find(b => b.id === selectedBarberFilter)?.name}`)
-              : `Minha Agenda e Atendimentos`}
+              ? (selectedBarberFilter === "all" ? "Visão Geral de Toda a Barbearia" : `Gestão de ${selectedBarberObj?.name}`)
+              : `Meu Painel de Atendimentos & Comissões`}
           </h2>
+          <p className="text-xs text-gray-400 mt-1">
+            {isAdmin 
+              ? "Acompanhamento do faturamento geral, lucro retido da casa e comissões de 45% da equipe."
+              : "Seu faturamento bruto e comissão de 45% calculados automaticamente a cada atendimento concluído."}
+          </p>
         </div>
 
         {/* Controles de Filtro: Data e Barbeiro (Dono) */}
@@ -149,15 +160,15 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 p-1 rounded-xl">
               <button
                 onClick={() => setSelectedBarberFilter("all")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === "all" ? "bg-[#C88E70] text-[#050B14]" : "text-gray-400 hover:text-white"}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === "all" ? "bg-[#C88E70] text-[#050B14] shadow-md shadow-[#C88E70]/20" : "text-gray-400 hover:text-white"}`}
               >
-                Todos
+                Todos (Geral)
               </button>
               {BARBERS.map((b) => (
                 <button
                   key={b.id}
                   onClick={() => setSelectedBarberFilter(b.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === b.id ? "bg-[#C88E70] text-[#050B14]" : "text-gray-400 hover:text-white"}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === b.id ? "bg-[#C88E70] text-[#050B14] shadow-md shadow-[#C88E70]/20" : "text-gray-400 hover:text-white"}`}
                 >
                   {b.name.split(" ")[0]}
                 </button>
@@ -185,71 +196,179 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── BENTO GRID DE CARDS PRINCIPAIS ── */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Card Faturamento */}
-        <div className="md:col-span-2 bg-gradient-to-br from-white/[0.06] via-white/[0.02] to-transparent border border-white/10 rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between shadow-2xl">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/10 blur-3xl rounded-full pointer-events-none" />
-          
-          <div className="flex justify-between items-start mb-6">
+      {/* ── BENTO GRID DE CARDS PRINCIPAIS (COMISSÕES & FATURAMENTO) ── */}
+      {isAdmin && selectedBarberFilter === "all" ? (
+        /* VISÃO GERAL DO DONO (TODOS) */
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Faturamento Bruto Total */}
+          <div className="bg-gradient-to-br from-white/[0.06] via-white/[0.02] to-transparent border border-white/10 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">Faturamento Bruto</p>
+                <h3 className="text-3xl font-serif text-white mt-1">
+                  R$ {Number(dashboardData.totalGrossShop || dashboardData.revenue || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </h3>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white">
+                <DollarSign className="w-5 h-5" />
+              </div>
+            </div>
+            <p className="text-xs text-gray-500">Soma de todos os cortes realizados na barbearia hoje.</p>
+          </div>
+
+          {/* Lucro Líquido da Casa */}
+          <div className="bg-emerald-500/[0.08] border border-emerald-500/30 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl rounded-full pointer-events-none" />
+            <div className="flex justify-between items-start mb-4 relative z-10">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">
+                    Retido pela Casa
+                  </span>
+                </div>
+                <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">Lucro Líquido Barbearia</p>
+                <h3 className="text-3xl font-serif text-emerald-400 mt-1">
+                  R$ {Number(dashboardData.houseNetProfit || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </h3>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 relative z-10">
+                <Wallet className="w-5 h-5" />
+              </div>
+            </div>
+            <p className="text-xs text-emerald-400/80 relative z-10">Dono 100% + 55% sobre a produção dos funcionários.</p>
+          </div>
+
+          {/* Comissões a Pagar aos Funcionários (45%) */}
+          <div className="bg-[#C88E70]/10 border border-[#C88E70]/40 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#C88E70]/15 blur-2xl rounded-full pointer-events-none" />
+            <div className="flex justify-between items-start mb-4 relative z-10">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className="text-[10px] bg-[#C88E70]/30 text-[#C88E70] px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">
+                    Repasse 45%
+                  </span>
+                </div>
+                <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">Comissões da Equipe</p>
+                <h3 className="text-3xl font-serif text-[#C88E70] mt-1">
+                  R$ {Number(dashboardData.totalEmployeeCommissions || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </h3>
+              </div>
+              <div className="w-10 h-10 rounded-full bg-[#C88E70]/20 border border-[#C88E70]/40 flex items-center justify-center text-[#C88E70] relative z-10">
+                <Scissors className="w-5 h-5" />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 relative z-10">Valor total a pagar aos barbeiros funcionários hoje.</p>
+          </div>
+
+          {/* Cortes Realizados */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">Atendimentos</p>
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-blue-400">
+                <Users className="w-5 h-5" />
+              </div>
+            </div>
             <div>
-              <p className="text-gray-400 text-xs tracking-[0.2em] uppercase font-semibold">
-                {isAdmin && selectedBarberFilter === "all" ? "Faturamento Geral (Dia)" : "Faturamento do Barbeiro (Dia)"}
-              </p>
-              <h3 className="text-4xl md:text-5xl font-serif text-white mt-2">
+              <p className="text-3xl font-serif text-white">{dashboardData.completedCount || 0} <span className="text-sm font-sans text-gray-400">concluídos</span></p>
+              <p className="text-xs text-gray-500 mt-1">{dashboardData.todayCount || 0} agendados para a data</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* VISÃO INDIVIDUAL (BARBEIRO FUNCIONÁRIO OU DONO ESPECÍFICO) */
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* Card Principal: Comissão Líquida do Barbeiro */}
+          <div className="md:col-span-2 bg-gradient-to-br from-[#C88E70]/20 via-[#050B14] to-[#C88E70]/5 border-2 border-[#C88E70]/50 rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/20 blur-3xl rounded-full pointer-events-none" />
+
+            <div className="flex justify-between items-start mb-6 relative z-10">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[11px] bg-[#C88E70] text-[#050B14] px-3 py-0.5 rounded-full uppercase font-bold tracking-wider flex items-center gap-1 shadow-md">
+                    <Award className="w-3.5 h-3.5" />
+                    {isSelectedBarberOwner ? "100% Dono" : "Comissão Oficial: 45%"}
+                  </span>
+                </div>
+                <p className="text-gray-300 text-xs tracking-[0.2em] uppercase font-semibold">
+                  {isSelectedBarberOwner ? "Recebimento do Dono (100%)" : "Minha Comissão Líquida a Receber"}
+                </p>
+                <h3 className="text-4xl md:text-5xl font-serif text-[#C88E70] mt-2 font-bold tracking-tight">
+                  R$ {Number(dashboardData.myCommission || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </h3>
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-[#C88E70]/20 border border-[#C88E70]/40 flex items-center justify-center text-[#C88E70] shadow-xl relative z-10">
+                <DollarSign className="w-7 h-7" />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-white bg-white/5 border border-white/10 w-fit px-3.5 py-1.5 rounded-xl text-xs font-medium relative z-10">
+              <TrendingUp className="w-3.5 h-3.5 text-[#C88E70]" />
+              <span>
+                {isSelectedBarberOwner
+                  ? "Como proprietário, você recebe 100% de seus atendimentos."
+                  : "Você recebe 45% de cada serviço concluído no seu nome."}
+              </span>
+            </div>
+          </div>
+
+          {/* Produção Bruta */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">Produção Bruta (100%)</p>
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-white">
+                <Scissors className="w-4 h-4" />
+              </div>
+            </div>
+            <div>
+              <p className="text-3xl font-serif text-white">
                 R$ {Number(dashboardData.revenue || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-              </h3>
-            </div>
-            <div className="w-12 h-12 rounded-full bg-[#C88E70]/20 border border-[#C88E70]/40 flex items-center justify-center text-[#C88E70]">
-              <DollarSign className="w-6 h-6" />
+              </p>
+              <p className="text-xs text-gray-500 mt-1">Valor integral dos seus cortes</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-green-400 bg-green-400/10 w-fit px-3 py-1.5 rounded-full text-xs font-semibold">
-            <TrendingUp className="w-3.5 h-3.5" /> 
-            <span>Cálculo automático de atendimentos concluídos</span>
+          {/* Repasse da Barbearia (55%) ou Contagem */}
+          <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
+            <div className="flex justify-between items-center mb-4">
+              <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">
+                {isSelectedBarberOwner ? "Atendimentos Concluídos" : "Repasse Barbearia (55%)"}
+              </p>
+              <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-[#C88E70]">
+                {isSelectedBarberOwner ? <CheckCircle className="w-4 h-4" /> : <Wallet className="w-4 h-4" />}
+              </div>
+            </div>
+            <div>
+              {isSelectedBarberOwner ? (
+                <>
+                  <p className="text-3xl font-serif text-white">{dashboardData.completedCount || 0}</p>
+                  <p className="text-xs text-gray-500 mt-1">De {dashboardData.todayCount || 0} agendados</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-3xl font-serif text-gray-300">
+                    R$ {Number(dashboardData.houseShare || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Estrutura e espaço da barbearia</p>
+                </>
+              )}
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Cortes do Dia */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-gray-400 text-xs tracking-wider uppercase">Cortes Agendados</p>
-            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-[#C88E70]">
-              <Scissors className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <p className="text-4xl font-serif text-white">{dashboardData.todayCount || 0}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              {dashboardData.completedCount || 0} já concluídos hoje
-            </p>
-          </div>
-        </div>
-
-        {/* Total de Clientes */}
-        <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
-          <div className="flex justify-between items-center mb-4">
-            <p className="text-gray-400 text-xs tracking-wider uppercase">Clientes Atendidos</p>
-            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-blue-400">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div>
-            <p className="text-4xl font-serif text-white">{dashboardData.clientsCount || 0}</p>
-            <p className="text-xs text-gray-500 mt-1">Fluxo na data selecionada</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── VISÃO DO DONO: FLUXO E REPARTIÇÃO POR FUNCIONÁRIO ── */}
+      {/* ── VISÃO DO DONO: FLUXO E REPARTIÇÃO POR FUNCIONÁRIO (COMISSÕES 45%) ── */}
       {isAdmin && selectedBarberFilter === "all" && (
         <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 md:p-8">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-white/5">
             <div>
-              <h3 className="text-xl font-serif text-white">Fluxo por Barbeiro (Equipe)</h3>
-              <p className="text-xs text-gray-400 font-light mt-0.5">
-                Acompanhe o faturamento e volume de atendimentos de cada funcionário em tempo real.
+              <div className="flex items-center gap-2">
+                <h3 className="text-xl font-serif text-white">Desempenho da Equipe & Repasse de Comissões</h3>
+                <span className="text-[10px] bg-[#C88E70]/20 text-[#C88E70] border border-[#C88E70]/40 px-2 py-0.5 rounded-full font-bold uppercase">
+                  Regra 45% / 55%
+                </span>
+              </div>
+              <p className="text-xs text-gray-400 font-light mt-1">
+                Acompanhe a produção bruta de cada profissional, o valor exato a pagar (45%) e a fatia retida pela barbearia (55%).
               </p>
             </div>
             <span className="text-xs text-[#C88E70] uppercase tracking-wider font-semibold">
@@ -263,6 +382,8 @@ export default function DashboardPage() {
                 totalApts: 0,
                 completedApts: 0,
                 revenue: 0,
+                commission: 0,
+                houseShare: 0,
               };
               const isOwner = barber.role === "ADMIN";
 
@@ -270,47 +391,71 @@ export default function DashboardPage() {
                 <div 
                   key={barber.id}
                   onClick={() => setSelectedBarberFilter(barber.id)}
-                  className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#C88E70]/50 hover:bg-[#C88E70]/5 transition-all cursor-pointer group"
+                  className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#C88E70]/50 hover:bg-[#C88E70]/5 transition-all cursor-pointer group flex flex-col justify-between"
                 >
-                  <div className="flex items-center gap-3.5 mb-4">
-                    <div 
-                      className="w-12 h-12 rounded-full bg-cover bg-center border border-white/20 shrink-0"
-                      style={{ backgroundImage: `url(${barber.avatar})` }}
-                    />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-base font-serif text-white group-hover:text-[#C88E70] transition-colors">
-                          {barber.name}
-                        </h4>
-                        {isOwner && (
-                          <span className="text-[9px] bg-[#C88E70] text-[#050B14] px-1.5 py-0.2 rounded font-bold uppercase">
-                            Dono
-                          </span>
-                        )}
+                  <div>
+                    <div className="flex items-center gap-3.5 mb-4">
+                      <div 
+                        className="w-12 h-12 rounded-full bg-cover bg-center border border-white/20 shrink-0"
+                        style={{ backgroundImage: `url(${barber.avatar})` }}
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-base font-serif text-white group-hover:text-[#C88E70] transition-colors">
+                            {barber.name}
+                          </h4>
+                          {isOwner ? (
+                            <span className="text-[9px] bg-[#C88E70] text-[#050B14] px-1.5 py-0.2 rounded font-bold uppercase">
+                              Dono (100%)
+                            </span>
+                          ) : (
+                            <span className="text-[9px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
+                              Comissão 45%
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-gray-500 font-mono">{barber.phoneDisplay}</p>
                       </div>
-                      <p className="text-[11px] text-gray-500 font-mono">{barber.phoneDisplay}</p>
                     </div>
-                  </div>
 
-                  <div className="space-y-2 pt-3 border-t border-white/5">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-400">Faturamento Hoje:</span>
-                      <span className="text-white font-mono font-bold text-sm text-[#C88E70]">
-                        R$ {Number(bStats.revenue || 0).toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-400">Atendimentos Concluídos:</span>
-                      <span className="text-white font-semibold">{bStats.completedApts}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-400">Total Agendados:</span>
-                      <span className="text-gray-300">{bStats.totalApts}</span>
+                    <div className="space-y-2.5 pt-3 border-t border-white/5">
+                      <div className="flex justify-between items-center text-xs">
+                        <span className="text-gray-400">Produção Bruta:</span>
+                        <span className="text-white font-mono font-bold text-sm">
+                          R$ {Number(bStats.revenue || 0).toFixed(2)}
+                        </span>
+                      </div>
+
+                      {/* Repasse de comissão */}
+                      <div className="flex justify-between items-center text-xs bg-white/[0.02] p-2 rounded-xl">
+                        <span className="text-gray-400">
+                          {isOwner ? "Faturamento Próprio:" : "Comissão a Pagar (45%):"}
+                        </span>
+                        <span className="text-[#C88E70] font-mono font-bold">
+                          R$ {Number(bStats.commission || 0).toFixed(2)}
+                        </span>
+                      </div>
+
+                      {!isOwner && (
+                        <div className="flex justify-between items-center text-xs bg-emerald-500/[0.04] p-2 rounded-xl border border-emerald-500/10">
+                          <span className="text-emerald-400/90">Lucro Barbearia (55%):</span>
+                          <span className="text-emerald-400 font-mono font-bold">
+                            + R$ {Number(bStats.houseShare || 0).toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center text-xs pt-1 text-gray-400">
+                        <span>Cortes Finalizados:</span>
+                        <span className="text-white font-semibold">
+                          {bStats.completedApts} de {bStats.totalApts}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
                   <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-[#C88E70] font-semibold">
-                    <span>Ver agenda exclusiva</span>
+                    <span>Filtrar agenda exclusiva</span>
                     <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </div>
@@ -330,7 +475,7 @@ export default function DashboardPage() {
             <p className="text-xs text-gray-400 font-light mt-0.5">
               {isAdmin && selectedBarberFilter === "all"
                 ? "Exibindo todos os cortes distribuídos entre os barbeiros."
-                : `Exibindo somente atendimentos de ${BARBERS.find(b => b.id === (isAdmin ? selectedBarberFilter : userBarberId))?.name || "este barbeiro"}.`}
+                : `Exibindo somente atendimentos de ${selectedBarberObj?.name || "este barbeiro"}.`}
             </p>
           </div>
 
@@ -348,6 +493,9 @@ export default function DashboardPage() {
             {dashboardData.appointments?.map((apt: any) => {
               const barberInfo = BARBERS.find(b => b.id === apt.barberId) || BARBERS[0];
               const aptTime = new Date(apt.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+              const isOwnerCut = barberInfo.role === "ADMIN";
+              const cutPrice = Number(apt.service?.price || 0);
+              const barberCutShare = isOwnerCut ? cutPrice : cutPrice * 0.45;
 
               return (
                 <div 
@@ -374,7 +522,13 @@ export default function DashboardPage() {
                         )}
                       </div>
                       <p className="text-xs text-gray-400 mt-0.5">
-                        {apt.service?.name} · <strong className="text-white">R$ {apt.service?.price}</strong> · WhatsApp: {apt.user?.phone || "Não informado"}
+                        {apt.service?.name} · <strong className="text-white">R$ {cutPrice.toFixed(2)}</strong>
+                        {" · "}
+                        <span className="text-[#C88E70]">
+                          Comissão: R$ {barberCutShare.toFixed(2)} ({isOwnerCut ? "100%" : "45%"})
+                        </span>
+                        {" · "}
+                        WhatsApp: {apt.user?.phone || "Não informado"}
                       </p>
                     </div>
                   </div>
@@ -397,7 +551,7 @@ export default function DashboardPage() {
                     {apt.status !== "COMPLETED" && apt.status !== "CANCELLED" && (
                       <button 
                         onClick={() => updateStatus(apt.id, "COMPLETED")}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 hover:text-black text-emerald-300 text-xs font-semibold transition-all"
+                        className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 hover:text-black text-emerald-300 text-xs font-semibold transition-all shadow-sm"
                       >
                         Concluir Corte
                       </button>

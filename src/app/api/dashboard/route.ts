@@ -138,7 +138,7 @@ export async function GET(req: Request) {
     let effectiveBarberFilter: string | null = null;
 
     if (userRole === "BARBER") {
-      // Barbeiro funcionário: isolamento obrigatório, só vê os seus
+      // Barbeiro funcionário: isolamento estrito, apenas vê a sua produção e seus agendamentos
       effectiveBarberFilter = userBarberId || "barbeiro-lucas";
     } else if (userRole === "ADMIN") {
       // Dono/ADM: pode ver "all" ou filtrar por um barbeiro específico
@@ -148,63 +148,104 @@ export async function GET(req: Request) {
     const startOfDay = new Date(`${dateParam}T00:00:00Z`);
     const endOfDay = new Date(`${dateParam}T23:59:59Z`);
 
-    let appointmentsList: any[] = [];
+    // Busca todos os atendimentos do dia para calcular métricas globais e repartição de comissões
+    let allDayAppointments: any[] = [];
 
     try {
       const dbAppointments = await prisma.appointment.findMany({
         where: {
           date: { gte: startOfDay, lte: endOfDay },
-          ...(effectiveBarberFilter ? { barberId: effectiveBarberFilter } : {}),
         },
         include: { service: true, user: true, barber: true },
         orderBy: { date: "asc" },
       });
 
       if (dbAppointments.length > 0) {
-        appointmentsList = dbAppointments;
+        allDayAppointments = dbAppointments;
       } else {
-        // Se banco vazio na data, usa mock da data
-        const mocks = getMockAppointments(dateParam);
-        appointmentsList = effectiveBarberFilter
-          ? mocks.filter((m) => m.barberId === effectiveBarberFilter)
-          : mocks;
+        allDayAppointments = getMockAppointments(dateParam);
       }
     } catch (dbErr) {
-      const mocks = getMockAppointments(dateParam);
-      appointmentsList = effectiveBarberFilter
-        ? mocks.filter((m) => m.barberId === effectiveBarberFilter)
-        : mocks;
+      allDayAppointments = getMockAppointments(dateParam);
     }
 
-    // Cálculos de métricas
-    const completedList = appointmentsList.filter((apt) => apt.status === "COMPLETED");
-    const totalRevenue = completedList.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
-    const todayCount = appointmentsList.length;
-
-    // Resumo por barbeiro (visão do Dono)
+    // Resumo de produção e comissões por barbeiro (45% para funcionários, 100% para o Dono)
     const breakdown = BARBERS.map((barber) => {
-      const bApts = appointmentsList.filter((apt) => apt.barberId === barber.id);
+      const bApts = allDayAppointments.filter((apt) => apt.barberId === barber.id);
       const bCompleted = bApts.filter((apt) => apt.status === "COMPLETED");
       const bRevenue = bCompleted.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
+      const isOwner = barber.role === "ADMIN";
+      
+      // Regra de comissão: Dono = 100%, Barbeiro Funcionário = 45%
+      const commissionRate = isOwner ? 1.0 : 0.45;
+      const commission = isOwner ? bRevenue : bRevenue * 0.45;
+      const houseShare = isOwner ? 0 : bRevenue * 0.55;
+
       return {
         id: barber.id,
         name: barber.name,
         role: barber.role,
         avatar: barber.avatar,
         phone: barber.phone,
+        phoneDisplay: barber.phoneDisplay,
+        commissionRate,
         totalApts: bApts.length,
         completedApts: bCompleted.length,
         revenue: bRevenue,
+        commission,
+        houseShare,
       };
     });
+
+    // Métricas Globais da Barbearia
+    const totalGrossShop = breakdown.reduce((acc, b) => acc + b.revenue, 0);
+    const employeeBarbers = breakdown.filter((b) => b.role === "BARBER");
+    const totalEmployeeCommissions = employeeBarbers.reduce((acc, b) => acc + b.commission, 0);
+    const ownerBarber = breakdown.find((b) => b.role === "ADMIN");
+    const ownerPersonalRevenue = ownerBarber?.revenue || 0;
+    const totalHouseEmployeeShare = employeeBarbers.reduce((acc, b) => acc + b.houseShare, 0);
+    const houseNetProfit = ownerPersonalRevenue + totalHouseEmployeeShare;
+
+    // Lista filtrada de agendamentos conforme a visão solicitada
+    const appointmentsList = effectiveBarberFilter
+      ? allDayAppointments.filter((apt) => apt.barberId === effectiveBarberFilter)
+      : allDayAppointments;
+
+    const completedList = appointmentsList.filter((apt) => apt.status === "COMPLETED");
+    const filteredGross = completedList.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
+
+    // Métricas específicas para a visão atual
+    let currentCommission = 0;
+    let currentHouseShare = 0;
+
+    if (effectiveBarberFilter) {
+      const currentBarberData = breakdown.find((b) => b.id === effectiveBarberFilter);
+      if (currentBarberData) {
+        currentCommission = currentBarberData.commission;
+        currentHouseShare = currentBarberData.houseShare;
+      }
+    } else {
+      // Visão Geral do Dono: Comissão é o total a pagar aos funcionários, lucro é o total da casa
+      currentCommission = totalEmployeeCommissions;
+      currentHouseShare = houseNetProfit;
+    }
 
     return NextResponse.json({
       isClient: false,
       userRole,
       currentBarber: getBarberById(userBarberId) || BARBERS[0],
       activeFilter: effectiveBarberFilter || "all",
-      revenue: totalRevenue,
-      todayCount,
+      
+      // Faturamento e Comissões
+      revenue: effectiveBarberFilter ? filteredGross : totalGrossShop, // Faturamento bruto exibido
+      totalGrossShop,
+      houseNetProfit, // Lucro total retido pela barbearia (Dono 100% + 55% dos funcionários)
+      totalEmployeeCommissions, // Total de comissões (45%) devidas aos funcionários
+      myCommission: currentCommission, // Comissão líquida do barbeiro (45%) ou total de comissões para o dono
+      houseShare: currentHouseShare, // Parcela da casa (55%)
+      
+      // Contadores
+      todayCount: appointmentsList.length,
       completedCount: completedList.length,
       clientsCount: appointmentsList.length,
       appointments: appointmentsList,

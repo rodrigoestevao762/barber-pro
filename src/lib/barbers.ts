@@ -8,6 +8,7 @@ export interface BarberData {
   specialty: string;
   avatar: string;
   bio: string;
+  commissionRate: number; // 0.45 para barbeiros funcionários (45%), 1.0 para o Dono (100%)
 }
 
 export const BARBERS: BarberData[] = [
@@ -21,6 +22,7 @@ export const BARBERS: BarberData[] = [
     specialty: "Cortes Clássicos, Barboterapia & Visagismo",
     avatar: "/nossa-area/area-01.jpg",
     bio: "Mestre barbeiro e fundador da Mr. Bastos Barbearia. Mais de 8 anos de excelência.",
+    commissionRate: 1.0, // Dono recebe 100% de seus cortes + 55% da equipe
   },
   {
     id: "barbeiro-lucas",
@@ -32,6 +34,7 @@ export const BARBERS: BarberData[] = [
     specialty: "Fade, Degradê Navalhado & Freestyle",
     avatar: "/nossa-area/area-04.jpg",
     bio: "Especialista em cortes modernos, transições de degradê e acabamento milimétrico.",
+    commissionRate: 0.45, // Comissão de 45% (55% repasse para a casa)
   },
   {
     id: "barbeiro-felipe",
@@ -43,6 +46,7 @@ export const BARBERS: BarberData[] = [
     specialty: "Barba Terapia, Alinhamento & Navalha",
     avatar: "/nossa-area/area-07.jpg",
     bio: "Especialista em desenho de barba na navalha, hidratação e cuidados faciais.",
+    commissionRate: 0.45, // Comissão de 45% (55% repasse para a casa)
   },
 ];
 
@@ -55,4 +59,3 @@ export function getBarberByEmail(email?: string | null): BarberData | undefined 
   if (!email) return undefined;
   return BARBERS.find((b) => b.email.toLowerCase() === email.toLowerCase());
 }
-
