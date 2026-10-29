@@ -8,13 +8,14 @@ process.env.NEXTAUTH_URL = "https://barber-pro-six.vercel.app";
 process.env.NEXTAUTH_URL_INTERNAL = "https://barber-pro-six.vercel.app";
 delete process.env.VERCEL_URL;
 
-// Contas oficiais dos barbeiros e gestor configuradas para acesso imediato
+// Contas oficiais dos barbeiros e gestor com senhas provisórias configuradas
 const PROVISIONAL_USERS = [
   {
     id: "barbeiro-dono",
-    email: "dono@mrbastos.com",
-    aliases: ["admin@mrbastos.com"],
-    phone: "5575999990001",
+    email: "fabiobastos20v@hotmail.com",
+    aliases: ["dono@mrbastos.com", "admin@mrbastos.com"],
+    phone: "5575998679820",
+    phoneAliases: ["7598679820", "557598679820", "75998679820"],
     name: "Mr. Bastos (Dono)",
     role: "ADMIN",
     barberId: "barbeiro-dono",
@@ -22,9 +23,10 @@ const PROVISIONAL_USERS = [
   },
   {
     id: "barbeiro-nando",
-    email: "nando@mrbastos.com",
-    aliases: ["lucas@mrbastos.com"],
-    phone: "5575999990002",
+    email: "nandomrbastos@gmail.com",
+    aliases: ["nando@mrbastos.com", "lucas@mrbastos.com"],
+    phone: "5575999697600",
+    phoneAliases: ["7599697600", "557599697600", "75999697600"],
     name: "Nando Barbeiro",
     role: "BARBER",
     barberId: "barbeiro-nando",
@@ -32,9 +34,10 @@ const PROVISIONAL_USERS = [
   },
   {
     id: "barbeiro-saul",
-    email: "saul@mrbastos.com",
-    aliases: ["felipe@mrbastos.com"],
-    phone: "5575999990003",
+    email: "saultheobaldos@gmail.com",
+    aliases: ["saul@mrbastos.com", "felipe@mrbastos.com"],
+    phone: "5575981208732",
+    phoneAliases: ["7581208732", "557581208732", "75981208732"],
     name: "Saul Barbeiro",
     role: "BARBER",
     barberId: "barbeiro-saul",
@@ -45,6 +48,7 @@ const PROVISIONAL_USERS = [
     email: "cliente@mrbastos.com",
     aliases: [],
     phone: "75988887777",
+    phoneAliases: ["5575988887777"],
     name: "Rodrigo Estêvão",
     role: "CLIENT",
     barberId: null,
@@ -76,7 +80,10 @@ export const authOptions: NextAuthOptions = {
           (u) =>
             u.email.toLowerCase() === lowerInput ||
             u.aliases?.some((a) => a.toLowerCase() === lowerInput) ||
-            (cleanPhone && u.phone.includes(cleanPhone))
+            (cleanPhone && (
+              u.phone.includes(cleanPhone) ||
+              u.phoneAliases?.some((p) => p.includes(cleanPhone) || cleanPhone.includes(p))
+            ))
         );
 
         if (foundProvisional) {

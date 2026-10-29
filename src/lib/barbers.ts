@@ -2,7 +2,7 @@ export interface BarberData {
   id: string;
   name: string;
   email: string;
-  phone: string; // WhatsApp com DDI e DDD (ex: 5575999990001)
+  phone: string; // WhatsApp com DDI e DDD (ex: 5575998679820)
   phoneDisplay: string;
   role: "ADMIN" | "BARBER";
   specialty: string;
@@ -15,9 +15,9 @@ export const BARBERS: BarberData[] = [
   {
     id: "barbeiro-dono",
     name: "Mr. Bastos (Dono)",
-    email: "dono@mrbastos.com",
-    phone: "5575999990001",
-    phoneDisplay: "(75) 99999-0001",
+    email: "fabiobastos20v@hotmail.com",
+    phone: "5575998679820",
+    phoneDisplay: "(75) 99867-9820",
     role: "ADMIN",
     specialty: "Cortes Clássicos, Barboterapia & Visagismo",
     avatar: "/nossa-area/area-01.jpg",
@@ -27,9 +27,9 @@ export const BARBERS: BarberData[] = [
   {
     id: "barbeiro-nando",
     name: "Nando Barbeiro",
-    email: "nando@mrbastos.com",
-    phone: "5575999990002",
-    phoneDisplay: "(75) 99999-0002",
+    email: "nandomrbastos@gmail.com",
+    phone: "5575999697600",
+    phoneDisplay: "(75) 99969-7600",
     role: "BARBER",
     specialty: "Fade, Degradê Navalhado & Freestyle",
     avatar: "/nossa-area/area-04.jpg",
@@ -39,9 +39,9 @@ export const BARBERS: BarberData[] = [
   {
     id: "barbeiro-saul",
     name: "Saul Barbeiro",
-    email: "saul@mrbastos.com",
-    phone: "5575999990003",
-    phoneDisplay: "(75) 99999-0003",
+    email: "Saultheobaldos@gmail.com",
+    phone: "5575981208732",
+    phoneDisplay: "(75) 98120-8732",
     role: "BARBER",
     specialty: "Barba Terapia, Alinhamento & Navalha",
     avatar: "/nossa-area/area-07.jpg",
@@ -52,7 +52,6 @@ export const BARBERS: BarberData[] = [
 
 export function getBarberById(id?: string | null): BarberData | undefined {
   if (!id) return undefined;
-  // Compatibilidade caso algum ID antigo esteja em cache
   if (id === "barbeiro-lucas") return BARBERS[1]; // Nando
   if (id === "barbeiro-felipe") return BARBERS[2]; // Saul
   return BARBERS.find((b) => b.id === id);
@@ -61,8 +60,14 @@ export function getBarberById(id?: string | null): BarberData | undefined {
 export function getBarberByEmail(email?: string | null): BarberData | undefined {
   if (!email) return undefined;
   const lower = email.toLowerCase().trim();
-  if (lower === "lucas@mrbastos.com") return BARBERS[1];
-  if (lower === "felipe@mrbastos.com") return BARBERS[2];
-  if (lower === "admin@mrbastos.com") return BARBERS[0];
+  if (lower === "fabiobastos20v@hotmail.com" || lower === "dono@mrbastos.com" || lower === "admin@mrbastos.com") {
+    return BARBERS[0];
+  }
+  if (lower === "nandomrbastos@gmail.com" || lower === "nando@mrbastos.com" || lower === "lucas@mrbastos.com") {
+    return BARBERS[1];
+  }
+  if (lower === "saultheobaldos@gmail.com" || lower === "saul@mrbastos.com" || lower === "felipe@mrbastos.com") {
+    return BARBERS[2];
+  }
   return BARBERS.find((b) => b.email.toLowerCase() === lower);
 }

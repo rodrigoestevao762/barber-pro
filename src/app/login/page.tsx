@@ -126,7 +126,7 @@ export default function LoginPage() {
                   value={identifier} 
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
-                  placeholder="Ex: dono@mrbastos.com ou 75988887777" 
+                  placeholder="Ex: fabiobastos20v@hotmail.com ou 7598679820" 
                 />
               </div>
             </div>
@@ -180,35 +180,35 @@ export default function LoginPage() {
             <div className="grid grid-cols-2 gap-2 text-left">
               <button
                 type="button"
-                onClick={() => fillQuickAccess("dono@mrbastos.com", "123")}
+                onClick={() => fillQuickAccess("fabiobastos20v@hotmail.com", "123")}
                 className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-[#C88E70] hover:bg-[#C88E70]/10 transition-all text-left group"
               >
                 <p className="text-xs font-serif text-white group-hover:text-[#C88E70] font-medium flex items-center gap-1.5">
                   <Shield className="w-3 h-3 text-[#C88E70]" /> Mr. Bastos (Dono)
                 </p>
-                <p className="text-[10px] text-gray-500 font-mono">dono@mrbastos.com</p>
+                <p className="text-[10px] text-gray-500 font-mono truncate">fabiobastos20v@hotmail.com</p>
               </button>
 
               <button
                 type="button"
-                onClick={() => fillQuickAccess("nando@mrbastos.com", "123")}
+                onClick={() => fillQuickAccess("nandomrbastos@gmail.com", "123")}
                 className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-blue-400 hover:bg-blue-400/10 transition-all text-left group"
               >
                 <p className="text-xs font-serif text-white group-hover:text-blue-400 font-medium flex items-center gap-1.5">
                   <Scissors className="w-3 h-3 text-blue-400" /> Nando (Barbeiro)
                 </p>
-                <p className="text-[10px] text-gray-500 font-mono">nando@mrbastos.com</p>
+                <p className="text-[10px] text-gray-500 font-mono truncate">nandomrbastos@gmail.com</p>
               </button>
 
               <button
                 type="button"
-                onClick={() => fillQuickAccess("saul@mrbastos.com", "123")}
+                onClick={() => fillQuickAccess("Saultheobaldos@gmail.com", "123")}
                 className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-emerald-400 hover:bg-emerald-400/10 transition-all text-left group"
               >
                 <p className="text-xs font-serif text-white group-hover:text-emerald-400 font-medium flex items-center gap-1.5">
                   <Scissors className="w-3 h-3 text-emerald-400" /> Saul (Barbeiro)
                 </p>
-                <p className="text-[10px] text-gray-500 font-mono">saul@mrbastos.com</p>
+                <p className="text-[10px] text-gray-500 font-mono truncate">Saultheobaldos@gmail.com</p>
               </button>
 
               <button

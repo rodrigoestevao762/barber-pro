@@ -32,3 +32,4 @@ content = content.replace(
 
 fs.writeFileSync('src/app/page.tsx', content, 'utf8');
 console.log('src/app/page.tsx successfully updated with the new cover photo!');
+
