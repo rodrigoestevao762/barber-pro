@@ -8,7 +8,8 @@ import { addStoredAppointment } from '@/lib/appointments-store';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { serviceId, barberId, date, isWalkIn, clientName, clientEmail, clientPhone, clientPassword } = body;
+    let { serviceId, barberId, date, isWalkIn, clientName, clientEmail, clientPhone, clientPassword, status: reqStatus, paymentMethod } = body;
+    const appointmentStatus = reqStatus || (isWalkIn ? "COMPLETED" : "PENDING");
 
     // Se o barbeiro for vazio ou inválido, seleciona o Mr. Bastos (Dono)
     let assignedBarber = getBarberById(barberId);
@@ -93,7 +94,7 @@ export async function POST(req: Request) {
           serviceId: serviceId || "corte",
           userId: client?.id || "walk-in",
           barberId: assignedBarber.id,
-          status: isWalkIn ? "CONFIRMED" : "PENDING",
+          status: appointmentStatus,
         },
       });
 
@@ -114,7 +115,8 @@ export async function POST(req: Request) {
           phone: clientPhone || "(75) 98888-0000",
           email: clientEmail,
         },
-        status: isWalkIn ? "CONFIRMED" : "PENDING",
+        status: appointmentStatus,
+        durationSpent: appointmentStatus === "COMPLETED" ? matchedService.duration : undefined,
       });
 
       return NextResponse.json({
@@ -141,12 +143,13 @@ export async function POST(req: Request) {
           phone: clientPhone || "(75) 98888-0000",
           email: clientEmail,
         },
-        status: isWalkIn ? "CONFIRMED" : "PENDING",
+        status: appointmentStatus,
+        durationSpent: appointmentStatus === "COMPLETED" ? matchedService.duration : undefined,
       });
 
       return NextResponse.json({
         success: true,
-        message: "Agendamento confirmado em modo demonstração",
+        message: "Atendimento lançado com sucesso no caixa",
         appointment: stored,
         barber: assignedBarber,
       });

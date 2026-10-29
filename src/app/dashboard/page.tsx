@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock } from "lucide-react";
+import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock, CreditCard, Banknote, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { BARBERS, BarberData } from "@/lib/barbers";
@@ -32,8 +32,25 @@ export default function DashboardPage() {
   // Modal de cliente balcão
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [services, setServices] = useState<ServiceItem[]>(OFFICIAL_SERVICES);
-  const [walkInBarberId, setWalkInBarberId] = useState(userBarberId || "barbeiro-dono");
+  const [selectedServiceId, setSelectedServiceId] = useState<string>("corte");
+  const [walkInClientName, setWalkInClientName] = useState<string>("Cliente Balcão");
+  const [paymentMethod, setPaymentMethod] = useState<string>("PIX");
+  const [walkInBarberId, setWalkInBarberId] = useState<string>(() => userBarberId || "barbeiro-dono");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (userBarberId) {
+      setWalkInBarberId(userBarberId);
+    }
+  }, [userBarberId]);
+
+  useEffect(() => {
+    if (toastMessage) {
+      const t = setTimeout(() => setToastMessage(null), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [toastMessage]);
 
   // Filtros
   const [selectedDate, setSelectedDate] = useState(() => {
@@ -77,29 +94,38 @@ export default function DashboardPage() {
     }
   };
 
-  const createWalkIn = async (serviceId: string) => {
+  const submitWalkIn = async (overrideServiceId?: string) => {
     setIsSubmitting(true);
     try {
-      // Se não for ADM, o barbeiro é estritamente o usuário logado
       const targetBarber = isAdmin ? walkInBarberId : (userBarberId || "barbeiro-nando");
+      const serviceToUse = OFFICIAL_SERVICES.find(s => s.id === (overrideServiceId || selectedServiceId)) || OFFICIAL_SERVICES[0];
       
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
-      await fetch('/api/appointments', {
+      const res = await fetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          serviceId, 
+          serviceId: serviceToUse.id, 
           barberId: targetBarber, 
           date: `${selectedDate}T${timeStr}Z`, 
           isWalkIn: true,
-          clientName: "Cliente Balcão"
+          status: "COMPLETED",
+          clientName: walkInClientName.trim() || "Cliente Balcão",
+          paymentMethod,
         })
       });
-      setIsModalOpen(false);
-      fetchDashboard();
+
+      if (res.ok) {
+        setIsModalOpen(false);
+        setWalkInClientName("Cliente Balcão");
+        await fetchDashboard();
+        const bObj = BARBERS.find(b => b.id === targetBarber);
+        const barberFirstName = bObj ? bObj.name.split(" ")[0] : "Barbeiro";
+        setToastMessage(`Atendimento de R$ ${serviceToUse.price.toFixed(2)} registrado com sucesso no caixa de ${barberFirstName}!`);
+      }
     } catch (e) {
-      console.error(e);
+      console.error("Erro ao registrar balcão:", e);
     } finally {
       setIsSubmitting(false);
     }
@@ -118,8 +144,41 @@ export default function DashboardPage() {
   const selectedBarberObj = BARBERS.find((b) => b.id === (isAdmin ? selectedBarberFilter : userBarberId));
   const isSelectedBarberOwner = selectedBarberObj?.role === "ADMIN";
 
+  const activeChosenService = OFFICIAL_SERVICES.find(s => s.id === selectedServiceId) || OFFICIAL_SERVICES[0];
+  const targetBarberForCalc = BARBERS.find(b => b.id === (isAdmin ? walkInBarberId : (userBarberId || "barbeiro-nando"))) || BARBERS[0];
+  const isTargetBarberOwner = targetBarberForCalc.role === "ADMIN";
+  const commissionPreview = isTargetBarberOwner ? activeChosenService.price : activeChosenService.price * 0.45;
+  const housePreview = isTargetBarberOwner ? 0 : activeChosenService.price * 0.55;
+
   return (
-    <div className="max-w-[1400px] mx-auto space-y-8 pb-12">
+    <div className="max-w-[1400px] mx-auto space-y-8 pb-12 relative">
+      {/* Toast de Confirmação Instantânea */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-24 right-6 z-[160] bg-[#050B14] border-2 border-emerald-500 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-4 max-w-md backdrop-blur-md"
+          >
+            <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/40">
+              <CheckCircle className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-emerald-400 text-sm flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4" /> Caixa Atualizado
+              </p>
+              <p className="text-gray-200 text-xs mt-0.5 leading-snug">{toastMessage}</p>
+            </div>
+            <button 
+              onClick={() => setToastMessage(null)} 
+              className="text-gray-400 hover:text-white p-1 rounded-lg transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* ── BARRA SUPERIOR: IDENTIDADE DO BARBEIRO E SELETOR DE GESTÃO ── */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-white/10 pb-6">
         <div>
@@ -580,7 +639,7 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* ── MODAL: CLIENTE BALCÃO (WALK-IN) COM TODAS AS 9 OPÇÕES DE SERVIÇOS E TRAVA DE BARBEIRO ── */}
+      {/* ── MODAL: CLIENTE BALCÃO (WALK-IN) COM TODAS AS 9 OPÇÕES DE SERVIÇOS E PROSSEGUIR ── */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
@@ -589,89 +648,204 @@ export default function DashboardPage() {
               initial={{ scale: 0.95, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[85vh] flex flex-col"
+              className="relative w-full max-w-xl bg-[#050B14] border border-[#C88E70]/40 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[90vh] flex flex-col"
             >
-              <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10 shrink-0">
+              {/* Cabeçalho */}
+              <div className="flex justify-between items-center mb-5 pb-4 border-b border-white/10 shrink-0">
                 <div>
-                  <h3 className="text-2xl font-serif text-white">Lançar Cliente Balcão</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Registre o serviço concluído diretamente no caixa.</p>
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#C88E70]/20 text-[#C88E70] border border-[#C88E70]/30">
+                      Lançamento no Caixa
+                    </span>
+                  </div>
+                  <h3 className="text-2xl font-serif text-white mt-1">Lançar Cliente Balcão</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">Selecione o serviço prestado e confirme para computar a comissão.</p>
                 </div>
-                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white p-1">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Escolha ou Trava do Barbeiro */}
-              <div className="mb-6 shrink-0">
-                {isAdmin ? (
-                  <>
-                    <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
-                      Barbeiro Responsável
+              {/* Corpo com Scroll */}
+              <div className="flex-1 overflow-y-auto pr-1 space-y-5">
+                {/* 1. Escolha ou Trava do Barbeiro */}
+                <div>
+                  {isAdmin ? (
+                    <>
+                      <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
+                        Barbeiro Responsável
+                      </label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {BARBERS.map((b) => (
+                          <button
+                            key={b.id}
+                            type="button"
+                            onClick={() => setWalkInBarberId(b.id)}
+                            className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 ${walkInBarberId === b.id ? "border-[#C88E70] bg-[#C88E70] text-[#050B14] shadow-md" : "border-white/10 text-gray-300 hover:border-white/30"}`}
+                          >
+                            <span>{b.name.split(" ")[0]}</span>
+                            <span className="text-[10px] opacity-80">({b.role === "ADMIN" ? "100%" : "45%"})</span>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                      <div>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Barbeiro Atendente</p>
+                        <p className="text-sm font-serif text-white font-medium">{userName}</p>
+                      </div>
+                      <span className="text-[10px] bg-[#C88E70]/20 text-[#C88E70] border border-[#C88E70]/30 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
+                        Sua Comissão: 45%
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. Seleção do Serviço (Grade Interativa) */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-gray-400 text-xs uppercase tracking-wider font-medium">
+                      1. Selecione o Serviço Prestado
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {BARBERS.map((b) => (
-                        <button
-                          key={b.id}
-                          type="button"
-                          onClick={() => setWalkInBarberId(b.id)}
-                          className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${walkInBarberId === b.id ? "border-[#C88E70] bg-[#C88E70] text-[#050B14]" : "border-white/10 text-gray-300 hover:border-white/30"}`}
-                        >
-                          {b.name.split(" ")[0]}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Barbeiro Atendente</p>
-                      <p className="text-sm font-serif text-white font-medium">{userName}</p>
-                    </div>
-                    <span className="text-[10px] bg-[#C88E70]/20 text-[#C88E70] border border-[#C88E70]/30 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">
-                      Comissão 45%
+                    <span className="text-[11px] text-[#C88E70]">
+                      {activeChosenService.name} (R$ {activeChosenService.price.toFixed(2)})
                     </span>
                   </div>
-                )}
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {OFFICIAL_SERVICES.map((s) => {
+                      const isSelected = s.id === selectedServiceId;
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setSelectedServiceId(s.id)}
+                          className={`p-3 rounded-xl border text-left transition-all flex items-center justify-between ${
+                            isSelected 
+                              ? "border-[#C88E70] bg-[#C88E70]/15 shadow-lg shadow-[#C88E70]/15 ring-1 ring-[#C88E70]" 
+                              : "border-white/10 hover:border-white/30 bg-white/[0.02] hover:bg-white/[0.05]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border text-[10px] ${
+                              isSelected ? "border-[#C88E70] bg-[#C88E70] text-[#050B14]" : "border-white/20 text-transparent"
+                            }`}>
+                              ✓
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-white text-xs font-semibold">{s.name}</span>
+                                {s.isCombo && (
+                                  <span className="text-[8px] bg-[#C88E70]/20 text-[#C88E70] px-1 py-0.2 rounded font-bold uppercase">
+                                    Combo
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-gray-500">{s.duration} min</p>
+                            </div>
+                          </div>
+                          <span className="text-[#C88E70] font-mono font-bold text-xs">R$ {s.price}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-              {/* Escolha do Serviço: TODOS OS 9 SERVIÇOS E COMBOS OFICIAIS */}
-              <div className="mb-6 flex-1 overflow-y-auto pr-1">
-                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
-                  Selecione o Serviço Prestado
-                </label>
-                <div className="space-y-2">
-                  {OFFICIAL_SERVICES.map((s) => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      disabled={isSubmitting}
-                      onClick={() => createWalkIn(s.id)}
-                      className="w-full p-3.5 rounded-xl border border-white/10 hover:border-[#C88E70] bg-white/[0.02] hover:bg-[#C88E70]/10 flex items-center justify-between text-left transition-all disabled:opacity-50"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-white text-sm font-medium">{s.name}</span>
-                          {s.isCombo && (
-                            <span className="text-[9px] bg-[#C88E70]/20 text-[#C88E70] px-1.5 py-0.2 rounded font-bold uppercase">
-                              Combo
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-0.5">{s.duration} min</p>
-                      </div>
-                      <span className="text-[#C88E70] font-mono font-bold text-sm">R$ {s.price}</span>
-                    </button>
-                  ))}
+                {/* 3. Forma de Pagamento */}
+                <div>
+                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
+                    2. Forma de Pagamento
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    {[
+                      { id: "PIX", label: "PIX", icon: Sparkles },
+                      { id: "DINHEIRO", label: "Dinheiro", icon: Banknote },
+                      { id: "CARTAO_DEBITO", label: "Débito", icon: CreditCard },
+                      { id: "CARTAO_CREDITO", label: "Crédito", icon: CreditCard },
+                    ].map((m) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        onClick={() => setPaymentMethod(m.id)}
+                        className={`py-2.5 px-3 rounded-xl text-xs font-medium border transition-all flex items-center justify-center gap-1.5 ${
+                          paymentMethod === m.id
+                            ? "border-[#C88E70] bg-[#C88E70]/20 text-[#C88E70] font-bold"
+                            : "border-white/10 text-gray-400 hover:text-white hover:border-white/20"
+                        }`}
+                      >
+                        <m.icon className="w-3.5 h-3.5" />
+                        <span>{m.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Nome do Cliente (Opcional) */}
+                <div>
+                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1.5 font-medium">
+                    3. Nome ou Identificação (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    value={walkInClientName}
+                    onChange={(e) => setWalkInClientName(e.target.value)}
+                    placeholder="Cliente Balcão"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-[#C88E70]"
+                  />
+                </div>
+
+                {/* 5. Demonstrativo da Comissão e Fechamento */}
+                <div className="p-4 rounded-2xl bg-gradient-to-br from-[#C88E70]/10 to-transparent border border-[#C88E70]/30 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-gray-300">Valor Integral do Atendimento:</span>
+                    <strong className="text-white font-mono text-sm">R$ {activeChosenService.price.toFixed(2)}</strong>
+                  </div>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-[#C88E70]">
+                      {isTargetBarberOwner ? "Recebimento do Dono (100%):" : `Comissão do Barbeiro (${targetBarberForCalc.name.split(" ")[0]} - 45%):`}
+                    </span>
+                    <strong className="text-[#C88E70] font-mono text-sm">
+                      R$ {commissionPreview.toFixed(2)}
+                    </strong>
+                  </div>
+                  {!isTargetBarberOwner && (
+                    <div className="flex justify-between items-center text-[11px] text-gray-400 pt-1 border-t border-white/10">
+                      <span>Repasse da Barbearia (55%):</span>
+                      <span className="font-mono">R$ {housePreview.toFixed(2)}</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <button 
-                type="button" 
-                onClick={() => setIsModalOpen(false)}
-                className="w-full text-center text-xs uppercase tracking-widest text-gray-500 hover:text-white transition-colors shrink-0 pt-2"
-              >
-                Cancelar
-              </button>
+              {/* Botões de Ação no Rodapé */}
+              <div className="pt-4 border-t border-white/10 shrink-0 space-y-2">
+                <button 
+                  type="button" 
+                  disabled={isSubmitting}
+                  onClick={() => submitWalkIn()}
+                  className="w-full py-3.5 rounded-xl bg-[#C88E70] hover:bg-white text-[#050B14] font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-xl shadow-[#C88E70]/20 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-[#050B14] border-t-transparent rounded-full animate-spin" />
+                      <span>Lançando no Caixa...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Scissors className="w-4 h-4" />
+                      <span>Prosseguir e Concluir Venda (R$ {activeChosenService.price.toFixed(2)})</span>
+                    </>
+                  )}
+                </button>
+
+                <button 
+                  type="button" 
+                  onClick={() => setIsModalOpen(false)}
+                  className="w-full text-center text-[11px] uppercase tracking-widest text-gray-500 hover:text-white transition-colors py-1"
+                >
+                  Cancelar
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
