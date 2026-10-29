@@ -108,7 +108,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
 
       {/* Top Header */}
-      <header className="px-6 pt-8 md:pl-36 md:pr-12 md:pt-10 flex flex-col md:flex-row md:justify-between items-start md:items-end gap-6 md:gap-0 relative z-40">
+      <header className="px-6 pt-8 md:pl-36 md:pr-12 md:pt-10 flex flex-col md:flex-row md:justify-between items-start md:items-end gap-6 md:gap-0 relative z-10">
         <div>
           <div className="flex items-center gap-2 mb-1">
             {isAdmin ? (
@@ -189,7 +189,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </header>
 
       {/* Main Content Viewport */}
-      <main className="px-6 py-8 md:pl-36 md:pr-12 md:py-10 relative z-10 max-w-[1600px]">
+      <main className="px-6 py-8 md:pl-36 md:pr-12 md:py-10 relative z-20 max-w-[1600px]">
         {children}
       </main>
 

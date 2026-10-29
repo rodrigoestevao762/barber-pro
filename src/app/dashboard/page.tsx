@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock, CreditCard, Banknote, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
@@ -30,6 +31,8 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   
   // Modal de cliente balcão
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [services, setServices] = useState<ServiceItem[]>(OFFICIAL_SERVICES);
   const [selectedServiceId, setSelectedServiceId] = useState<string>("corte");
@@ -640,10 +643,10 @@ export default function DashboardPage() {
       </div>
 
       {/* ── MODAL: CLIENTE BALCÃO (WALK-IN) COM TODAS AS 9 OPÇÕES DE SERVIÇOS E PROSSEGUIR ── */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-[#050B14]/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+      {mounted && isModalOpen && typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black/85 backdrop-blur-md" onClick={() => setIsModalOpen(false)} />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
@@ -848,8 +851,9 @@ export default function DashboardPage() {
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

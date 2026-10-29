@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, DollarSign, Plus, X, Wallet, ArrowUpRight, Scissors, Receipt, User, Award, Shield, Lock, CheckCircle, Sparkles, CreditCard, Banknote } from "lucide-react";
 import { BARBERS, BarberData } from "@/lib/barbers";
@@ -25,6 +26,8 @@ export default function FinanceiroPage() {
   const [valeDesc, setValeDesc] = useState("");
   const [valeAmount, setValeAmount] = useState("");
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
   const [selectedBarber, setSelectedBarber] = useState<any>(null);
   const [selectedServiceId, setSelectedServiceId] = useState<string>("corte");
@@ -734,9 +737,9 @@ export default function FinanceiroPage() {
       </AnimatePresence>
 
       {/* REGISTRAR SERVIÇO (WALK-IN) MODAL - TODOS OS 9 SERVIÇOS E COMBOS COM SELEÇÃO E PROSSEGUIR */}
-      <AnimatePresence>
-        {isWalkInModalOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+      {mounted && isWalkInModalOpen && typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#050B14] border border-[#C88E70]/40 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl relative max-h-[90vh] flex flex-col">
               {/* Header */}
               <div className="p-6 md:p-8 pb-4 relative z-10 shrink-0 border-b border-white/10">
@@ -898,8 +901,9 @@ export default function FinanceiroPage() {
               </div>
             </motion.div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+      )}
 
     </motion.div>
   );
