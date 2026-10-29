@@ -80,3 +80,4 @@ export function getServiceById(id?: string | null): ServiceItem | undefined {
   if (!id) return undefined;
   return OFFICIAL_SERVICES.find((s) => s.id === id || s.name.toLowerCase() === id.toLowerCase());
 }
+

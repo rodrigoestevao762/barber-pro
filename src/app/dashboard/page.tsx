@@ -37,7 +37,11 @@ export default function DashboardPage() {
 
   // Filtros
   const [selectedDate, setSelectedDate] = useState(() => {
-    return new Date().toISOString().split("T")[0];
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   });
   const [selectedBarberFilter, setSelectedBarberFilter] = useState<string>("all");
 
@@ -79,13 +83,15 @@ export default function DashboardPage() {
       // Se não for ADM, o barbeiro é estritamente o usuário logado
       const targetBarber = isAdmin ? walkInBarberId : (userBarberId || "barbeiro-lucas");
       
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;
       await fetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           serviceId, 
           barberId: targetBarber, 
-          date: new Date().toISOString(), 
+          date: `${selectedDate}T${timeStr}Z`, 
           isWalkIn: true,
           clientName: "Cliente Balcão"
         })

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { BARBERS, getBarberById } from '@/lib/barbers';
+import { OFFICIAL_SERVICES } from '@/lib/services';
+import { addStoredAppointment } from '@/lib/appointments-store';
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +16,8 @@ export async function POST(req: Request) {
       assignedBarber = BARBERS[0];
       barberId = assignedBarber.id;
     }
+
+    const matchedService = OFFICIAL_SERVICES.find((s) => s.id === serviceId) || OFFICIAL_SERVICES[0];
 
     try {
       // 1. Serviço
@@ -93,6 +97,26 @@ export async function POST(req: Request) {
         },
       });
 
+      // Também adiciona ao store em memória para sincronia instantânea
+      addStoredAppointment({
+        id: appointment.id,
+        date: new Date(date).toISOString(),
+        barberId: assignedBarber.id,
+        service: {
+          id: matchedService.id,
+          name: matchedService.name,
+          price: matchedService.price,
+          duration: matchedService.duration,
+        },
+        user: {
+          id: client?.id || `u-${Date.now()}`,
+          name: clientName || "Cliente",
+          phone: clientPhone || "(75) 98888-0000",
+          email: clientEmail,
+        },
+        status: isWalkIn ? "CONFIRMED" : "PENDING",
+      });
+
       return NextResponse.json({
         success: true,
         message: "Agendamento criado com sucesso",
@@ -101,15 +125,29 @@ export async function POST(req: Request) {
       });
     } catch (dbErr) {
       console.warn("Agendamento processado em modo fallback:", dbErr);
+      
+      const stored = addStoredAppointment({
+        date: new Date(date).toISOString(),
+        barberId: assignedBarber.id,
+        service: {
+          id: matchedService.id,
+          name: matchedService.name,
+          price: matchedService.price,
+          duration: matchedService.duration,
+        },
+        user: {
+          id: `u-${Date.now()}`,
+          name: clientName || "Cliente",
+          phone: clientPhone || "(75) 98888-0000",
+          email: clientEmail,
+        },
+        status: isWalkIn ? "CONFIRMED" : "PENDING",
+      });
+
       return NextResponse.json({
         success: true,
         message: "Agendamento confirmado em modo demonstração",
-        appointment: {
-          id: "apt-" + Date.now(),
-          date: new Date(date),
-          status: "CONFIRMED",
-          barberId: assignedBarber.id,
-        },
+        appointment: stored,
         barber: assignedBarber,
       });
     }

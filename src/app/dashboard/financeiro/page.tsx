@@ -36,7 +36,11 @@ export default function FinanceiroPage() {
   
   // Date filter
   const [selectedDate, setSelectedDate] = useState(() => {
-    return new Date().toISOString().split('T')[0];
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   });
 
   // Dados Globais
@@ -67,25 +71,19 @@ export default function FinanceiroPage() {
       const storedBarbers = localStorage.getItem(`barbers_${dateStr}`);
       const storedExpenses = localStorage.getItem(`expenses_${dateStr}`);
       
-      let baseBarbers: any[] = [];
+      // Inicializa sempre limpo para a data selecionada
+      let baseBarbers = BARBERS.map((b) => ({
+        id: b.id,
+        name: b.name,
+        role: b.role,
+        cutsToday: 0,
+        totalEarned: 0,
+        personalExpenses: 0,
+        isClosed: false,
+        commissionRate: b.role === "ADMIN" ? 1.0 : 0.45,
+      }));
 
-      if (storedBarbers && storedBarbers.includes("barbeiro-dono")) {
-        baseBarbers = JSON.parse(storedBarbers);
-      } else {
-        // Inicializa com a equipe oficial Mr. Bastos (Dono 100%, Barbeiros 45%)
-        baseBarbers = BARBERS.map((b) => ({
-          id: b.id,
-          name: b.name,
-          role: b.role,
-          cutsToday: 0,
-          totalEarned: 0,
-          personalExpenses: 0,
-          isClosed: false,
-          commissionRate: b.role === "ADMIN" ? 1.0 : 0.45,
-        }));
-      }
-
-      // Sincroniza com agendamentos concluídos na API do dashboard
+      // Sincroniza com agendamentos da API para a data selecionada
       try {
         const resDash = await fetch(`/api/dashboard?date=${dateStr}&barberId=all`);
         if (resDash.ok) {
@@ -93,18 +91,35 @@ export default function FinanceiroPage() {
           if (dashData.barberBreakdown) {
             baseBarbers = baseBarbers.map((b) => {
               const matched = dashData.barberBreakdown.find((item: any) => item.id === b.id);
-              if (matched) {
-                return {
-                  ...b,
-                  cutsToday: Math.max(b.cutsToday, matched.completedApts || 0),
-                  totalEarned: Math.max(b.totalEarned, matched.revenue || 0),
-                };
-              }
-              return b;
+              return {
+                ...b,
+                cutsToday: matched ? (matched.completedApts || 0) : 0,
+                totalEarned: matched ? (matched.revenue || 0) : 0,
+              };
             });
           }
         }
       } catch (_) {}
+
+      // Se houver registro local de fechamento ou vales para este dia específico, aplica
+      if (storedBarbers && storedBarbers.includes("barbeiro-dono")) {
+        try {
+          const parsed = JSON.parse(storedBarbers);
+          baseBarbers = baseBarbers.map((b) => {
+            const local = parsed.find((p: any) => p.id === b.id);
+            if (local) {
+              return {
+                ...b,
+                personalExpenses: local.personalExpenses || 0,
+                isClosed: !!local.isClosed,
+                cutsToday: Math.max(b.cutsToday, local.cutsToday || 0),
+                totalEarned: Math.max(b.totalEarned, local.totalEarned || 0),
+              };
+            }
+            return b;
+          });
+        } catch (_) {}
+      }
 
       setBarbers(baseBarbers);
 

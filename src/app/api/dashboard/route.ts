@@ -3,71 +3,12 @@ import prisma from '@/lib/prisma';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { BARBERS, getBarberById } from '@/lib/barbers';
-
-// Dados de demonstração consistentes para teste dos painéis caso o DB esteja vazio
-function getMockAppointments(selectedDateStr: string) {
-  const d = selectedDateStr;
-  return [
-    {
-      id: "mock-1",
-      date: new Date(`${d}T09:00:00Z`),
-      status: "COMPLETED",
-      barberId: "barbeiro-dono",
-      barber: { id: "barbeiro-dono", name: "Mr. Bastos (Dono)" },
-      service: { id: "corte", name: "Corte", price: 35 },
-      user: { id: "u-1", name: "Marcos Vinicius", phone: "75988112233" },
-      durationSpent: 28,
-    },
-    {
-      id: "mock-2",
-      date: new Date(`${d}T10:00:00Z`),
-      status: "COMPLETED",
-      barberId: "barbeiro-dono",
-      barber: { id: "barbeiro-dono", name: "Mr. Bastos (Dono)" },
-      service: { id: "combo-corte-barba", name: "Corte + Barba", price: 55 },
-      user: { id: "u-2", name: "Guilherme Santos", phone: "75988223344" },
-      durationSpent: 45,
-    },
-    {
-      id: "mock-3",
-      date: new Date(`${d}T11:00:00Z`),
-      status: "CONFIRMED",
-      barberId: "barbeiro-lucas",
-      barber: { id: "barbeiro-lucas", name: "Lucas Barbeiro" },
-      service: { id: "corte", name: "Corte", price: 35 },
-      user: { id: "u-3", name: "Thiago Lima", phone: "75988334455" },
-    },
-    {
-      id: "mock-4",
-      date: new Date(`${d}T14:00:00Z`),
-      status: "COMPLETED",
-      barberId: "barbeiro-lucas",
-      barber: { id: "barbeiro-lucas", name: "Lucas Barbeiro" },
-      service: { id: "corte", name: "Corte", price: 35 },
-      user: { id: "u-4", name: "Rafael Silva", phone: "75988445566" },
-      durationSpent: 25,
-    },
-    {
-      id: "mock-5",
-      date: new Date(`${d}T15:00:00Z`),
-      status: "CONFIRMED",
-      barberId: "barbeiro-felipe",
-      barber: { id: "barbeiro-felipe", name: "Felipe Barbeiro" },
-      service: { id: "barba", name: "Barba", price: 25 },
-      user: { id: "u-5", name: "Carlos Eduardo", phone: "75988556677" },
-    },
-    {
-      id: "mock-6",
-      date: new Date(`${d}T16:00:00Z`),
-      status: "COMPLETED",
-      barberId: "barbeiro-felipe",
-      barber: { id: "barbeiro-felipe", name: "Felipe Barbeiro" },
-      service: { id: "combo-corte-barba", name: "Corte + Barba", price: 55 },
-      user: { id: "u-6", name: "André Matos", phone: "75988667788" },
-      durationSpent: 40,
-    },
-  ];
-}
+import { 
+  getAppointmentsForDate, 
+  getAllStoredAppointments, 
+  updateStoredAppointmentStatus, 
+  getLocalDateString 
+} from '@/lib/appointments-store';
 
 export async function GET(req: Request) {
   try {
@@ -77,7 +18,7 @@ export async function GET(req: Request) {
     const userId = (session?.user as any)?.id;
 
     const { searchParams } = new URL(req.url);
-    const dateParam = searchParams.get("date") || new Date().toISOString().split("T")[0];
+    const dateParam = searchParams.get("date") || getLocalDateString();
     const filterBarberId = searchParams.get("barberId") || "all";
 
     // 1. FLUXO DO CLIENTE
@@ -106,27 +47,16 @@ export async function GET(req: Request) {
           },
         });
       } catch (dbErr) {
-        // Mock do painel do cliente para teste
+        // Fallback em memória para cliente
+        const allApts = getAllStoredAppointments();
+        const clientApts = allApts.filter(
+          (a) => a.user.phone?.includes("8888") || a.user.email?.includes("cliente")
+        );
         return NextResponse.json({
           isClient: true,
-          appointments: [
-            {
-              id: "apt-cli-1",
-              date: new Date(Date.now() + 86400000).toISOString(),
-              status: "CONFIRMED",
-              service: { name: "Corte", price: 35 },
-              barber: { name: "Mr. Bastos (Dono)", phone: "5575999990001" },
-            },
-            {
-              id: "apt-cli-2",
-              date: new Date(Date.now() - 172800000).toISOString(),
-              status: "COMPLETED",
-              service: { name: "Corte + Barba", price: 55 },
-              barber: { name: "Mr. Bastos (Dono)", phone: "5575999990001" },
-            },
-          ],
+          appointments: clientApts,
           loyaltyCard: {
-            currentCuts: 4,
+            currentCuts: clientApts.filter((a) => a.status === "COMPLETED").length % 10,
             targetCuts: 10,
             freeCutsWon: 0,
           },
@@ -148,7 +78,7 @@ export async function GET(req: Request) {
     const startOfDay = new Date(`${dateParam}T00:00:00Z`);
     const endOfDay = new Date(`${dateParam}T23:59:59Z`);
 
-    // Busca todos os atendimentos do dia para calcular métricas globais e repartição de comissões
+    // Busca agendamentos para a data selecionada
     let allDayAppointments: any[] = [];
 
     try {
@@ -160,23 +90,23 @@ export async function GET(req: Request) {
         orderBy: { date: "asc" },
       });
 
-      if (dbAppointments.length > 0) {
+      if (dbAppointments && dbAppointments.length > 0) {
         allDayAppointments = dbAppointments;
       } else {
-        allDayAppointments = getMockAppointments(dateParam);
+        // Busca os agendamentos da data especificada no store em memória
+        allDayAppointments = getAppointmentsForDate(dateParam, null);
       }
     } catch (dbErr) {
-      allDayAppointments = getMockAppointments(dateParam);
+      allDayAppointments = getAppointmentsForDate(dateParam, null);
     }
 
-    // Resumo de produção e comissões por barbeiro (45% para funcionários, 100% para o Dono)
+    // Resumo de produção e comissões por barbeiro para a data (45% para funcionários, 100% para o Dono)
     const breakdown = BARBERS.map((barber) => {
       const bApts = allDayAppointments.filter((apt) => apt.barberId === barber.id);
       const bCompleted = bApts.filter((apt) => apt.status === "COMPLETED");
       const bRevenue = bCompleted.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
       const isOwner = barber.role === "ADMIN";
       
-      // Regra de comissão: Dono = 100%, Barbeiro Funcionário = 45%
       const commissionRate = isOwner ? 1.0 : 0.45;
       const commission = isOwner ? bRevenue : bRevenue * 0.45;
       const houseShare = isOwner ? 0 : bRevenue * 0.55;
@@ -197,7 +127,7 @@ export async function GET(req: Request) {
       };
     });
 
-    // Métricas Globais da Barbearia
+    // Métricas Globais da Barbearia para a Data
     const totalGrossShop = breakdown.reduce((acc, b) => acc + b.revenue, 0);
     const employeeBarbers = breakdown.filter((b) => b.role === "BARBER");
     const totalEmployeeCommissions = employeeBarbers.reduce((acc, b) => acc + b.commission, 0);
@@ -206,7 +136,7 @@ export async function GET(req: Request) {
     const totalHouseEmployeeShare = employeeBarbers.reduce((acc, b) => acc + b.houseShare, 0);
     const houseNetProfit = ownerPersonalRevenue + totalHouseEmployeeShare;
 
-    // Lista filtrada de agendamentos conforme a visão solicitada
+    // Lista filtrada de agendamentos conforme o barbeiro selecionado
     const appointmentsList = effectiveBarberFilter
       ? allDayAppointments.filter((apt) => apt.barberId === effectiveBarberFilter)
       : allDayAppointments;
@@ -214,7 +144,6 @@ export async function GET(req: Request) {
     const completedList = appointmentsList.filter((apt) => apt.status === "COMPLETED");
     const filteredGross = completedList.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
 
-    // Métricas específicas para a visão atual
     let currentCommission = 0;
     let currentHouseShare = 0;
 
@@ -225,7 +154,6 @@ export async function GET(req: Request) {
         currentHouseShare = currentBarberData.houseShare;
       }
     } else {
-      // Visão Geral do Dono: Comissão é o total a pagar aos funcionários, lucro é o total da casa
       currentCommission = totalEmployeeCommissions;
       currentHouseShare = houseNetProfit;
     }
@@ -235,14 +163,15 @@ export async function GET(req: Request) {
       userRole,
       currentBarber: getBarberById(userBarberId) || BARBERS[0],
       activeFilter: effectiveBarberFilter || "all",
+      selectedDate: dateParam,
       
-      // Faturamento e Comissões
-      revenue: effectiveBarberFilter ? filteredGross : totalGrossShop, // Faturamento bruto exibido
+      // Faturamento e Comissões para a Data
+      revenue: effectiveBarberFilter ? filteredGross : totalGrossShop,
       totalGrossShop,
-      houseNetProfit, // Lucro total retido pela barbearia (Dono 100% + 55% dos funcionários)
-      totalEmployeeCommissions, // Total de comissões (45%) devidas aos funcionários
-      myCommission: currentCommission, // Comissão líquida do barbeiro (45%) ou total de comissões para o dono
-      houseShare: currentHouseShare, // Parcela da casa (55%)
+      houseNetProfit,
+      totalEmployeeCommissions,
+      myCommission: currentCommission,
+      houseShare: currentHouseShare,
       
       // Contadores
       todayCount: appointmentsList.length,
@@ -261,6 +190,10 @@ export async function GET(req: Request) {
 export async function PATCH(req: Request) {
   try {
     const { id, status } = await req.json();
+    
+    // Atualiza no store em memória
+    updateStoredAppointmentStatus(id, status);
+
     try {
       const updated = await prisma.appointment.update({
         where: { id },
@@ -268,8 +201,7 @@ export async function PATCH(req: Request) {
       });
       return NextResponse.json({ success: true, updated });
     } catch (dbErr) {
-      // Mock update
-      return NextResponse.json({ success: true, mockId: id, status });
+      return NextResponse.json({ success: true, id, status });
     }
   } catch (error) {
     return NextResponse.json({ error: "Erro ao atualizar" }, { status: 500 });

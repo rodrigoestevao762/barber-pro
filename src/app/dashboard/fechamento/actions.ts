@@ -2,10 +2,17 @@
 
 import prisma from "@/lib/prisma";
 import { BARBERS } from "@/lib/barbers";
+import { 
+  getAppointmentsForDate, 
+  getStoredClosingsForDate, 
+  addStoredClosing,
+  getLocalDateString 
+} from "@/lib/appointments-store";
 
 export async function getFechamentoData(dateStr?: string) {
   try {
-    const targetDate = dateStr ? new Date(dateStr + "T12:00:00") : new Date();
+    const targetDateStr = dateStr || getLocalDateString();
+    const targetDate = new Date(targetDateStr + "T12:00:00");
     const start = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
     const end = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
 
@@ -39,36 +46,16 @@ export async function getFechamentoData(dateStr?: string) {
         }
       });
     } catch (dbErr) {
-      // Fallback gracioso com atendimentos de demonstração
-      appointments = [
-        {
-          id: "mock-1",
-          service: { name: "Corte", price: 35 },
-          barber: { id: "barbeiro-dono", name: "Mr. Bastos (Dono)", commissionRate: 1.0 },
-        },
-        {
-          id: "mock-2",
-          service: { name: "Corte + Barba", price: 55 },
-          barber: { id: "barbeiro-dono", name: "Mr. Bastos (Dono)", commissionRate: 1.0 },
-        },
-        {
-          id: "mock-3",
-          service: { name: "Corte", price: 35 },
-          barber: { id: "barbeiro-lucas", name: "Lucas Barbeiro", commissionRate: 0.45 },
-        },
-        {
-          id: "mock-4",
-          service: { name: "Corte + Barba", price: 55 },
-          barber: { id: "barbeiro-felipe", name: "Felipe Barbeiro", commissionRate: 0.45 },
-        },
-      ];
-      closings = [];
+      // Fallback em memória dinâmico e 100% resiliente
+      const storedApts = getAppointmentsForDate(targetDateStr, null);
+      appointments = storedApts.filter(a => a.status === "COMPLETED" || a.status === "CONFIRMED");
+      closings = getStoredClosingsForDate(targetDateStr);
     }
 
     let totalRevenue = 0;
     const barberRevenues: Record<string, { id: string, name: string, total: number, commission: number, rate: number, isOwner: boolean }> = {};
 
-    // Inicializa todos os barbeiros
+    // Inicializa todos os barbeiros oficiais
     BARBERS.forEach((b) => {
       const isOwner = b.role === "ADMIN";
       barberRevenues[b.id] = {
@@ -85,7 +72,7 @@ export async function getFechamentoData(dateStr?: string) {
       const price = app.service?.price || 0;
       totalRevenue += price;
       
-      const bId = app.barber?.id || "barbeiro-dono";
+      const bId = app.barber?.id || app.barberId || "barbeiro-dono";
       if (!barberRevenues[bId]) {
         const isOwner = app.barber?.name?.toLowerCase().includes("dono") || bId === "barbeiro-dono";
         barberRevenues[bId] = { 
@@ -99,7 +86,7 @@ export async function getFechamentoData(dateStr?: string) {
       }
       
       barberRevenues[bId].total += price;
-      // Regra de comissão: Dono = 100%, Barbeiro Funcionário = 45%
+      // Regra oficial Mr. Bastos: Dono = 100%, Barbeiro Funcionário = 45%
       const effectiveRate = barberRevenues[bId].isOwner ? 1.0 : 0.45;
       barberRevenues[bId].commission += (price * effectiveRate);
     });
@@ -114,16 +101,43 @@ export async function getFechamentoData(dateStr?: string) {
     };
   } catch (error: unknown) {
     console.error("Action error:", error);
+    const targetDateStr = dateStr || getLocalDateString();
+    const storedApts = getAppointmentsForDate(targetDateStr, null);
+    const completedApts = storedApts.filter(a => a.status === "COMPLETED" || a.status === "CONFIRMED");
+    const closings = getStoredClosingsForDate(targetDateStr);
+
+    let totalRevenue = 0;
+    const barberRevenues: Record<string, { id: string, name: string, total: number, commission: number, rate: number, isOwner: boolean }> = {};
+
+    BARBERS.forEach((b) => {
+      const isOwner = b.role === "ADMIN";
+      barberRevenues[b.id] = {
+        id: b.id,
+        name: b.name,
+        total: 0,
+        commission: 0,
+        rate: isOwner ? 1.0 : 0.45,
+        isOwner,
+      };
+    });
+
+    completedApts.forEach(app => {
+      const price = app.service?.price || 0;
+      totalRevenue += price;
+      const bId = app.barberId || "barbeiro-dono";
+      if (barberRevenues[bId]) {
+        barberRevenues[bId].total += price;
+        const rate = barberRevenues[bId].isOwner ? 1.0 : 0.45;
+        barberRevenues[bId].commission += (price * rate);
+      }
+    });
+
     return {
       success: true as const,
       data: {
-        totalRevenue: 180,
-        barberRevenues: [
-          { id: "barbeiro-dono", name: "Mr. Bastos (Dono)", total: 90, commission: 90, rate: 1.0, isOwner: true },
-          { id: "barbeiro-lucas", name: "Lucas Barbeiro", total: 35, commission: 15.75, rate: 0.45, isOwner: false },
-          { id: "barbeiro-felipe", name: "Felipe Barbeiro", total: 55, commission: 24.75, rate: 0.45, isOwner: false },
-        ],
-        closings: []
+        totalRevenue,
+        barberRevenues: Object.values(barberRevenues),
+        closings
       }
     };
   }
@@ -149,17 +163,19 @@ export async function closeCashRegister(data: { totalRevenue: number, barberReve
       });
       return { success: true, data: closing };
     } catch (dbErr) {
+      const storedClosing = addStoredClosing({
+        id: `closing-${Date.now()}`,
+        date: data.dateStr,
+        totalRevenue: data.totalRevenue,
+        totalExpenses: totalCommissions,
+        barberRevenues: data.barberRevenues,
+        closedBy: data.closedBy,
+        createdAt: new Date().toISOString(),
+      });
+
       return {
         success: true,
-        data: {
-          id: `closing-${Date.now()}`,
-          date: closingDate,
-          totalRevenue: data.totalRevenue,
-          totalExpenses: totalCommissions,
-          barberRevenues: data.barberRevenues,
-          closedBy: data.closedBy,
-          createdAt: new Date(),
-        }
+        data: storedClosing
       };
     }
   } catch (error: unknown) {
