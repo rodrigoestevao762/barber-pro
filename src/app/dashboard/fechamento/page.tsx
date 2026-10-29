@@ -180,7 +180,7 @@ export default function FechamentoPage() {
               </h3>
             </div>
           </div>
-          <p className="text-xs text-gray-400">Total a pagar para Lucas e Felipe.</p>
+          <p className="text-xs text-gray-400">Total a pagar para Nando e Saul (45%).</p>
         </motion.div>
 
         {/* Saldo Retido pela Casa */}

@@ -31,3 +31,4 @@ const componentContent = `export function LogoMrBastos({
 
 fs.writeFileSync('src/components/LogoMrBastos.tsx', componentContent, 'utf8');
 console.log('src/components/LogoMrBastos.tsx successfully updated!');
+

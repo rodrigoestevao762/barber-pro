@@ -31,7 +31,7 @@ export default function FinanceiroPage() {
 
   // Estado das Abas: "GERAL" para o Dono, ou ID do barbeiro logado
   const [activeTab, setActiveTab] = useState<string>(() => {
-    return isAdmin ? "GERAL" : (userBarberId || "barbeiro-lucas");
+    return isAdmin ? "GERAL" : (userBarberId || "barbeiro-nando");
   });
   
   // Date filter
@@ -47,14 +47,20 @@ export default function FinanceiroPage() {
   const [expenses, setExpenses] = useState<any[]>([]); 
   const [barbers, setBarbers] = useState<any[]>([]);
 
-  // Limpeza de cache antigo do localStorage (exclui resquícios de "Maria" ou "Pedro")
+  // Limpeza de cache antigo do localStorage (exclui resquícios antigos)
   const purgeLegacyLocalStorage = () => {
     try {
       if (typeof window === "undefined") return;
       Object.keys(localStorage).forEach((key) => {
         if (key.startsWith("barbers_") || key.startsWith("expenses_")) {
           const val = localStorage.getItem(key) || "";
-          if (val.includes("Maria") || val.includes("Pedro") || !val.includes("barbeiro-dono")) {
+          if (
+            val.includes("Maria") ||
+            val.includes("Pedro") ||
+            val.includes("Lucas") ||
+            val.includes("Felipe") ||
+            !val.includes("barbeiro-dono")
+          ) {
             localStorage.removeItem(key);
           }
         }
@@ -140,7 +146,7 @@ export default function FinanceiroPage() {
   useEffect(() => {
     // Se for barbeiro funcionário, garante que a aba ativa é o seu ID
     if (!isAdmin) {
-      setActiveTab(userBarberId || "barbeiro-lucas");
+      setActiveTab(userBarberId || "barbeiro-nando");
     }
   }, [isAdmin, userBarberId]);
 
@@ -155,7 +161,7 @@ export default function FinanceiroPage() {
   };
 
   const handleRegisterService = (service: any) => {
-    const targetBarberId = isAdmin ? selectedBarber?.id : (userBarberId || "barbeiro-lucas");
+    const targetBarberId = isAdmin ? selectedBarber?.id : (userBarberId || "barbeiro-nando");
     if (!targetBarberId) return;
 
     setIsSubmitting(true);
@@ -175,7 +181,7 @@ export default function FinanceiroPage() {
   };
 
   const handleReopenCaixa = () => {
-    const targetId = isAdmin ? activeTab : (userBarberId || "barbeiro-lucas");
+    const targetId = isAdmin ? activeTab : (userBarberId || "barbeiro-nando");
     const activeBarber = barbers.find(b => b.id === targetId);
     if (!activeBarber || !activeBarber.isClosed) return;
 
@@ -191,7 +197,7 @@ export default function FinanceiroPage() {
   };
 
   const handleCloseCaixa = () => {
-    const targetId = isAdmin ? activeTab : (userBarberId || "barbeiro-lucas");
+    const targetId = isAdmin ? activeTab : (userBarberId || "barbeiro-nando");
     const activeBarber = barbers.find(b => b.id === targetId);
     if (!activeBarber || activeBarber.isClosed) return;
 
@@ -229,7 +235,7 @@ export default function FinanceiroPage() {
   // Lançar Vale/Despesa do Barbeiro
   const handleAddVale = async (e: React.FormEvent) => {
     e.preventDefault();
-    const targetId = isAdmin ? activeTab : (userBarberId || "barbeiro-lucas");
+    const targetId = isAdmin ? activeTab : (userBarberId || "barbeiro-nando");
     const activeBarber = barbers.find(b => b.id === targetId);
     if (!activeBarber) return;
 
@@ -537,7 +543,7 @@ export default function FinanceiroPage() {
           >
             {(() => {
               // Barbeiro ativo na tela: se for funcionário, SEMPRE ele mesmo
-              const currentId = !isAdmin ? (userBarberId || "barbeiro-lucas") : activeTab;
+              const currentId = !isAdmin ? (userBarberId || "barbeiro-nando") : activeTab;
               const barber = barbers.find(b => b.id === currentId) || barbers[0];
               if (!barber) return null;
 

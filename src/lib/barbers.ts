@@ -21,41 +21,48 @@ export const BARBERS: BarberData[] = [
     role: "ADMIN",
     specialty: "Cortes Clássicos, Barboterapia & Visagismo",
     avatar: "/nossa-area/area-01.jpg",
-    bio: "Mestre barbeiro e fundador da Mr. Bastos Barbearia. Mais de 8 anos de excelência.",
+    bio: "Mestre barbeiro e proprietário da Mr. Bastos Barbearia. Tradição e excelência em Alagoinhas.",
     commissionRate: 1.0, // Dono recebe 100% de seus cortes + 55% da equipe
   },
   {
-    id: "barbeiro-lucas",
-    name: "Lucas Barbeiro",
-    email: "lucas@mrbastos.com",
+    id: "barbeiro-nando",
+    name: "Nando Barbeiro",
+    email: "nando@mrbastos.com",
     phone: "5575999990002",
     phoneDisplay: "(75) 99999-0002",
     role: "BARBER",
     specialty: "Fade, Degradê Navalhado & Freestyle",
     avatar: "/nossa-area/area-04.jpg",
-    bio: "Especialista em cortes modernos, transições de degradê e acabamento milimétrico.",
-    commissionRate: 0.45, // Comissão de 45% (55% repasse para a casa)
+    bio: "Especialista em transições de degradê, cortes modernos e acabamento milimétrico na lâmina.",
+    commissionRate: 0.45, // Comissão oficial de 45% (55% repasse para a casa)
   },
   {
-    id: "barbeiro-felipe",
-    name: "Felipe Barbeiro",
-    email: "felipe@mrbastos.com",
+    id: "barbeiro-saul",
+    name: "Saul Barbeiro",
+    email: "saul@mrbastos.com",
     phone: "5575999990003",
     phoneDisplay: "(75) 99999-0003",
     role: "BARBER",
     specialty: "Barba Terapia, Alinhamento & Navalha",
     avatar: "/nossa-area/area-07.jpg",
-    bio: "Especialista em desenho de barba na navalha, hidratação e cuidados faciais.",
-    commissionRate: 0.45, // Comissão de 45% (55% repasse para a casa)
+    bio: "Especialista em desenho e escultura de barba na navalha, toalha quente e tratamentos faciais.",
+    commissionRate: 0.45, // Comissão oficial de 45% (55% repasse para a casa)
   },
 ];
 
 export function getBarberById(id?: string | null): BarberData | undefined {
   if (!id) return undefined;
+  // Compatibilidade caso algum ID antigo esteja em cache
+  if (id === "barbeiro-lucas") return BARBERS[1]; // Nando
+  if (id === "barbeiro-felipe") return BARBERS[2]; // Saul
   return BARBERS.find((b) => b.id === id);
 }
 
 export function getBarberByEmail(email?: string | null): BarberData | undefined {
   if (!email) return undefined;
-  return BARBERS.find((b) => b.email.toLowerCase() === email.toLowerCase());
+  const lower = email.toLowerCase().trim();
+  if (lower === "lucas@mrbastos.com") return BARBERS[1];
+  if (lower === "felipe@mrbastos.com") return BARBERS[2];
+  if (lower === "admin@mrbastos.com") return BARBERS[0];
+  return BARBERS.find((b) => b.email.toLowerCase() === lower);
 }

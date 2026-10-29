@@ -8,11 +8,12 @@ process.env.NEXTAUTH_URL = "https://barber-pro-six.vercel.app";
 process.env.NEXTAUTH_URL_INTERNAL = "https://barber-pro-six.vercel.app";
 delete process.env.VERCEL_URL;
 
-// Contas de barbeiros e gestor pré-configuradas para testes imediatos
+// Contas oficiais dos barbeiros e gestor configuradas para acesso imediato
 const PROVISIONAL_USERS = [
   {
     id: "barbeiro-dono",
     email: "dono@mrbastos.com",
+    aliases: ["admin@mrbastos.com"],
     phone: "5575999990001",
     name: "Mr. Bastos (Dono)",
     role: "ADMIN",
@@ -20,26 +21,29 @@ const PROVISIONAL_USERS = [
     passwords: ["123", "admin123", "@Familia435"],
   },
   {
-    id: "barbeiro-lucas",
-    email: "lucas@mrbastos.com",
+    id: "barbeiro-nando",
+    email: "nando@mrbastos.com",
+    aliases: ["lucas@mrbastos.com"],
     phone: "5575999990002",
-    name: "Lucas Barbeiro",
+    name: "Nando Barbeiro",
     role: "BARBER",
-    barberId: "barbeiro-lucas",
+    barberId: "barbeiro-nando",
     passwords: ["123", "barbeiro123"],
   },
   {
-    id: "barbeiro-felipe",
-    email: "felipe@mrbastos.com",
+    id: "barbeiro-saul",
+    email: "saul@mrbastos.com",
+    aliases: ["felipe@mrbastos.com"],
     phone: "5575999990003",
-    name: "Felipe Barbeiro",
+    name: "Saul Barbeiro",
     role: "BARBER",
-    barberId: "barbeiro-felipe",
+    barberId: "barbeiro-saul",
     passwords: ["123", "barbeiro123"],
   },
   {
     id: "client-test",
     email: "cliente@mrbastos.com",
+    aliases: [],
     phone: "75988887777",
     name: "Rodrigo Estêvão",
     role: "CLIENT",
@@ -71,6 +75,7 @@ export const authOptions: NextAuthOptions = {
         const foundProvisional = PROVISIONAL_USERS.find(
           (u) =>
             u.email.toLowerCase() === lowerInput ||
+            u.aliases?.some((a) => a.toLowerCase() === lowerInput) ||
             (cleanPhone && u.phone.includes(cleanPhone))
         );
 

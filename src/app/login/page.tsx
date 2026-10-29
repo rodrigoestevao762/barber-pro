@@ -191,24 +191,24 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                onClick={() => fillQuickAccess("lucas@mrbastos.com", "123")}
+                onClick={() => fillQuickAccess("nando@mrbastos.com", "123")}
                 className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-blue-400 hover:bg-blue-400/10 transition-all text-left group"
               >
                 <p className="text-xs font-serif text-white group-hover:text-blue-400 font-medium flex items-center gap-1.5">
-                  <Scissors className="w-3 h-3 text-blue-400" /> Lucas (Barbeiro)
+                  <Scissors className="w-3 h-3 text-blue-400" /> Nando (Barbeiro)
                 </p>
-                <p className="text-[10px] text-gray-500 font-mono">lucas@mrbastos.com</p>
+                <p className="text-[10px] text-gray-500 font-mono">nando@mrbastos.com</p>
               </button>
 
               <button
                 type="button"
-                onClick={() => fillQuickAccess("felipe@mrbastos.com", "123")}
+                onClick={() => fillQuickAccess("saul@mrbastos.com", "123")}
                 className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-emerald-400 hover:bg-emerald-400/10 transition-all text-left group"
               >
                 <p className="text-xs font-serif text-white group-hover:text-emerald-400 font-medium flex items-center gap-1.5">
-                  <Scissors className="w-3 h-3 text-emerald-400" /> Felipe (Barbeiro)
+                  <Scissors className="w-3 h-3 text-emerald-400" /> Saul (Barbeiro)
                 </p>
-                <p className="text-[10px] text-gray-500 font-mono">felipe@mrbastos.com</p>
+                <p className="text-[10px] text-gray-500 font-mono">saul@mrbastos.com</p>
               </button>
 
               <button

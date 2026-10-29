@@ -67,12 +67,20 @@ export async function GET(req: Request) {
     // 2. FLUXO DOS BARBEIROS / DONO (ADMIN)
     let effectiveBarberFilter: string | null = null;
 
+    let normalizedUserBarberId = userBarberId;
+    if (normalizedUserBarberId === "barbeiro-lucas") normalizedUserBarberId = "barbeiro-nando";
+    if (normalizedUserBarberId === "barbeiro-felipe") normalizedUserBarberId = "barbeiro-saul";
+
+    let normalizedFilterBarberId = filterBarberId;
+    if (normalizedFilterBarberId === "barbeiro-lucas") normalizedFilterBarberId = "barbeiro-nando";
+    if (normalizedFilterBarberId === "barbeiro-felipe") normalizedFilterBarberId = "barbeiro-saul";
+
     if (userRole === "BARBER") {
       // Barbeiro funcionário: isolamento estrito, apenas vê a sua produção e seus agendamentos
-      effectiveBarberFilter = userBarberId || "barbeiro-lucas";
+      effectiveBarberFilter = normalizedUserBarberId || "barbeiro-nando";
     } else if (userRole === "ADMIN") {
       // Dono/ADM: pode ver "all" ou filtrar por um barbeiro específico
-      effectiveBarberFilter = filterBarberId !== "all" ? filterBarberId : null;
+      effectiveBarberFilter = normalizedFilterBarberId !== "all" ? normalizedFilterBarberId : null;
     }
 
     const startOfDay = new Date(`${dateParam}T00:00:00Z`);

@@ -31,7 +31,7 @@ export interface StoredExpense {
   barberId?: string;
 }
 
-// Helper para obter a data local no formato YYYY-MM-DD
+// Helper para obter a data local no formato YYYY-MM-DD (fuso Brasil UTC-3)
 export function getLocalDateString(d: Date = new Date()): string {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -39,7 +39,7 @@ export function getLocalDateString(d: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-// Inicializa dados realistas distribuídos entre hoje, ontem e amanhã
+// Inicializa dados realistas distribuídos entre hoje, ontem e amanhã com a equipe oficial: Dono, Nando e Saul
 function createInitialAppointments(): StoredAppointment[] {
   const today = getLocalDateString();
   
@@ -77,8 +77,8 @@ function createInitialAppointments(): StoredAppointment[] {
       id: "apt-today-3",
       date: `${today}T11:00:00.000Z`,
       status: "CONFIRMED",
-      barberId: "barbeiro-lucas",
-      barber: { id: "barbeiro-lucas", name: "Lucas Barbeiro", role: "BARBER" },
+      barberId: "barbeiro-nando",
+      barber: { id: "barbeiro-nando", name: "Nando Barbeiro", role: "BARBER" },
       service: { id: "corte", name: "Corte", price: 35, duration: 30 },
       user: { id: "u-3", name: "Thiago Lima", phone: "(75) 98833-4455", email: "thiago@gmail.com" },
     },
@@ -86,8 +86,8 @@ function createInitialAppointments(): StoredAppointment[] {
       id: "apt-today-4",
       date: `${today}T14:00:00.000Z`,
       status: "COMPLETED",
-      barberId: "barbeiro-lucas",
-      barber: { id: "barbeiro-lucas", name: "Lucas Barbeiro", role: "BARBER" },
+      barberId: "barbeiro-nando",
+      barber: { id: "barbeiro-nando", name: "Nando Barbeiro", role: "BARBER" },
       service: { id: "corte", name: "Corte", price: 35, duration: 30 },
       user: { id: "u-4", name: "Rafael Silva", phone: "(75) 98844-5566", email: "rafael@gmail.com" },
       durationSpent: 26,
@@ -96,8 +96,8 @@ function createInitialAppointments(): StoredAppointment[] {
       id: "apt-today-5",
       date: `${today}T15:30:00.000Z`,
       status: "CONFIRMED",
-      barberId: "barbeiro-felipe",
-      barber: { id: "barbeiro-felipe", name: "Felipe Barbeiro", role: "BARBER" },
+      barberId: "barbeiro-saul",
+      barber: { id: "barbeiro-saul", name: "Saul Barbeiro", role: "BARBER" },
       service: { id: "barba", name: "Barba", price: 25, duration: 25 },
       user: { id: "u-5", name: "Carlos Eduardo", phone: "(75) 98855-6677", email: "carlos@gmail.com" },
     },
@@ -105,8 +105,8 @@ function createInitialAppointments(): StoredAppointment[] {
       id: "apt-today-6",
       date: `${today}T16:30:00.000Z`,
       status: "COMPLETED",
-      barberId: "barbeiro-felipe",
-      barber: { id: "barbeiro-felipe", name: "Felipe Barbeiro", role: "BARBER" },
+      barberId: "barbeiro-saul",
+      barber: { id: "barbeiro-saul", name: "Saul Barbeiro", role: "BARBER" },
       service: { id: "combo-corte-barba", name: "Corte + Barba", price: 55, duration: 50 },
       user: { id: "u-6", name: "André Matos", phone: "(75) 98866-7788", email: "andre@gmail.com" },
       durationSpent: 42,
@@ -127,8 +127,8 @@ function createInitialAppointments(): StoredAppointment[] {
       id: "apt-yest-2",
       date: `${yesterday}T14:30:00.000Z`,
       status: "COMPLETED",
-      barberId: "barbeiro-lucas",
-      barber: { id: "barbeiro-lucas", name: "Lucas Barbeiro", role: "BARBER" },
+      barberId: "barbeiro-nando",
+      barber: { id: "barbeiro-nando", name: "Nando Barbeiro", role: "BARBER" },
       service: { id: "combo-corte-sobrancelha", name: "Corte + Sobrancelha", price: 45, duration: 40 },
       user: { id: "u-8", name: "Fábio Souza", phone: "(75) 98877-3344" },
       durationSpent: 38,
@@ -137,8 +137,8 @@ function createInitialAppointments(): StoredAppointment[] {
       id: "apt-yest-3",
       date: `${yesterday}T16:00:00.000Z`,
       status: "COMPLETED",
-      barberId: "barbeiro-felipe",
-      barber: { id: "barbeiro-felipe", name: "Felipe Barbeiro", role: "BARBER" },
+      barberId: "barbeiro-saul",
+      barber: { id: "barbeiro-saul", name: "Saul Barbeiro", role: "BARBER" },
       service: { id: "pezinho-barba", name: "Pezinho + Barba", price: 40, duration: 35 },
       user: { id: "u-9", name: "Lucas Gabriel", phone: "(75) 98877-5566" },
       durationSpent: 32,
@@ -158,8 +158,8 @@ function createInitialAppointments(): StoredAppointment[] {
       id: "apt-tom-2",
       date: `${tomorrow}T11:00:00.000Z`,
       status: "CONFIRMED",
-      barberId: "barbeiro-lucas",
-      barber: { id: "barbeiro-lucas", name: "Lucas Barbeiro", role: "BARBER" },
+      barberId: "barbeiro-nando",
+      barber: { id: "barbeiro-nando", name: "Nando Barbeiro", role: "BARBER" },
       service: { id: "corte", name: "Corte", price: 35, duration: 30 },
       user: { id: "u-11", name: "Henrique Mendes", phone: "(75) 98899-2233", email: "henrique@gmail.com" },
     },
@@ -167,8 +167,8 @@ function createInitialAppointments(): StoredAppointment[] {
       id: "apt-tom-3",
       date: `${tomorrow}T15:00:00.000Z`,
       status: "PENDING",
-      barberId: "barbeiro-felipe",
-      barber: { id: "barbeiro-felipe", name: "Felipe Barbeiro", role: "BARBER" },
+      barberId: "barbeiro-saul",
+      barber: { id: "barbeiro-saul", name: "Saul Barbeiro", role: "BARBER" },
       service: { id: "barba", name: "Barba", price: 25, duration: 25 },
       user: { id: "u-12", name: "Rodrigo Estêvão", phone: "(75) 98888-7777", email: "cliente@mrbastos.com" },
     },
@@ -201,10 +201,11 @@ export function getAllStoredAppointments(): StoredAppointment[] {
 export function getAppointmentsForDate(dateStr: string, barberId?: string | null): StoredAppointment[] {
   const all = global.__mrbastos_appointments || [];
   return all.filter((apt) => {
-    // Extrai o YYYY-MM-DD da data do agendamento
     const aptDay = apt.date.substring(0, 10);
     const matchesDate = aptDay === dateStr;
-    const matchesBarber = !barberId || barberId === "all" || apt.barberId === barberId;
+    const matchesBarber = !barberId || barberId === "all" || apt.barberId === barberId ||
+      (barberId === "barbeiro-nando" && apt.barberId === "barbeiro-lucas") ||
+      (barberId === "barbeiro-saul" && apt.barberId === "barbeiro-felipe");
     return matchesDate && matchesBarber;
   });
 }
@@ -214,7 +215,13 @@ export function addStoredAppointment(aptData: Partial<StoredAppointment>): Store
     global.__mrbastos_appointments = createInitialAppointments();
   }
 
-  const barber = BARBERS.find((b) => b.id === aptData.barberId) || BARBERS[0];
+  let barber = BARBERS.find((b) => b.id === aptData.barberId);
+  if (!barber) {
+    if (aptData.barberId === "barbeiro-lucas") barber = BARBERS[1];
+    else if (aptData.barberId === "barbeiro-felipe") barber = BARBERS[2];
+    else barber = BARBERS[0];
+  }
+
   const service = OFFICIAL_SERVICES.find((s) => s.id === aptData.service?.id) || {
     id: "corte",
     name: "Corte",

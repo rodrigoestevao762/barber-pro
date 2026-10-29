@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
   const fetchDashboard = async () => {
     try {
-      const bFilter = isAdmin ? selectedBarberFilter : (userBarberId || "barbeiro-lucas");
+      const bFilter = isAdmin ? selectedBarberFilter : (userBarberId || "barbeiro-nando");
       const res = await fetch(`/api/dashboard?date=${selectedDate}&barberId=${bFilter}`);
       if (res.ok) {
         const json = await res.json();
@@ -81,7 +81,7 @@ export default function DashboardPage() {
     setIsSubmitting(true);
     try {
       // Se não for ADM, o barbeiro é estritamente o usuário logado
-      const targetBarber = isAdmin ? walkInBarberId : (userBarberId || "barbeiro-lucas");
+      const targetBarber = isAdmin ? walkInBarberId : (userBarberId || "barbeiro-nando");
       
       const now = new Date();
       const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:00`;

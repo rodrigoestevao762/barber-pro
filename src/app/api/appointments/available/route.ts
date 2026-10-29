@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { BARBERS } from "@/lib/barbers";
+import { getAppointmentsForDate } from "@/lib/appointments-store";
 
 const WORK_HOURS = [
   "09:00",
@@ -38,30 +39,42 @@ export async function GET(req: Request) {
         },
       });
 
-      if (barberId && barberId !== "qualquer") {
-        // Horários ocupados para esse barbeiro específico
-        const bookedTimes = bookedAppointments.map((apt) =>
-          apt.date.toISOString().substring(11, 16)
-        );
-        const availableTimes = WORK_HOURS.filter((time) => !bookedTimes.includes(time));
-        return NextResponse.json({ availableTimes });
+      if (bookedAppointments && bookedAppointments.length > 0) {
+        if (barberId && barberId !== "qualquer") {
+          const bookedTimes = bookedAppointments.map((apt) =>
+            apt.date.toISOString().substring(11, 16)
+          );
+          const availableTimes = WORK_HOURS.filter((time) => !bookedTimes.includes(time));
+          return NextResponse.json({ availableTimes });
+        } else {
+          const timesCount: Record<string, number> = {};
+          bookedAppointments.forEach((apt) => {
+            const t = apt.date.toISOString().substring(11, 16);
+            timesCount[t] = (timesCount[t] || 0) + 1;
+          });
+          const totalBarbers = BARBERS.length;
+          const availableTimes = WORK_HOURS.filter(
+            (time) => (timesCount[time] || 0) < totalBarbers
+          );
+          return NextResponse.json({ availableTimes });
+        }
       } else {
-        // Se "qualquer barbeiro", o horário só é bloqueado se TODOS os 3 barbeiros estiverem ocupados
-        const timesCount: Record<string, number> = {};
-        bookedAppointments.forEach((apt) => {
-          const t = apt.date.toISOString().substring(11, 16);
-          timesCount[t] = (timesCount[t] || 0) + 1;
-        });
-
-        const totalBarbers = BARBERS.length;
-        const availableTimes = WORK_HOURS.filter(
-          (time) => (timesCount[time] || 0) < totalBarbers
-        );
+        // Verifica no store em memória
+        const storedApts = getAppointmentsForDate(dateParam, barberId);
+        const bookedTimes = storedApts
+          .filter((apt) => apt.status !== "CANCELLED")
+          .map((apt) => apt.date.substring(11, 16));
+        const availableTimes = WORK_HOURS.filter((time) => !bookedTimes.includes(time));
         return NextResponse.json({ availableTimes });
       }
     } catch (dbErr) {
-      // Fallback gracioso com horários abertos para testes
-      return NextResponse.json({ availableTimes: WORK_HOURS });
+      // Fallback em memória para teste offline
+      const storedApts = getAppointmentsForDate(dateParam, barberId);
+      const bookedTimes = storedApts
+        .filter((apt) => apt.status !== "CANCELLED")
+        .map((apt) => apt.date.substring(11, 16));
+      const availableTimes = WORK_HOURS.filter((time) => !bookedTimes.includes(time));
+      return NextResponse.json({ availableTimes });
     }
   } catch (error) {
     return NextResponse.json({ error: "Erro ao buscar horários" }, { status: 500 });

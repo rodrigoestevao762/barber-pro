@@ -40,7 +40,7 @@ export default function AgendaPage() {
   const fetchAgenda = async () => {
     setLoading(true);
     try {
-      const bFilter = isAdmin ? selectedBarberFilter : (userBarberId || "barbeiro-lucas");
+      const bFilter = isAdmin ? selectedBarberFilter : (userBarberId || "barbeiro-nando");
       const res = await fetch(`/api/dashboard?date=${selectedDate}&barberId=${bFilter}`);
       if (res.ok) {
         const data = await res.json();
@@ -72,7 +72,7 @@ export default function AgendaPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const targetBarber = isAdmin ? newBarberId : (userBarberId || "barbeiro-lucas");
+    const targetBarber = isAdmin ? newBarberId : (userBarberId || "barbeiro-nando");
     const fullDate = `${selectedDate}T${newTime}:00Z`;
 
     try {
