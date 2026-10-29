@@ -88,6 +88,7 @@ export async function GET(req: Request) {
 
     // Busca agendamentos para a data selecionada
     let allDayAppointments: any[] = [];
+    let upcomingAppointments: any[] = [];
 
     try {
       const dbAppointments = await prisma.appointment.findMany({
@@ -98,12 +99,27 @@ export async function GET(req: Request) {
         orderBy: { date: "asc" },
       });
 
-      if (dbAppointments && dbAppointments.length > 0) {
-        allDayAppointments = dbAppointments;
-      } else {
-        // Busca os agendamentos da data especificada no store em memória
-        allDayAppointments = getAppointmentsForDate(dateParam, null);
-      }
+      const memAppointments = getAppointmentsForDate(dateParam, null);
+      
+      // Unifica agendamentos do banco e de memória sem duplicatas
+      const map = new Map<string, any>();
+      (dbAppointments || []).forEach((a) => map.set(a.id, a));
+      (memAppointments || []).forEach((a) => {
+        if (!map.has(a.id)) map.set(a.id, a);
+      });
+      allDayAppointments = Array.from(map.values());
+
+      // Próximos agendamentos futuros para a barra de avisos
+      upcomingAppointments = await prisma.appointment.findMany({
+        where: {
+          date: { gte: new Date() },
+          status: { in: ["PENDING", "CONFIRMED"] },
+          ...(effectiveBarberFilter ? { barberId: effectiveBarberFilter } : {}),
+        },
+        include: { service: true, user: true, barber: true },
+        orderBy: { date: "asc" },
+        take: 10,
+      });
     } catch (dbErr) {
       allDayAppointments = getAppointmentsForDate(dateParam, null);
     }
@@ -186,6 +202,7 @@ export async function GET(req: Request) {
       completedCount: completedList.length,
       clientsCount: appointmentsList.length,
       appointments: appointmentsList,
+      upcomingAppointments,
       barberBreakdown: breakdown,
       barbersList: BARBERS,
     });

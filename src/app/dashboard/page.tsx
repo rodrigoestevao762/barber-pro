@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock, CreditCard, Banknote, Sparkles } from "lucide-react";
+import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock, CreditCard, Banknote, Sparkles, Calendar } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { BARBERS, BarberData } from "@/lib/barbers";
@@ -521,6 +521,38 @@ export default function DashboardPage() {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* ── ALERTA DE AGENDAMENTOS FUTUROS (PRÓXIMOS DIAS) ── */}
+      {dashboardData.upcomingAppointments?.length > 0 && (
+        <div className="bg-gradient-to-r from-[#C88E70]/10 via-white/[0.02] to-transparent border border-[#C88E70]/30 rounded-2xl p-4 md:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-[#C88E70]/20 text-[#C88E70] flex items-center justify-center shrink-0 border border-[#C88E70]/40">
+              <Calendar className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white flex items-center gap-2">
+                <span>Próximos Agendamentos Confirmados</span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C88E70] text-black">
+                  {dashboardData.upcomingAppointments.length} agendado{dashboardData.upcomingAppointments.length > 1 ? "s" : ""}
+                </span>
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Próximo cliente: <strong className="text-white">{dashboardData.upcomingAppointments[0]?.user?.name || "Cliente"}</strong> em {new Date(dashboardData.upcomingAppointments[0]?.date).toLocaleDateString("pt-BR")} às {new Date(dashboardData.upcomingAppointments[0]?.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })} ({dashboardData.upcomingAppointments[0]?.service?.name})
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              const nextDate = new Date(dashboardData.upcomingAppointments[0]?.date).toISOString().split("T")[0];
+              setSelectedDate(nextDate);
+            }}
+            className="px-4 py-2 rounded-xl bg-[#C88E70]/20 hover:bg-[#C88E70] text-[#C88E70] hover:text-[#050B14] text-xs font-semibold uppercase tracking-wider transition-all duration-300 border border-[#C88E70]/40 flex items-center gap-2 shrink-0"
+          >
+            <span>Ver na Agenda</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       )}
 

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { OFFICIAL_SERVICES } from "@/lib/services";
+import { BARBERS } from "@/lib/barbers";
 
 export async function GET() {
   try {
@@ -17,16 +19,63 @@ export async function GET() {
           CONSTRAINT "CashClosing_pkey" PRIMARY KEY ("id")
       );
     `);
-    
-    // Test if we can read it
-    const closings = await prisma.cashClosing.findMany();
-    
-    return NextResponse.json({ 
-      message: "Tabela CashClosing criada com sucesso!",
-      closingsCount: closings.length
+
+    // Sincroniza todos os 9 serviços e combos oficiais
+    for (const s of OFFICIAL_SERVICES) {
+      try {
+        await prisma.service.upsert({
+          where: { id: s.id },
+          update: {
+            name: s.name,
+            price: s.price,
+            duration: s.duration,
+            description: s.description,
+          },
+          create: {
+            id: s.id,
+            name: s.name,
+            description: s.description,
+            price: s.price,
+            duration: s.duration,
+          },
+        });
+      } catch (err) {
+        console.warn(`Erro ao sincronizar serviço ${s.id}:`, err);
+      }
+    }
+
+    // Sincroniza todos os 3 barbeiros oficiais
+    for (const b of BARBERS) {
+      try {
+        await prisma.barber.upsert({
+          where: { id: b.id },
+          update: {
+            name: b.name,
+            commissionRate: b.commissionRate,
+          },
+          create: {
+            id: b.id,
+            name: b.name,
+            commissionRate: b.commissionRate,
+          },
+        });
+      } catch (err) {
+        console.warn(`Erro ao sincronizar barbeiro ${b.id}:`, err);
+      }
+    }
+
+    const servicesCount = await prisma.service.count();
+    const barbersCount = await prisma.barber.count();
+    const closingsCount = await prisma.cashClosing.count();
+
+    return NextResponse.json({
+      success: true,
+      message: "Banco de dados sincronizado e atualizado!",
+      servicesCount,
+      barbersCount,
+      closingsCount,
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message || String(error) }, { status: 500 });
   }
 }
-

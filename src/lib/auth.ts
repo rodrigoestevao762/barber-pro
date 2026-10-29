@@ -105,11 +105,16 @@ export const authOptions: NextAuthOptions = {
 
         // 2. Busca no banco de dados Prisma (se disponível)
         try {
+          const phoneVariants = cleanPhone ? [
+            cleanPhone,
+            cleanPhone.startsWith("55") ? cleanPhone.slice(2) : `55${cleanPhone}`,
+          ] : [];
+
           const user = await prisma.user.findFirst({
             where: {
               OR: [
-                { email: lowerInput },
-                ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+                { email: { equals: lowerInput, mode: "insensitive" } },
+                ...phoneVariants.map((p) => ({ phone: p })),
               ],
             },
           });

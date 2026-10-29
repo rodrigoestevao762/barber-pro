@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import { X, Calendar, Clock, ChevronRight, CheckCircle2, User, Scissors, Star, Mail, Phone, Lock, Shield, Sparkles, Check, Edit3 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { BARBERS, BarberData } from "@/lib/barbers";
@@ -147,6 +147,16 @@ export default function BookingModal({
 
       if (res.ok) {
         setIsSuccess(true);
+        // Autentica o cliente automaticamente na sessão se ele não estiver logado
+        if (!isLoggedIn) {
+          try {
+            await signIn("credentials", {
+              identifier: clientEmail.trim().toLowerCase() || clientPhone.trim(),
+              password: clientPassword || "123",
+              redirect: false,
+            });
+          } catch (_) {}
+        }
       } else {
         const data = await res.json();
         setErrorMsg(data.error || "Erro ao agendar.");
@@ -271,6 +281,16 @@ export default function BookingModal({
                     <ChevronRight className="w-4 h-4" />
                   </a>
                 </div>
+
+                {/* Botão Acessar Painel VIP */}
+                <a
+                  href="/painel-cliente"
+                  className="w-full max-w-md bg-[#C88E70] text-[#050B14] py-3.5 px-4 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-white transition-all duration-300 shadow-lg shadow-[#C88E70]/20 mb-3"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  <span>Acessar Meu Painel VIP Agora</span>
+                  <ChevronRight className="w-4 h-4" />
+                </a>
 
                 <button 
                   onClick={onClose} 
