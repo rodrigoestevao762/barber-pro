@@ -87,7 +87,10 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (foundProvisional) {
-          if (foundProvisional.passwords.includes(pwd)) {
+          const customPwd = (global as any).__mrbastos_custom_passwords?.[foundProvisional.email.toLowerCase()];
+          const isMatch = (customPwd && customPwd === pwd) || foundProvisional.passwords.includes(pwd);
+
+          if (isMatch) {
             return {
               id: foundProvisional.id,
               name: foundProvisional.name,

@@ -38,3 +38,4 @@ content = content.replace(
 
 fs.writeFileSync('src/app/login/page.tsx', content, 'utf8');
 console.log('src/app/login/page.tsx successfully updated with official emails!');
+

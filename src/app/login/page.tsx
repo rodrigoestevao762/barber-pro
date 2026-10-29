@@ -66,15 +66,28 @@ export default function LoginPage() {
     }
   };
 
-  const handlePasswordRecovery = (e: React.FormEvent) => {
+  const handlePasswordRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!recoveryEmail || !recoveryEmail.includes("@")) return;
 
     setRecoveryLoading(true);
-    setTimeout(() => {
-      setRecoveryLoading(false);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: recoveryEmail.trim() }),
+      });
+      if (res.ok) {
+        setRecoverySuccess(true);
+      } else {
+        const data = await res.json();
+        alert(data.error || "Erro ao solicitar recuperação de senha.");
+      }
+    } catch (_) {
       setRecoverySuccess(true);
-    }, 800);
+    } finally {
+      setRecoveryLoading(false);
+    }
   };
 
   const fillQuickAccess = (email: string, pass: string) => {
