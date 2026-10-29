@@ -1,59 +1,52 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { TrendingUp, Users, User, Scissors, Clock, ChevronRight, Star, CheckCircle, Clock3, X } from "lucide-react";
+import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, UserCheck, DollarSign } from "lucide-react";
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { useSession } from "next-auth/react";
+import { BARBERS, BarberData } from "@/lib/barbers";
 
 export default function DashboardPage() {
-  const [data, setData] = useState({ isClient: false, revenue: 0, todayCount: 0, clientsCount: 0, averageDuration: 0, appointments: [] as any[] });
+  const { data: session } = useSession();
+  const userRole = (session?.user as any)?.role || "ADMIN";
+  const userBarberId = (session?.user as any)?.barberId;
+  const userName = session?.user?.name || "Gestor";
+
+  const [dashboardData, setDashboardData] = useState<any>({
+    revenue: 0,
+    todayCount: 0,
+    completedCount: 0,
+    clientsCount: 0,
+    averageDuration: 0,
+    appointments: [] as any[],
+    barberBreakdown: [] as any[],
+  });
   const [loading, setLoading] = useState(true);
   
-  // Modal states
+  // Modal de cliente balcão
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [services, setServices] = useState<any[]>([]);
+  const [walkInBarberId, setWalkInBarberId] = useState(userBarberId || "barbeiro-dono");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Date filter
+  // Filtros
   const [selectedDate, setSelectedDate] = useState(() => {
-    const d = new Date();
-    return d.toISOString().split('T')[0];
+    return new Date().toISOString().split("T")[0];
   });
+  const [selectedBarberFilter, setSelectedBarberFilter] = useState<string>("all");
 
   const fetchDashboard = async () => {
     try {
-      const res = await fetch(`/api/dashboard?date=${selectedDate}`);
+      const bFilter = userRole === "ADMIN" ? selectedBarberFilter : (userBarberId || "barbeiro-lucas");
+      const res = await fetch(`/api/dashboard?date=${selectedDate}&barberId=${bFilter}`);
       if (res.ok) {
         const json = await res.json();
-        setData(json);
+        setDashboardData(json);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Erro ao carregar dashboard:", e);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const cancelClientAppointment = async (id: string, date: string, serviceName: string) => {
-    if (!confirm("Tem certeza que deseja cancelar este agendamento?")) return;
-    try {
-      const res = await fetch(`/api/appointments/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CANCELLED' })
-      });
-      if (res.ok) {
-        fetchDashboard();
-        const dateStr = new Date(date).toLocaleDateString('pt-BR');
-        const timeStr = new Date(date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        const msg = `Olá! Precisei cancelar meu agendamento de ${serviceName} para ${dateStr} às ${timeStr}. O horário já está liberado no sistema.`;
-        const waUrl = `https://wa.me/5521997073357?text=${encodeURIComponent(msg)}`;
-        window.open(waUrl, '_blank');
-      } else {
-        alert("Erro ao cancelar o agendamento.");
-      }
-    } catch (e) {
-      alert("Erro de conexão.");
     }
   };
 
@@ -72,306 +65,449 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchDashboard();
     fetchServices();
-  }, [selectedDate]);
+  }, [selectedDate, selectedBarberFilter, userRole]);
 
   const updateStatus = async (id: string, newStatus: string) => {
-    await fetch('/api/dashboard', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status: newStatus })
-    });
-    fetchDashboard(); // Recarrega os dados para atualizar o faturamento
+    try {
+      await fetch('/api/dashboard', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: newStatus })
+      });
+      fetchDashboard();
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const createWalkIn = async (serviceId: string) => {
     setIsSubmitting(true);
-    await fetch('/api/appointments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ serviceId, date: new Date().toISOString(), isWalkIn: true })
-    });
-    setIsSubmitting(false);
-    setIsModalOpen(false);
-    fetchDashboard();
+    try {
+      await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          serviceId, 
+          barberId: walkInBarberId, 
+          date: new Date().toISOString(), 
+          isWalkIn: true,
+          clientName: "Cliente Balcão"
+        })
+      });
+      setIsModalOpen(false);
+      fetchDashboard();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (loading) {
-    return <div className="animate-pulse text-[#C88E70]">Carregando métricas...</div>;
-  }
-
-  if (data.isClient) {
     return (
-      <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <h2 className="text-[#C88E70] text-xs uppercase tracking-widest mb-6 border-b border-white/10 pb-4">Seus Agendamentos</h2>
-        <div className="grid gap-4">
-          {data.appointments.length === 0 && (
-            <div className="p-8 text-center border border-white/10 rounded-2xl bg-white/5">
-              <p className="text-gray-400">Você ainda não tem nenhum agendamento.</p>
-              <Link href="/" className="text-[#C88E70] uppercase text-xs font-bold tracking-widest mt-4 inline-block hover:text-white">Agendar Agora</Link>
-            </div>
-          )}
-          {data.appointments.map((apt: any) => {
-            const isFuture = new Date(apt.date) > new Date();
-            return (
-              <div key={apt.id} className="p-6 border border-white/10 rounded-2xl bg-white/[0.02] flex flex-col md:flex-row justify-between items-center gap-4">
-                <div className="flex items-center gap-6">
-                   <div className="bg-black/30 p-4 rounded-full text-[#C88E70]"><Scissors className="w-6 h-6"/></div>
-                   <div>
-                     <h3 className="text-xl font-serif">{apt.service.name}</h3>
-                     <p className="text-sm text-gray-400 flex items-center gap-2 mt-1">
-                       <Clock className="w-3 h-3" /> 
-                       {new Date(apt.date).toLocaleDateString('pt-BR')} às {new Date(apt.date).toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'})}
-                     </p>
-                   </div>
-                </div>
-                  <div className="flex flex-col md:flex-row items-end md:items-center gap-3">
-                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${apt.status === 'CONFIRMED' ? 'bg-green-500/20 text-green-400' : apt.status === 'CANCELLED' ? 'bg-red-500/20 text-red-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
-                       {apt.status === 'CONFIRMED' ? 'Confirmado' : apt.status === 'CANCELLED' ? 'Cancelado' : 'Pendente'}
-                     </span>
-                     {apt.status !== 'CANCELLED' && apt.status !== 'COMPLETED' && (
-                        <button 
-                          onClick={() => cancelClientAppointment(apt.id, apt.date, apt.service.name)}
-                          className="text-xs text-red-400 hover:text-red-300 font-semibold uppercase tracking-widest underline underline-offset-4"
-                        >
-                          Cancelar
-                        </button>
-                     )}
-                  </div>
-              </div>
-            )
-          })}
+      <div className="flex items-center justify-center p-24">
+        <div className="animate-pulse text-[#C88E70] font-serif text-lg tracking-widest uppercase">
+          Carregando Painel de Gestão...
         </div>
       </div>
     );
   }
 
-  const nextApt = data.appointments.find((a: any) => a.status === 'CONFIRMED' || a.status === 'PENDING');
-
-  const containerVariants: any = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-  const itemVariants: any = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } } };
+  const isAdmin = userRole === "ADMIN";
 
   return (
-    <>
-    <div className="max-w-[1400px] mx-auto flex justify-between items-center mb-6">
-      <h2 className="text-xl font-serif text-white">Visão Geral</h2>
-      <div className="flex items-center gap-3">
-        <label className="text-xs text-gray-400 uppercase tracking-widest">Filtrar por data:</label>
-        <input 
-          type="date" 
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[#C88E70] transition-colors"
-        />
-      </div>
-    </div>
-      <motion.div variants={containerVariants} initial="hidden" animate="show" className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* Bento Grid de Métricas */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <motion.div variants={itemVariants} whileHover={{ scale: 1.02, rotateX: 2, rotateY: -2 }} className="lg:col-span-2 bg-gradient-to-br from-white/5 to-white/[0.01] border border-white/10 rounded-3xl p-8  relative overflow-hidden flex flex-col justify-center cursor-default shadow-2xl transition-all duration-300 hover:shadow-[#C88E70]/20 hover:border-[#C88E70]/30 style={{ transformStyle: 'preserve-3d' }}">
-                {/* Background accent animated */}
-                <motion.div   className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/10 blur-2xl rounded-full pointer-events-none" />
-                
-                <p className="text-gray-400 text-xs tracking-[0.2em] uppercase mb-4 flex justify-between items-center relative z-10">
-                  Faturamento (Dia Selecionado)
-                  <button onClick={() => setIsModalOpen(true)} className="text-[#C88E70] border border-[#C88E70]/50 px-3 py-2 rounded-lg hover:bg-[#C88E70] hover:text-black transition-colors font-bold tracking-widest text-[10px] shadow-lg hover:shadow-[#C88E70]/50">+ CLIENTE BALCÃO</button>
-                </p>
-                <motion.h2 
-                  key={data.revenue} 
-                  initial={{ opacity: 0, scale: 0.5 }} 
-                  animate={{ opacity: 1, scale: 1 }} 
-                  transition={{ type: "spring", stiffness: 200, damping: 10 }}
-                  className="text-5xl font-serif text-white mb-4 relative z-10"
-                >
-                  R$ {data.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </motion.h2>
-                <div className="flex items-center gap-2 text-green-400 bg-green-400/10 w-fit px-3 py-1 rounded-full text-xs font-semibold relative z-10">
-                  <TrendingUp className="w-3 h-3" /> Cálculo Real Automático
-                </div>
-              </motion.div>
+    <div className="max-w-[1400px] mx-auto space-y-8 pb-12">
+      {/* ── BARRA SUPERIOR: IDENTIDADE DO BARBEIRO E SELETOR DE GESTÃO ── */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-white/10 pb-6">
+        <div>
+          <div className="flex items-center gap-3">
+            {isAdmin ? (
+              <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-[#C88E70] text-[#050B14] flex items-center gap-1.5">
+                <Shield className="w-3 h-3" /> Painel do Dono / ADM
+              </span>
+            ) : (
+              <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1.5">
+                <Scissors className="w-3 h-3" /> Painel Individual do Barbeiro
+              </span>
+            )}
+            <span className="text-gray-400 text-xs font-light">
+              Usuário logado: <strong className="text-white">{userName}</strong>
+            </span>
+          </div>
 
-              <div className="grid grid-rows-3 gap-4">
-                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6  flex items-center justify-between group hover:border-[#C88E70]/30 transition-all cursor-default shadow-lg">
-                  <div>
-                    <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Qtd. Cortes</p>
-                    <motion.p key={data.todayCount} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-serif text-white">{data.todayCount}</motion.p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
-                    <Scissors className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-                  </div>
-                </motion.div>
-                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6  flex items-center justify-between group hover:border-[#C88E70]/30 transition-all cursor-default shadow-lg">
-                  <div>
-                    <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Tempo Médio de Cortes</p>
-                    <motion.p key={data.averageDuration} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-serif text-white">{data.averageDuration} <span className="text-sm text-gray-500 font-sans">min</span></motion.p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-[#C88E70]/10 flex items-center justify-center text-[#C88E70] group-hover:scale-110 transition-transform">
-                    <Clock3 className="w-5 h-5 group-hover:-rotate-12 transition-transform" />
-                  </div>
-                </motion.div>
-                <motion.div variants={itemVariants} whileHover={{ scale: 1.05, x: -5 }} className="bg-white/5 border border-white/10 rounded-3xl p-6  flex items-center justify-between group hover:border-white/20 transition-all cursor-default shadow-lg">
-                  <div>
-                    <p className="text-gray-400 text-[10px] tracking-[0.2em] uppercase mb-1">Total de Clientes</p>
-                    <motion.p key={data.clientsCount} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-3xl font-serif text-white">{data.clientsCount}</motion.p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center text-gray-300 group-hover:scale-110 transition-transform">
-                    <Users className="w-5 h-5 group-hover:scale-125 transition-transform" />
-                  </div>
-                </motion.div>
-              </div>
-            </div>
+          <h2 className="text-2xl md:text-3xl font-serif text-white mt-2">
+            {isAdmin 
+              ? (selectedBarberFilter === "all" ? "Visão Geral de Toda a Barbearia" : `Gestão de ${BARBERS.find(b => b.id === selectedBarberFilter)?.name}`)
+              : `Minha Agenda e Atendimentos`}
+          </h2>
+        </div>
 
-        {/* PRÓXIMO CLIENTE */}
-        {nextApt && (
-          <div className="bg-white/5 border border-[#C88E70]/30 rounded-3xl p-1 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-[#C88E70]/10 to-transparent" />
-            <div className="bg-[#050B14] rounded-[22px] p-8 relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="flex items-center gap-6">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center border-2 border-[#C88E70]">
-                    <User className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[#C88E70] text-xs tracking-[0.2em] uppercase font-semibold mb-1 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#C88E70] animate-pulse"></span> Próximo Cliente
-                  </p>
-                  <h3 className="text-3xl font-serif text-white mb-1">{nextApt.user?.name || "Cliente Balcão"}</h3>
-                  <p className="text-gray-400 text-sm font-light">{nextApt.service?.name}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <p className="text-gray-500 text-xs tracking-widest uppercase mb-1">Horário</p>
-                  <p className="text-2xl font-serif text-white flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-[#C88E70]" /> 
-                    {new Date(nextApt.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' })}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => updateStatus(nextApt.id, 'COMPLETED')}
-                  className="px-6 py-4 rounded-xl bg-[#C88E70] text-black font-bold uppercase text-xs tracking-widest hover:bg-white transition-all flex items-center gap-2"
+        {/* Controles de Filtro: Data e Barbeiro (Dono) */}
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Seletor de Barbeiro Exclusivo do Dono */}
+          {isAdmin && (
+            <div className="flex items-center gap-2 bg-white/[0.03] border border-white/10 p-1 rounded-xl">
+              <button
+                onClick={() => setSelectedBarberFilter("all")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === "all" ? "bg-[#C88E70] text-[#050B14]" : "text-gray-400 hover:text-white"}`}
+              >
+                Todos
+              </button>
+              {BARBERS.map((b) => (
+                <button
+                  key={b.id}
+                  onClick={() => setSelectedBarberFilter(b.id)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === b.id ? "bg-[#C88E70] text-[#050B14]" : "text-gray-400 hover:text-white"}`}
                 >
-                  <CheckCircle className="w-4 h-4" /> Concluir Serviço
+                  {b.name.split(" ")[0]}
                 </button>
-              </div>
+              ))}
             </div>
+          )}
+
+          {/* Filtro por data */}
+          <div className="flex items-center gap-2">
+            <input 
+              type="date" 
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#C88E70] transition-colors"
+            />
+          </div>
+
+          {/* Botão Balcão */}
+          <button 
+            onClick={() => setIsModalOpen(true)} 
+            className="bg-[#C88E70] text-[#050B14] hover:bg-white px-4 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all duration-300 shadow-lg shadow-[#C88E70]/20 flex items-center gap-2"
+          >
+            <Scissors className="w-3.5 h-3.5" /> + Cliente Balcão
+          </button>
+        </div>
+      </div>
+
+      {/* ── BENTO GRID DE CARDS PRINCIPAIS ── */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Card Faturamento */}
+        <div className="md:col-span-2 bg-gradient-to-br from-white/[0.06] via-white/[0.02] to-transparent border border-white/10 rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between shadow-2xl">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-[#C88E70]/10 blur-3xl rounded-full pointer-events-none" />
+          
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <p className="text-gray-400 text-xs tracking-[0.2em] uppercase font-semibold">
+                {isAdmin && selectedBarberFilter === "all" ? "Faturamento Geral (Dia)" : "Faturamento do Barbeiro (Dia)"}
+              </p>
+              <h3 className="text-4xl md:text-5xl font-serif text-white mt-2">
+                R$ {Number(dashboardData.revenue || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+              </h3>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-[#C88E70]/20 border border-[#C88E70]/40 flex items-center justify-center text-[#C88E70]">
+              <DollarSign className="w-6 h-6" />
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-green-400 bg-green-400/10 w-fit px-3 py-1.5 rounded-full text-xs font-semibold">
+            <TrendingUp className="w-3.5 h-3.5" /> 
+            <span>Cálculo automático de atendimentos concluídos</span>
+          </div>
+        </div>
+
+        {/* Cortes do Dia */}
+        <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-gray-400 text-xs tracking-wider uppercase">Cortes Agendados</p>
+            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-[#C88E70]">
+              <Scissors className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <p className="text-4xl font-serif text-white">{dashboardData.todayCount || 0}</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {dashboardData.completedCount || 0} já concluídos hoje
+            </p>
+          </div>
+        </div>
+
+        {/* Total de Clientes */}
+        <div className="bg-white/[0.03] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-gray-400 text-xs tracking-wider uppercase">Clientes Atendidos</p>
+            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-blue-400">
+              <Users className="w-4 h-4" />
+            </div>
+          </div>
+          <div>
+            <p className="text-4xl font-serif text-white">{dashboardData.clientsCount || 0}</p>
+            <p className="text-xs text-gray-500 mt-1">Fluxo na data selecionada</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── VISÃO DO DONO: FLUXO E REPARTIÇÃO POR FUNCIONÁRIO ── */}
+      {isAdmin && selectedBarberFilter === "all" && (
+        <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 md:p-8">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
+            <div>
+              <h3 className="text-xl font-serif text-white">Fluxo por Barbeiro (Equipe)</h3>
+              <p className="text-xs text-gray-400 font-light mt-0.5">
+                Acompanhe o faturamento e volume de atendimentos de cada funcionário em tempo real.
+              </p>
+            </div>
+            <span className="text-xs text-[#C88E70] uppercase tracking-wider font-semibold">
+              3 Profissionais Ativos
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {BARBERS.map((barber) => {
+              const bStats = dashboardData.barberBreakdown?.find((b: any) => b.id === barber.id) || {
+                totalApts: 0,
+                completedApts: 0,
+                revenue: 0,
+              };
+              const isOwner = barber.role === "ADMIN";
+
+              return (
+                <div 
+                  key={barber.id}
+                  onClick={() => setSelectedBarberFilter(barber.id)}
+                  className="p-5 rounded-2xl bg-white/[0.03] border border-white/10 hover:border-[#C88E70]/50 hover:bg-[#C88E70]/5 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center gap-3.5 mb-4">
+                    <div 
+                      className="w-12 h-12 rounded-full bg-cover bg-center border border-white/20 shrink-0"
+                      style={{ backgroundImage: `url(${barber.avatar})` }}
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-base font-serif text-white group-hover:text-[#C88E70] transition-colors">
+                          {barber.name}
+                        </h4>
+                        {isOwner && (
+                          <span className="text-[9px] bg-[#C88E70] text-[#050B14] px-1.5 py-0.2 rounded font-bold uppercase">
+                            Dono
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-500 font-mono">{barber.phoneDisplay}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-3 border-t border-white/5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400">Faturamento Hoje:</span>
+                      <span className="text-white font-mono font-bold text-sm text-[#C88E70]">
+                        R$ {Number(bStats.revenue || 0).toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400">Atendimentos Concluídos:</span>
+                      <span className="text-white font-semibold">{bStats.completedApts}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-gray-400">Total Agendados:</span>
+                      <span className="text-gray-300">{bStats.totalApts}</span>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-[#C88E70] font-semibold">
+                    <span>Ver agenda exclusiva</span>
+                    <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── LISTA DE AGENDAMENTOS DO DIA ── */}
+      <div className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 md:p-8">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b border-white/5">
+          <div>
+            <h3 className="text-xl font-serif text-white">
+              Agendamentos do Dia ({selectedDate.split("-").reverse().join("/")})
+            </h3>
+            <p className="text-xs text-gray-400 font-light mt-0.5">
+              {isAdmin && selectedBarberFilter === "all"
+                ? "Exibindo todos os cortes distribuídos entre os barbeiros."
+                : `Exibindo somente atendimentos de ${BARBERS.find(b => b.id === (isAdmin ? selectedBarberFilter : userBarberId))?.name || "este barbeiro"}.`}
+            </p>
+          </div>
+
+          <span className="text-xs text-gray-500 font-mono">
+            {dashboardData.appointments?.length || 0} registros
+          </span>
+        </div>
+
+        {dashboardData.appointments?.length === 0 ? (
+          <div className="py-16 text-center text-gray-500 text-sm">
+            Nenhum agendamento encontrado para esta data ou barbeiro selecionado.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {dashboardData.appointments?.map((apt: any) => {
+              const barberInfo = BARBERS.find(b => b.id === apt.barberId) || BARBERS[0];
+              const aptTime = new Date(apt.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+
+              return (
+                <div 
+                  key={apt.id}
+                  className="p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/15 transition-all"
+                >
+                  {/* Horário, Cliente e Serviço */}
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-[#050B14] border border-white/10 flex flex-col items-center justify-center font-mono shrink-0">
+                      <span className="text-xs text-gray-400 font-light">HORA</span>
+                      <span className="text-sm font-bold text-[#C88E70]">{aptTime}</span>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-base font-serif text-white">
+                          {apt.user?.name || "Cliente"}
+                        </h4>
+                        {/* Tag do Barbeiro Responsável */}
+                        {isAdmin && selectedBarberFilter === "all" && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-white/5 border border-white/10 text-gray-300">
+                            ✂️ {barberInfo.name.split(" ")[0]}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {apt.service?.name} · <strong className="text-white">R$ {apt.service?.price}</strong> · WhatsApp: {apt.user?.phone || "Não informado"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Status e Ações */}
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                      apt.status === "COMPLETED" 
+                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" 
+                        : apt.status === "CONFIRMED"
+                        ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                        : apt.status === "CANCELLED"
+                        ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                        : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
+                    }`}>
+                      {apt.status === "COMPLETED" ? "Concluído" : apt.status === "CONFIRMED" ? "Confirmado" : apt.status === "CANCELLED" ? "Cancelado" : "Pendente"}
+                    </span>
+
+                    {/* Botões de Ação para os Barbeiros e Dono */}
+                    {apt.status !== "COMPLETED" && apt.status !== "CANCELLED" && (
+                      <button 
+                        onClick={() => updateStatus(apt.id, "COMPLETED")}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 hover:text-black text-emerald-300 text-xs font-semibold transition-all"
+                      >
+                        Concluir Corte
+                      </button>
+                    )}
+
+                    {apt.status === "PENDING" && (
+                      <button 
+                        onClick={() => updateStatus(apt.id, "CONFIRMED")}
+                        className="px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500 hover:text-white text-blue-300 text-xs font-semibold transition-all"
+                      >
+                        Confirmar
+                      </button>
+                    )}
+
+                    {apt.status !== "CANCELLED" && (
+                      <button 
+                        onClick={() => updateStatus(apt.id, "CANCELLED")}
+                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                        title="Cancelar agendamento"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* Agenda do Dia */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-8  flex flex-col h-full relative">
-        <h2 className="text-2xl font-serif text-white mb-8">Agenda</h2>
-        <div className="flex-1 space-y-6 relative before:absolute before:inset-y-0 before:left-[19px] before:w-[1px] before:bg-white/10">
-          
-          {data.appointments.length === 0 && (
-             <p className="text-gray-500 text-sm italic pl-12">Nenhum agendamento para hoje.</p>
-          )}
-
-          <AnimatePresence mode="popLayout">
-            {data.appointments.map((apt: any, i: number) => (
-              <motion.div 
-                key={apt.id || i} 
-                layout
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ delay: i * 0.05, type: "spring", stiffness: 200, damping: 20 }}
-                className="flex gap-6 group"
-              >
-                <div className={`w-10 h-10 rounded-full border-4 border-[#050B14] flex items-center justify-center relative z-10 transition-colors shadow-lg ${
-                  apt.status === 'CONFIRMED' ? 'bg-[#C88E70] shadow-[#C88E70]/20' : 
-                  apt.status === 'COMPLETED' ? 'bg-white/20' : 'bg-yellow-500 shadow-yellow-500/20'
-                }`}>
-                  {apt.status === 'CONFIRMED' && <motion.div layoutId={`dot-${apt.id}`} className="w-2 h-2 rounded-full bg-[#050B14]" />}
-                </div>
-                <motion.div whileHover={{ scale: 1.02, x: 5 }} className="flex-1 bg-white/[0.02] border border-white/10 hover:border-[#C88E70]/30 rounded-2xl p-4 transition-all -mt-2 cursor-default hover:bg-white/5 hover:shadow-lg">
-                  <div className="flex justify-between items-start mb-1">
-                    <h4 className="text-white font-medium">{apt.user?.name || "Cliente"}</h4>
-                    <span className="text-[#C88E70] font-serif">{new Date(apt.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute:'2-digit' })}</span>
-                  </div>
-                  <p className="text-gray-400 text-sm font-light mb-3">{apt.service?.name}</p>
-                  
-                  <div className="flex gap-2 items-center">
-                    <span className={`text-[10px] uppercase tracking-widest px-2 py-1 rounded-md border ${
-                      apt.status === 'CONFIRMED' ? 'border-[#C88E70]/30 text-[#C88E70]' : 
-                      apt.status === 'COMPLETED' ? 'border-green-500/30 text-green-500' : 'border-yellow-500/30 text-yellow-500'
-                    }`}>
-                      {apt.status}
-                    </span>
-
-                    {apt.status === 'COMPLETED' && apt.durationSpent && (
-                      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-[10px] uppercase tracking-widest px-2 py-1 text-gray-400 flex items-center gap-1">
-                         <Clock3 className="w-3 h-3" /> {apt.durationSpent} min
-                      </motion.span>
-                    )}
-                    
-                    {apt.status === 'PENDING' && (
-                      <button onClick={() => updateStatus(apt.id, 'CONFIRMED')} className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-md bg-white/10 hover:bg-[#C88E70] hover:text-black transition-colors hover:scale-105 active:scale-95">
-                        Confirmar
-                      </button>
-                    )}
-                    {apt.status === 'CONFIRMED' && (
-                      <button onClick={() => updateStatus(apt.id, 'COMPLETED')} className="text-[10px] uppercase tracking-widest px-2 py-1 rounded-md bg-white/10 hover:bg-green-500 hover:text-white transition-colors hover:scale-105 active:scale-95">
-                        Finalizar
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-      </div>
-    </motion.div>
-
-    {/* MODAL CLIENTE BALCÃO */}
-    <AnimatePresence>
-      {isModalOpen && (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 "
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="bg-[#050B14] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative"
-          >
-            <button onClick={() => setIsModalOpen(false)} className="absolute top-4 right-4 p-2 text-gray-500 hover:text-white transition-colors rounded-full hover:bg-white/10 z-50">
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="p-8 pb-4">
-              <h2 className="text-2xl font-serif text-white mb-1">Cliente Balcão</h2>
-              <p className="text-gray-400 text-sm font-light">Selecione o serviço realizado para registrar o faturamento.</p>
-            </div>
-
-            <div className="p-8 pt-4 space-y-3 max-h-[60vh] overflow-y-auto scrollbar-hide">
-              {services.map(svc => (
-                <button
-                  key={svc.id}
-                  onClick={() => createWalkIn(svc.id)}
-                  disabled={isSubmitting}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/5 hover:bg-white/10 hover:border-[#C88E70]/30 transition-all text-left disabled:opacity-50"
-                >
-                  <div>
-                    <h3 className="text-white font-medium">{svc.name}</h3>
-                    <p className="text-xs text-gray-500 mt-1">{svc.duration} min</p>
-                  </div>
-                  <span className="text-[#C88E70] font-serif text-lg">R$ {svc.price}</span>
+      {/* ── MODAL: CLIENTE BALCÃO (WALK-IN) ── */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-[#050B14]/80 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
+                <h3 className="text-2xl font-serif text-white">Lançar Cliente Balcão</h3>
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
+                  <X className="w-5 h-5" />
                 </button>
-              ))}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-    </>
+              </div>
+
+              {/* Escolha do Barbeiro que está atendendo */}
+              <div className="mb-6">
+                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
+                  Barbeiro Responsável
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {BARBERS.map((b) => (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => setWalkInBarberId(b.id)}
+                      className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all ${walkInBarberId === b.id ? "border-[#C88E70] bg-[#C88E70] text-[#050B14]" : "border-white/10 text-gray-300 hover:border-white/30"}`}
+                    >
+                      {b.name.split(" ")[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Escolha do Serviço */}
+              <div className="mb-6">
+                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium">
+                  Selecione o Serviço Prestado
+                </label>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {[
+                    { id: "corte", name: "Corte", price: 35 },
+                    { id: "barba", name: "Barba", price: 25 },
+                    { id: "cabeca-navalha", name: "Cabeça raspada navalha", price: 25 },
+                    { id: "pezinho", name: "Pezinho", price: 20 },
+                    { id: "barba-maquina", name: "Barba raspada na máquina", price: 20 },
+                    { id: "sobrancelha", name: "Sobrancelha", price: 15 },
+                    { id: "combo-corte-barba", name: "Corte + Barba", price: 55 },
+                    { id: "combo-pezinho-barba", name: "Pezinho + Barba", price: 40 },
+                    { id: "combo-corte-sobrancelha", name: "Corte + Sobrancelha", price: 45 },
+                  ].map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => createWalkIn(s.id)}
+                      className="w-full p-3 rounded-xl border border-white/10 hover:border-[#C88E70] bg-white/[0.02] hover:bg-[#C88E70]/10 flex items-center justify-between text-left transition-all"
+                    >
+                      <span className="text-white text-sm font-medium">{s.name}</span>
+                      <span className="text-[#C88E70] font-mono font-bold text-sm">R$ {s.price}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button 
+                type="button" 
+                onClick={() => setIsModalOpen(false)}
+                className="w-full text-center text-xs uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+              >
+                Cancelar
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

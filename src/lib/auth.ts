@@ -2,10 +2,51 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { BARBERS, getBarberByEmail } from "@/lib/barbers";
 
 process.env.NEXTAUTH_URL = "https://barber-pro-six.vercel.app";
 process.env.NEXTAUTH_URL_INTERNAL = "https://barber-pro-six.vercel.app";
 delete process.env.VERCEL_URL;
+
+// Contas de barbeiros e gestor pré-configuradas para testes imediatos
+const PROVISIONAL_USERS = [
+  {
+    id: "barbeiro-dono",
+    email: "dono@mrbastos.com",
+    phone: "5575999990001",
+    name: "Mr. Bastos (Dono)",
+    role: "ADMIN",
+    barberId: "barbeiro-dono",
+    passwords: ["123", "admin123", "@Familia435"],
+  },
+  {
+    id: "barbeiro-lucas",
+    email: "lucas@mrbastos.com",
+    phone: "5575999990002",
+    name: "Lucas Barbeiro",
+    role: "BARBER",
+    barberId: "barbeiro-lucas",
+    passwords: ["123", "barbeiro123"],
+  },
+  {
+    id: "barbeiro-felipe",
+    email: "felipe@mrbastos.com",
+    phone: "5575999990003",
+    name: "Felipe Barbeiro",
+    role: "BARBER",
+    barberId: "barbeiro-felipe",
+    passwords: ["123", "barbeiro123"],
+  },
+  {
+    id: "client-test",
+    email: "cliente@mrbastos.com",
+    phone: "75988887777",
+    name: "Rodrigo Estêvão",
+    role: "CLIENT",
+    barberId: null,
+    passwords: ["123", "123456"],
+  },
+];
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET || "super-secret-barber-key-123",
@@ -13,53 +54,96 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: "Credentials",
       credentials: {
+        identifier: { label: "E-mail ou Telefone", type: "text" },
         phone: { label: "Telefone", type: "text" },
-        password: { label: "Senha (Somente Gestor)", type: "password" }
+        password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.phone) return null;
-        
-        const user = await prisma.user.findUnique({
-          where: { phone: credentials.phone }
-        });
+        const input = (credentials?.identifier || credentials?.phone || "").trim();
+        const pwd = (credentials?.password || "").trim();
 
-        if (!user) return null;
+        if (!input || !pwd) return null;
 
-        // Todos precisam de senha
-        if (!credentials.password || !user.password) return null;
-        const isValid = await bcrypt.compare(credentials.password, user.password);
-        if (!isValid) return null;
+        const cleanPhone = input.replace(/\D/g, "");
+        const lowerInput = input.toLowerCase();
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          phone: user.phone,
-          role: user.role
-        };
-      }
-    })
+        // 1. Verifica contas provisionadas dos barbeiros / dono / cliente de teste
+        const foundProvisional = PROVISIONAL_USERS.find(
+          (u) =>
+            u.email.toLowerCase() === lowerInput ||
+            (cleanPhone && u.phone.includes(cleanPhone))
+        );
+
+        if (foundProvisional) {
+          if (foundProvisional.passwords.includes(pwd)) {
+            return {
+              id: foundProvisional.id,
+              name: foundProvisional.name,
+              email: foundProvisional.email,
+              phone: foundProvisional.phone,
+              role: foundProvisional.role,
+              barberId: foundProvisional.barberId,
+            } as any;
+          }
+          return null;
+        }
+
+        // 2. Busca no banco de dados Prisma (se disponível)
+        try {
+          const user = await prisma.user.findFirst({
+            where: {
+              OR: [
+                { email: lowerInput },
+                ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+              ],
+            },
+          });
+
+          if (user && user.password) {
+            const isValid = await bcrypt.compare(pwd, user.password);
+            if (isValid) {
+              const barberMatch = getBarberByEmail(user.email);
+              return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                barberId: barberMatch?.id || null,
+              } as any;
+            }
+          }
+        } catch (dbErr) {
+          console.warn("DB offline ou não disponível na autorização:", dbErr);
+        }
+
+        return null;
+      },
+    }),
   ],
   pages: {
-    signIn: '/login', // Redireciona usuários não logados para cá
+    signIn: "/login",
   },
   session: {
-    strategy: "jwt", // Mais rápido e não onera o banco de dados
+    strategy: "jwt",
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.role = (user as any).role;
+        token.barberId = (user as any).barberId;
+        token.phone = (user as any).phone;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         (session.user as any).role = token.role;
+        (session.user as any).barberId = token.barberId;
+        (session.user as any).phone = token.phone;
         (session.user as any).id = token.sub;
       }
       return session;
-    }
-  }
+    },
+  },
 };
-

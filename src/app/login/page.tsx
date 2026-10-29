@@ -1,15 +1,16 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { Phone, Lock, ArrowRight, ChevronLeft } from "lucide-react";
+import { motion } from "framer-motion";
+import { Mail, Lock, ArrowRight, ChevronLeft, Shield, User, Scissors } from "lucide-react";
 import Link from "next/link";
+import { LogoMrBastos } from "@/components/LogoMrBastos";
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
-  const [phone, setPhone] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -17,34 +18,37 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/dashboard");
+      const role = (session?.user as any)?.role;
+      if (role === "CLIENT") {
+        router.push("/painel-cliente");
+      } else {
+        router.push("/dashboard");
+      }
     }
-  }, [status, router]);
+  }, [status, session, router]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || !password) {
-      setError("Preencha todos os campos para continuar.");
+    if (!identifier || !password) {
+      setError("Por favor, preencha o e-mail (ou telefone) e a senha.");
       return;
     }
     setLoading(true);
     setError("");
 
-    const cleanPhone = phone.replace(/\D/g, "");
-
     try {
       const res = await signIn("credentials", {
-        phone: cleanPhone,
-        password,
+        identifier: identifier.trim(),
+        phone: identifier.trim(),
+        password: password.trim(),
         redirect: false,
       });
 
       if (res?.error) {
-        setError("Credenciais inválidas ou número não encontrado.");
+        setError("Credenciais inválidas. Verifique os dados ou utilize um dos acessos de teste.");
         setLoading(false);
       } else if (res?.ok) {
         router.refresh();
-        router.push("/dashboard");
       } else {
         setError("Falha inesperada no login.");
         setLoading(false);
@@ -55,62 +59,170 @@ export default function LoginPage() {
     }
   };
 
+  const fillQuickAccess = (email: string, pass: string) => {
+    setIdentifier(email);
+    setPassword(pass);
+    setError("");
+  };
+
   return (
-    <div className="min-h-screen bg-[#050B14] flex flex-col lg:flex-row">
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 relative">
-        <Link href="/" className="absolute top-8 left-8 text-gray-500 hover:text-[#C88E70] transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-semibold z-20">
-          <ChevronLeft className="w-4 h-4" /> Voltar
+    <div className="min-h-screen bg-[#050B14] flex flex-col lg:flex-row text-white selection:bg-[#C88E70] selection:text-black">
+      {/* Coluna da Esquerda: Formulário de Login */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative">
+        <Link 
+          href="/" 
+          className="absolute top-8 left-8 text-gray-500 hover:text-[#C88E70] transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-semibold z-20"
+        >
+          <ChevronLeft className="w-4 h-4" /> Voltar ao Site
         </Link>
 
-        <div className="w-full max-w-sm relative z-10">
-          <div className="mb-12 text-center lg:text-left">
+        <div className="w-full max-w-md relative z-10 pt-16 lg:pt-0">
+          <div className="mb-8 text-center lg:text-left">
+            <div className="flex items-center gap-3 justify-center lg:justify-start mb-4">
+              <LogoMrBastos size={42} color="#C88E70" />
+              <span className="text-xl font-serif tracking-[0.25em] uppercase text-white">Mr. Bastos</span>
+            </div>
             <h1 className="text-3xl font-serif text-white tracking-wide uppercase mb-2">Acesso ao Sistema</h1>
-            <p className="text-gray-400 text-sm font-light">Insira suas credenciais para continuar.</p>
+            <p className="text-gray-400 text-sm font-light leading-relaxed">
+              Área exclusiva para Barbeiros, Administração e Clientes.
+            </p>
           </div>
 
-          <form className="space-y-5" onSubmit={handleAuth}>
-            {error && <p className="text-red-400 text-xs font-semibold text-center bg-red-400/10 py-2 rounded-lg">{error}</p>}
+          <form className="space-y-4" onSubmit={handleAuth}>
+            {error && (
+              <p className="text-red-400 text-xs font-semibold text-center bg-red-400/10 border border-red-400/20 py-3 px-4 rounded-xl">
+                {error}
+              </p>
+            )}
 
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                <Phone className="w-5 h-5 text-gray-600 group-focus-within:text-[#C88E70] transition-colors" />
-              </div>
-              <input 
-                type="text" value={phone} onChange={(e) => setPhone(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder-transparent peer"
-                placeholder="Telefone" id="phone"
-              />
-              <label htmlFor="phone" className="absolute left-12 top-4 text-gray-500 text-sm transition-all duration-300 peer-focus:-top-2 peer-focus:left-4 peer-focus:text-[10px] peer-focus:uppercase peer-focus:tracking-widest peer-focus:text-[#C88E70] peer-focus:bg-[#050B14] peer-focus:px-2 peer-valid:-top-2 peer-valid:left-4 peer-valid:text-[10px] peer-valid:uppercase peer-valid:tracking-widest peer-valid:text-gray-400 peer-valid:bg-[#050B14] peer-valid:px-2 cursor-text">
-                TELEFONE
+            <div>
+              <label className="block text-gray-400 text-[10px] uppercase tracking-widest font-semibold mb-2">
+                E-mail ou Telefone
               </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                  <Mail className="w-4 h-4 text-gray-500" />
+                </div>
+                <input 
+                  type="text" 
+                  value={identifier} 
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
+                  placeholder="Ex: dono@mrbastos.com ou (75) 98888-7777" 
+                />
+              </div>
             </div>
 
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                <Lock className="w-5 h-5 text-gray-600 group-focus-within:text-[#C88E70] transition-colors" />
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-gray-400 text-[10px] uppercase tracking-widest font-semibold">
+                  Senha
+                </label>
+                <span className="text-[10px] text-gray-500 uppercase tracking-wider">
+                  Recuperação via e-mail em breve
+                </span>
               </div>
-              <input 
-                type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder-transparent peer"
-                placeholder="Senha" id="password"
-              />
-              <label htmlFor="password" className="absolute left-12 top-4 text-gray-500 text-sm transition-all duration-300 peer-focus:-top-2 peer-focus:left-4 peer-focus:text-[10px] peer-focus:uppercase peer-focus:tracking-widest peer-focus:text-[#C88E70] peer-focus:bg-[#050B14] peer-focus:px-2 peer-valid:-top-2 peer-valid:left-4 peer-valid:text-[10px] peer-valid:uppercase peer-valid:tracking-widest peer-valid:text-gray-400 peer-valid:bg-[#050B14] peer-valid:px-2 cursor-text">
-                SENHA
-              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+                  <Lock className="w-4 h-4 text-gray-500" />
+                </div>
+                <input 
+                  type="password" 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
+                  placeholder="Sua senha de acesso" 
+                />
+              </div>
             </div>
 
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 group mt-4 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+              className="w-full bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 group mt-6 hover:bg-white active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-[#C88E70]/20"
             >
-              {loading ? "Processando..." : "Acessar Sistema"}
+              {loading ? "Autenticando..." : "Entrar no Painel"}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
           </form>
+
+          {/* Atalhos Rápidos para Teste dos 3 Barbeiros e Cliente */}
+          <div className="mt-8 pt-6 border-t border-white/10">
+            <p className="text-[10px] uppercase tracking-[0.25em] text-[#C88E70] font-semibold mb-3 flex items-center gap-2">
+              <Shield className="w-3.5 h-3.5" /> Acessos Provisórios de Teste (1 Clique)
+            </p>
+            <div className="grid grid-cols-2 gap-2 text-left">
+              <button
+                type="button"
+                onClick={() => fillQuickAccess("dono@mrbastos.com", "123")}
+                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-[#C88E70] hover:bg-[#C88E70]/10 transition-all text-left group"
+              >
+                <p className="text-xs font-serif text-white group-hover:text-[#C88E70] font-medium flex items-center gap-1.5">
+                  <Shield className="w-3 h-3 text-[#C88E70]" /> Mr. Bastos (Dono)
+                </p>
+                <p className="text-[10px] text-gray-500 font-mono">dono@mrbastos.com</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fillQuickAccess("lucas@mrbastos.com", "123")}
+                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-blue-400 hover:bg-blue-400/10 transition-all text-left group"
+              >
+                <p className="text-xs font-serif text-white group-hover:text-blue-400 font-medium flex items-center gap-1.5">
+                  <Scissors className="w-3 h-3 text-blue-400" /> Lucas (Barbeiro)
+                </p>
+                <p className="text-[10px] text-gray-500 font-mono">lucas@mrbastos.com</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fillQuickAccess("felipe@mrbastos.com", "123")}
+                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-emerald-400 hover:bg-emerald-400/10 transition-all text-left group"
+              >
+                <p className="text-xs font-serif text-white group-hover:text-emerald-400 font-medium flex items-center gap-1.5">
+                  <Scissors className="w-3 h-3 text-emerald-400" /> Felipe (Barbeiro)
+                </p>
+                <p className="text-[10px] text-gray-500 font-mono">felipe@mrbastos.com</p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => fillQuickAccess("cliente@mrbastos.com", "123")}
+                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-purple-400 hover:bg-purple-400/10 transition-all text-left group"
+              >
+                <p className="text-xs font-serif text-white group-hover:text-purple-400 font-medium flex items-center gap-1.5">
+                  <User className="w-3 h-3 text-purple-400" /> Rodrigo (Cliente)
+                </p>
+                <p className="text-[10px] text-gray-500 font-mono">cliente@mrbastos.com</p>
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-500 mt-3 text-center">
+              Senha padrão provisória de teste: <span className="font-mono text-white">123</span>
+            </p>
+          </div>
         </div>
       </div>
-      <div className="hidden lg:block w-1/2 bg-[url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2070')] bg-cover bg-center" />
+
+      {/* Coluna da Direita: Imagem Real de Fundo com Overlay */}
+      <div 
+        className="hidden lg:block w-1/2 bg-cover bg-center relative"
+        style={{ backgroundImage: `url('/nossa-area/area-06.jpg')` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-[#050B14] via-[#050B14]/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#050B14] via-transparent to-transparent" />
+        
+        <div className="absolute bottom-12 left-12 right-12 z-10 max-w-lg">
+          <p className="text-[#C88E70] text-xs uppercase tracking-[0.3em] font-semibold mb-2">
+            Gestão Integrada Mr. Bastos
+          </p>
+          <h2 className="text-3xl font-serif text-white leading-tight mb-3">
+            O Padrão de Excelência em Cada Detalhe.
+          </h2>
+          <p className="text-gray-300 text-sm font-light leading-relaxed">
+            Painéis independentes para cada profissional com controle total de agendamentos, clientes e fechamento de caixa.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

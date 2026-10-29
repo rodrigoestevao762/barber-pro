@@ -112,7 +112,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             animate={{ opacity: 1, y: 0 }}
             className="text-3xl md:text-5xl font-serif text-white tracking-tight"
           >
-            BOM DIA, <span className="text-[#C88E70] italic">{(session?.user as any)?.role === 'CLIENT' ? (session?.user?.name?.split(' ')[0] || 'CLIENTE').toUpperCase() : 'GESTOR'}</span>
+            BOM DIA, <span className="text-[#C88E70] italic">{(session?.user?.name || 'BARBEIRO').toUpperCase()}</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -120,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             transition={{ delay: 0.1 }}
             className="text-gray-400 text-sm mt-2 font-light tracking-wide"
           >
-            {(session?.user as any)?.role === 'CLIENT' ? 'Acompanhe seus agendamentos e histórico conosco.' : 'O seu império aguarda. Aqui está o resumo de hoje.'}
+            {(session?.user as any)?.role === 'ADMIN' ? 'Visão administrativa e fluxo de toda a barbearia.' : 'Acompanhe seus agendamentos individuais e clientes de hoje.'}
           </motion.p>
         </div>
 

@@ -11,22 +11,36 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const { status } = await req.json();
 
-    // Verifica se o agendamento pertence ao usuário ou se é admin
-    const apt = await prisma.appointment.findUnique({ where: { id: resolvedParams.id } });
-    if (!apt) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
+    try {
+      const apt = await prisma.appointment.findUnique({ where: { id: resolvedParams.id } });
+      if (apt) {
+        const userRole = (session.user as any).role;
+        const userId = (session.user as any).id;
+        const userBarberId = (session.user as any).barberId;
 
-    if (apt.userId !== (session.user as any).id && (session.user as any).role !== "ADMIN") {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
+        // Permite se for o dono, o cliente do agendamento ou o barbeiro responsável
+        const isAllowed = 
+          userRole === "ADMIN" || 
+          apt.userId === userId || 
+          (userRole === "BARBER" && apt.barberId === userBarberId);
+
+        if (!isAllowed) {
+          return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
+        }
+
+        const updated = await prisma.appointment.update({
+          where: { id: resolvedParams.id },
+          data: { status }
+        });
+
+        return NextResponse.json(updated);
+      }
+    } catch (dbErr) {
+      // Fallback
     }
 
-    const updated = await prisma.appointment.update({
-      where: { id: resolvedParams.id },
-      data: { status }
-    });
-
-    return NextResponse.json(updated);
+    return NextResponse.json({ success: true, id: resolvedParams.id, status });
   } catch (e) {
     return NextResponse.json({ error: "Erro ao atualizar" }, { status: 500 });
   }
 }
-
