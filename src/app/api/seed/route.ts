@@ -9,9 +9,15 @@ export async function GET() {
     if (count === 0) {
       await prisma.service.createMany({
         data: [
-          { name: "Corte Clássico", description: "Corte na tesoura ou máquina com acabamento.", price: 80, duration: 45 },
-          { name: "Barba Terapia", description: "Toalha quente, massagem facial e óleos.", price: 60, duration: 30 },
-          { name: "Combo Premium", description: "A experiência completa de Corte e Barba.", price: 120, duration: 75 }
+          { name: "Corte", description: "Corte na tesoura ou máquina com acabamento impecável.", price: 35, duration: 30 },
+          { name: "Barba", description: "Alinhamento com navalha, toalha e produtos de qualidade.", price: 25, duration: 25 },
+          { name: "Cabeça raspada navalha", description: "Raspagem completa na navalha com acabamento suave.", price: 25, duration: 30 },
+          { name: "Pezinho", description: "Acabamento e contorno no detalhe.", price: 20, duration: 15 },
+          { name: "Barba raspada na máquina", description: "Aparação e alinhamento na máquina.", price: 20, duration: 20 },
+          { name: "Sobrancelha", description: "Design e alinhamento de sobrancelha.", price: 15, duration: 15 },
+          { name: "Corte + Barba", description: "Combo completo: corte e barba alinhada.", price: 55, duration: 50 },
+          { name: "Pezinho + Barba", description: "Acabamento no pezinho e barba feita.", price: 40, duration: 35 },
+          { name: "Corte + Sobrancelha", description: "Corte no estilo + design de sobrancelha.", price: 45, duration: 40 }
         ]
       });
     }

@@ -6,6 +6,18 @@ import { useState, useEffect } from "react";
 
 type Service = { id: string; name: string; price: number; duration: number };
 
+const DEFAULT_SERVICES: Service[] = [
+  { id: "corte", name: "Corte", price: 35, duration: 30 },
+  { id: "barba", name: "Barba", price: 25, duration: 25 },
+  { id: "cabeca-navalha", name: "Cabeça raspada navalha", price: 25, duration: 30 },
+  { id: "pezinho", name: "Pezinho", price: 20, duration: 15 },
+  { id: "barba-maquina", name: "Barba raspada na máquina", price: 20, duration: 20 },
+  { id: "sobrancelha", name: "Sobrancelha", price: 15, duration: 15 },
+  { id: "combo-corte-barba", name: "Corte + Barba", price: 55, duration: 50 },
+  { id: "combo-pezinho-barba", name: "Pezinho + Barba", price: 40, duration: 35 },
+  { id: "combo-corte-sobrancelha", name: "Corte + Sobrancelha", price: 45, duration: 40 },
+];
+
 export default function BookingModal({ 
   isOpen, 
   onClose,
@@ -30,24 +42,35 @@ export default function BookingModal({
 
   useEffect(() => {
     if (isOpen) {
-      fetch('/api/services').then(res => res.json()).then(data => {
-        setServices(data);
+      const applyServices = (list: Service[]) => {
+        const finalServices = Array.isArray(list) && list.length > 0 ? list : DEFAULT_SERVICES;
+        setServices(finalServices);
         if (initialServiceId) {
-          const s = data.find((d: Service) => d.id === initialServiceId);
+          const s = finalServices.find(
+            (d: Service) => d.id === initialServiceId || d.name.toLowerCase() === initialServiceId.toLowerCase()
+          );
           if (s) {
             setSelectedService(s);
-            setStep(2); // Pula direto pra etapa de data
+            setStep(2);
+          } else {
+            setStep(1);
+            setSelectedService(null);
           }
         } else {
           setStep(1);
           setSelectedService(null);
         }
-        
-        setSelectedDate("");
-        setSelectedTime("");
-        setAvailableTimes([]);
-        setIsSuccess(false);
-      });
+      };
+
+      fetch('/api/services')
+        .then(res => res.json())
+        .then(data => applyServices(data))
+        .catch(() => applyServices(DEFAULT_SERVICES));
+
+      setSelectedDate("");
+      setSelectedTime("");
+      setAvailableTimes([]);
+      setIsSuccess(false);
     }
   }, [isOpen, initialServiceId]);
 
