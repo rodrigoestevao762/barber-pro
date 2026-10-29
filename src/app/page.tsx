@@ -265,16 +265,48 @@ export default function Home() {
         <motion.div style={{ y, opacity }} className="absolute inset-0 w-full h-[120%] -top-[10%] pointer-events-none">
           {HERO_IMAGES.map((img, idx) => {
             const isActive = idx === currentImage;
+            const isOwnerSlide = idx === 2;
+
+            if (isOwnerSlide) {
+              return (
+                <div
+                  key={img}
+                  aria-hidden={!isActive}
+                  className={`absolute inset-0 transition-opacity duration-1000 ease-in-out will-change-[opacity] ${
+                    isActive ? "opacity-100 z-10" : "opacity-0 z-0"
+                  }`}
+                  style={{
+                    transform: "translate3d(0, 0, 0)",
+                    backfaceVisibility: "hidden",
+                    WebkitBackfaceVisibility: "hidden",
+                  }}
+                >
+                  {/* Fundo ambiental desfocado que expande o tom azul da parede para as bordas sem corte */}
+                  <div
+                    className="absolute inset-[-40px] bg-cover bg-center filter blur-3xl opacity-40 brightness-75 scale-110"
+                    style={{ backgroundImage: `url(${img})` }}
+                  />
+                  {/* Foto do Dono em enquadramento natural (sem zoom excessivo, mostrando caricaturas e postura) */}
+                  <div
+                    className="absolute inset-0 bg-contain bg-center bg-no-repeat"
+                    style={{
+                      backgroundImage: `url(${img})`,
+                      transform: "translate3d(0, 0, 0)",
+                    }}
+                  />
+                </div>
+              );
+            }
+
             return (
               <div
                 key={img}
                 aria-hidden={!isActive}
-                className={`absolute inset-0 bg-cover transition-opacity duration-1000 ease-in-out will-change-[opacity] ${
+                className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out will-change-[opacity] ${
                   isActive ? "opacity-100 z-10" : "opacity-0 z-0"
                 }`}
                 style={{
                   backgroundImage: `url(${img})`,
-                  backgroundPosition: idx === 2 ? "center 20%" : "center center",
                   transform: "translate3d(0, 0, 0)",
                   backfaceVisibility: "hidden",
                   WebkitBackfaceVisibility: "hidden",
