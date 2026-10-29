@@ -122,10 +122,7 @@ export default function NossaAreaSection() {
     offset: ["start end", "end start"],
   });
 
-  const titleY = useSpring(useTransform(scrollYProgress, [0, 0.4], [80, 0]), {
-    stiffness: 80,
-    damping: 20,
-  });
+  const titleY = useTransform(scrollYProgress, [0, 0.35], [50, 0]);
   const titleOpacity = useTransform(scrollYProgress, [0, 0.25], [0, 1]);
 
   return (
@@ -268,7 +265,7 @@ export default function NossaAreaSection() {
               key={i}
               initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
+              viewport={{ once: true, amount: 0.15 }}
               transition={{ duration: 0.7, delay: i * 0.07 }}
               className="relative overflow-hidden rounded-2xl"
               style={{ height: 240 }}

@@ -1,144 +1,145 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
-import { Award, ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
+import { Award, ShieldCheck, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
-// Fotos CINEMÁTICAS e diferentes da capa (Modelos, Cortes Premium, Fades)
-const CINEMATIC_IMAGES = [
-  "https://images.unsplash.com/photo-1605497788044-5a32c7078486?q=80&w=2000&auto=format&fit=crop", // Barbeiro cortando, luz premium
-  "https://images.unsplash.com/photo-1622288432450-277d0fce5b95?q=80&w=2000&auto=format&fit=crop", // Detalhe de barba com toalha
-  "https://images.unsplash.com/photo-1508898558739-c08127376c96?q=80&w=2000&auto=format&fit=crop", // Modelo masculino perfil elegante
-  "https://images.unsplash.com/photo-1618086054817-27b68da4017e?q=80&w=2000&auto=format&fit=crop", // Close up de máquina no fade
-  "https://images.unsplash.com/photo-1532710093739-9470acff878b?q=80&w=2000&auto=format&fit=crop", // Ação com tesoura
+// Fotos Oficiais dos Cortes Realizados na Barbearia MR. BASTOS
+const EXPERIENCIA_IMAGES = [
+  "/experiencia-corte-1.jpg", // Corte Fade Clássico na Mr. Bastos
+  "/experiencia-corte-2.jpg", // Corte Taper / Moicano Texturizado na Mr. Bastos
 ];
 
 export default function ExperienciaSection() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Efeito Ken Burns: Troca a cada 5 segundos para uma transição majestosa
+  // Pré-carregamento e transição cinematográfica fluida
   useEffect(() => {
+    EXPERIENCIA_IMAGES.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+
     const timer = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % CINEMATIC_IMAGES.length);
+      setCurrentSlide((prev) => (prev + 1) % EXPERIENCIA_IMAGES.length);
     }, 5000);
+
     return () => clearInterval(timer);
   }, []);
 
   return (
-    <section id="experiencia" className="relative min-h-[120vh] flex items-center justify-center bg-[#010204] overflow-hidden py-32 px-4 md:px-8">
-      
-      {/* FUNDO ANIMADO CINEMÁTICO (SLIDESHOW) */}
-      <div className="absolute inset-0 w-full h-full pointer-events-none">
-        <AnimatePresence mode="popLayout">
-          <motion.div
-            key={currentIndex}
-            initial={{ opacity: 0, scale: 1.15 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 3, ease: "easeInOut" }}
-            className="absolute inset-0 bg-cover bg-top grayscale-0 md:grayscale-[15%]"
-            style={{ backgroundImage: `url(${CINEMATIC_IMAGES[currentIndex]})` }}
-          />
-        </AnimatePresence>
-        
-        {/* OVERLAY DE CINEMA - Gradiente profundo e Vignette escura nas bordas */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(1,2,4,0.7)_100%)] md:bg-[radial-gradient(circle_at_center,transparent_0%,rgba(1,2,4,0.9)_100%)]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#010204] via-[#050B14]/50 md:via-[#050B14]/70 to-[#010204] opacity-90" />
+    <section 
+      id="experiencia" 
+      className="relative min-h-screen flex items-center justify-center bg-[#010204] overflow-hidden py-24 md:py-36 px-4 md:px-8"
+    >
+      {/* FUNDO COM SLIDESHOW DOS CORTES OFICIAIS MR. BASTOS (Zero Lag, GPU Acoplada) */}
+      <div className="absolute inset-0 w-full h-full pointer-events-none overflow-hidden">
+        {EXPERIENCIA_IMAGES.map((src, idx) => {
+          const isActive = idx === currentSlide;
+          return (
+            <div
+              key={src}
+              aria-hidden={!isActive}
+              className={`absolute inset-0 bg-cover transition-opacity duration-1000 ease-in-out will-change-[opacity] ${
+                isActive ? "opacity-100 z-10" : "opacity-0 z-0"
+              }`}
+              style={{
+                backgroundImage: `url(${src})`,
+                backgroundPosition: "center 32%",
+                transform: "translate3d(0, 0, 0)",
+                backfaceVisibility: "hidden",
+                WebkitBackfaceVisibility: "hidden",
+              }}
+            />
+          );
+        })}
+
+        {/* OVERLAYS CINEMÁTICOS DE LUXO - Contraste e Elegância sem pesar no processamento */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(1,2,4,0.75)_100%)] z-20 pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#010204] via-[#050B14]/65 to-[#010204] opacity-95 z-20 pointer-events-none" />
+        <div className="absolute inset-0 bg-[#010204]/30 z-20 pointer-events-none" />
       </div>
 
       {/* CAIXA DE TEXTO CINEMÁTICA (GLASSMORPHISM MONOLITH) */}
       <motion.div
-        initial={{ opacity: 0, y: 80 }}
+        initial={{ opacity: 0, y: 35 }}
         whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 w-full max-w-5xl mx-auto p-8 md:p-16 lg:p-20 rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.9)] border border-white/5  bg-[#050B14]/90"
+        viewport={{ once: true, amount: 0.15 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-30 w-full max-w-5xl mx-auto p-7 sm:p-12 md:p-16 lg:p-20 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.85)] border border-[#C88E70]/20 bg-[#050B14]/90 backdrop-blur-md"
       >
-        {/* LUZES VOLUMÉTRICAS (Flares) */}
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-[#C88E70]/20 blur-2xl rounded-full pointer-events-none" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-white/5 blur-2xl rounded-full pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-black/80 pointer-events-none" />
+        {/* Iluminação de borda dourada sutil */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-[#C88E70]/60 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2/4 h-[1px] bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
 
         <div className="relative z-20 flex flex-col items-center text-center">
           
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.4 }}
-          >
-            <p className="text-[#C88E70] uppercase tracking-[0.6em] text-xs md:text-sm font-semibold flex items-center gap-4 mb-8 drop-shadow-md">
-              <span className="w-8 md:w-16 h-[1px] bg-gradient-to-r from-transparent to-[#C88E70]"></span>
+          {/* Subtítulo Badge */}
+          <div className="inline-flex items-center gap-3 mb-6">
+            <span className="w-6 md:w-12 h-[1px] bg-gradient-to-r from-transparent to-[#C88E70]" />
+            <p className="text-[#C88E70] uppercase tracking-[0.45em] text-xs md:text-sm font-semibold flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#C88E70]" />
               A Experiência
-              <span className="w-8 md:w-16 h-[1px] bg-gradient-to-l from-transparent to-[#C88E70]"></span>
             </p>
-          </motion.div>
+            <span className="w-6 md:w-12 h-[1px] bg-gradient-to-l from-transparent to-[#C88E70]" />
+          </div>
 
-          <motion.h2 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, delay: 0.6 }}
-            className="text-5xl md:text-7xl lg:text-[5.5rem] font-serif font-black leading-[1.05] tracking-tighter mb-10 text-transparent bg-clip-text"
-            style={{
-              backgroundImage: "linear-gradient(135deg, #ffffff 10%, #a0a0a0 60%, #C88E70 100%)",
-              WebkitTextStroke: "1px rgba(200, 142, 112, 0.4)",
-              filter: "none"
-            }}
-          >
+          {/* Título Principal de Impacto */}
+          <h2 className="text-4xl sm:text-5xl md:text-7xl lg:text-[5.2rem] font-serif font-black leading-[1.08] tracking-tight mb-8 text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-[#C88E70]">
             A Arte de Forjar <br className="hidden md:block" /> Grandes Homens.
-          </motion.h2>
+          </h2>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.2, delay: 0.8 }}
-            className="w-24 h-[2px] bg-gradient-to-r from-transparent via-[#C88E70]/50 to-transparent mb-10"
-          />
+          {/* Divisor de Luxo */}
+          <div className="w-20 h-[2px] bg-gradient-to-r from-transparent via-[#C88E70]/60 to-transparent mb-8" />
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, delay: 1 }}
-            className="max-w-3xl text-gray-300 font-light text-lg md:text-2xl leading-relaxed mb-16 drop-shadow-lg"
-          >
+          {/* Texto de Filosofia da Barbearia */}
+          <p className="max-w-3xl text-gray-200 font-light text-base sm:text-lg md:text-2xl leading-relaxed mb-12 drop-shadow-sm">
             Não vendemos apenas cortes de cabelo. Entregamos um ritual cinematográfico de resgate da confiança e do bem-estar, onde o respeito às raízes clássicas encontra a excelência do homem moderno.
-          </motion.p>
+          </p>
 
-          {/* BADGES CINEMÁTICOS */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 1, delay: 1.2 }}
-            className="flex flex-col md:flex-row gap-6 md:gap-10 w-full justify-center"
-          >
-            {/* Badge 1 */}
-            <div className="group flex-1 bg-black/30 border border-[#C88E70]/20 p-6 rounded-2xl flex items-center gap-6 hover:bg-[#C88E70]/10 hover:border-[#C88E70]/50 transition-all duration-500 overflow-hidden relative">
-               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out" />
-               <div className="p-4 bg-[#050B14] rounded-full border border-white/5 shadow-inner group-hover:scale-110 transition-transform duration-500">
-                 <ShieldCheck className="w-8 h-8 text-[#C88E70]" />
-               </div>
-               <div className="text-left">
-                 <h4 className="text-white font-serif text-2xl mb-1">Mestria</h4>
-                 <p className="text-xs text-gray-400 uppercase tracking-widest">Técnica Impecável</p>
-               </div>
+          {/* BADGES CINEMÁTICOS DE ALTA PERFORMANCE */}
+          <div className="flex flex-col sm:flex-row gap-5 md:gap-8 w-full max-w-2xl justify-center mb-8">
+            
+            {/* Badge 1 - Mestria */}
+            <div className="flex-1 bg-black/40 border border-[#C88E70]/25 hover:border-[#C88E70] p-5 sm:p-6 rounded-2xl flex items-center gap-5 transition-all duration-300 hover:bg-[#C88E70]/5 group">
+              <div className="p-3.5 bg-[#050B14] rounded-full border border-[#C88E70]/30 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                <ShieldCheck className="w-7 h-7 text-[#C88E70]" />
+              </div>
+              <div className="text-left">
+                <h4 className="text-white font-serif text-xl sm:text-2xl font-bold mb-0.5">Mestria</h4>
+                <p className="text-[11px] text-gray-400 uppercase tracking-widest font-medium">Técnica Impecável</p>
+              </div>
             </div>
 
-            {/* Badge 2 */}
-            <div className="group flex-1 bg-black/30 border border-[#C88E70]/20 p-6 rounded-2xl flex items-center gap-6 hover:bg-[#C88E70]/10 hover:border-[#C88E70]/50 transition-all duration-500 overflow-hidden relative">
-               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-all duration-1000 ease-in-out" />
-               <div className="p-4 bg-[#050B14] rounded-full border border-white/5 shadow-inner group-hover:scale-110 transition-transform duration-500">
-                 <Award className="w-8 h-8 text-[#C88E70]" />
-               </div>
-               <div className="text-left">
-                 <h4 className="text-white font-serif text-2xl mb-1">Premium</h4>
-                 <p className="text-xs text-gray-400 uppercase tracking-widest">Atmosfera de Luxo</p>
-               </div>
+            {/* Badge 2 - Premium */}
+            <div className="flex-1 bg-black/40 border border-[#C88E70]/25 hover:border-[#C88E70] p-5 sm:p-6 rounded-2xl flex items-center gap-5 transition-all duration-300 hover:bg-[#C88E70]/5 group">
+              <div className="p-3.5 bg-[#050B14] rounded-full border border-[#C88E70]/30 shadow-inner group-hover:scale-105 transition-transform duration-300">
+                <Award className="w-7 h-7 text-[#C88E70]" />
+              </div>
+              <div className="text-left">
+                <h4 className="text-white font-serif text-xl sm:text-2xl font-bold mb-0.5">Premium</h4>
+                <p className="text-[11px] text-gray-400 uppercase tracking-widest font-medium">Atmosfera de Luxo</p>
+              </div>
             </div>
-          </motion.div>
+
+          </div>
+
+          {/* Indicador de Transição de Fotos */}
+          <div className="flex items-center gap-2 pt-2">
+            {EXPERIENCIA_IMAGES.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setCurrentSlide(i)}
+                aria-label={`Ver foto ${i + 1}`}
+                className={`h-1.5 rounded-full transition-all duration-500 ${
+                  i === currentSlide 
+                    ? "w-8 bg-[#C88E70]" 
+                    : "w-2 bg-white/20 hover:bg-white/40"
+                }`}
+              />
+            ))}
+          </div>
 
         </div>
       </motion.div>

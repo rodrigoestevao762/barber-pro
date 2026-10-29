@@ -136,6 +136,8 @@ export default function Home() {
   // Efeito Parallax suave para a imagem de fundo
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+  const footerY = useTransform(scrollYProgress, [0.8, 1], [0, 150]);
+  const footerOpacity = useTransform(scrollYProgress, [0.8, 1], [0, 0.4]);
 
   useEffect(() => {
     // Pré-carrega todas as fotos na GPU para transição perfeitamente fluida
@@ -281,19 +283,22 @@ export default function Home() {
                     WebkitBackfaceVisibility: "hidden",
                   }}
                 >
-                  {/* Fundo ambiental desfocado que expande o tom azul da parede para as bordas sem corte */}
+                  {/* Fundo ambiental com tom suave azulado da barbearia */}
                   <div
-                    className="absolute inset-[-40px] bg-cover bg-center filter blur-3xl opacity-40 brightness-75 scale-110"
+                    className="absolute inset-[-40px] bg-cover bg-center filter blur-2xl opacity-30 brightness-75 scale-105"
                     style={{ backgroundImage: `url(${img})` }}
                   />
-                  {/* Foto do Dono em enquadramento natural (sem zoom excessivo, mostrando caricaturas e postura) */}
-                  <div
-                    className="absolute inset-0 bg-contain bg-center bg-no-repeat"
-                    style={{
-                      backgroundImage: `url(${img})`,
-                      transform: "translate3d(0, 0, 0)",
-                    }}
-                  />
+                  {/* Foto do Dono com enquadramento recuado, elegante e sem ficar muito próxima */}
+                  <div className="absolute inset-0 flex items-center justify-center p-6 md:p-12">
+                    <div
+                      className="w-full h-full max-w-sm sm:max-w-md md:max-w-xl bg-contain bg-center bg-no-repeat transition-transform duration-700"
+                      style={{
+                        backgroundImage: `url(${img})`,
+                        backgroundPosition: "center 45%",
+                        transform: "translate3d(0, 0, 0) scale(0.82)",
+                      }}
+                    />
+                  </div>
                 </div>
               );
             }
@@ -574,17 +579,17 @@ export default function Home() {
       <section className="relative bg-[#02050A] text-[#C88E70] min-h-screen flex flex-col items-center justify-center overflow-hidden">
         {/* Fundo Parallax Sombrio */}
         <motion.div 
-          style={{ y: useTransform(scrollYProgress, [0.8, 1], [0, 200]), opacity: useTransform(scrollYProgress, [0.8, 1], [0, 0.4]) }}
+          style={{ y: footerY, opacity: footerOpacity }}
           className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1520338661084-3522f7c00683?q=80&w=2070')] bg-cover bg-center pointer-events-none"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#02050A] via-[#02050A]/90 to-transparent pointer-events-none" />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-8 flex flex-col items-center justify-center flex-1 py-32">
           <motion.div 
-            initial={{ scale: 0.5, rotate: -180, opacity: 0 }}
-            whileInView={{ scale: 1, rotate: 0, opacity: 1 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ type: "spring", stiffness: 50, damping: 20 }}
+            initial={{ scale: 0.8, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
             className="w-24 h-24 rounded-full border border-[#C88E70]/30 flex items-center justify-center mb-12 backdrop-blur-sm"
           >
             <Scissors className="w-10 h-10 text-[#C88E70]" />
@@ -592,11 +597,11 @@ export default function Home() {
 
           <div className="text-center space-y-4 mb-16 relative">
              <motion.h2 
-               initial={{ opacity: 0, y: 100, filter: "blur(20px)" }}
-               whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+               initial={{ opacity: 0, y: 40 }}
+               whileInView={{ opacity: 1, y: 0 }}
                viewport={{ once: true }}
-               transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-               className="text-[4rem] md:text-[8rem] font-serif leading-[0.8] tracking-tighter uppercase"
+               transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
+               className="text-[3.5rem] sm:text-[4.5rem] md:text-[8rem] font-serif leading-[0.88] tracking-tighter uppercase"
              >
                A Sua Nova <br /> 
                <span className="text-transparent [-webkit-text-stroke:2px_#C88E70] hover:text-[#C88E70] transition-colors duration-1000">
@@ -604,11 +609,11 @@ export default function Home() {
                </span>
              </motion.h2>
              <motion.p 
-               initial={{ opacity: 0, scale: 0.8 }}
-               whileInView={{ opacity: 1, scale: 1 }}
+               initial={{ opacity: 0, y: 15 }}
+               whileInView={{ opacity: 1, y: 0 }}
                viewport={{ once: true }}
-               transition={{ delay: 0.5, duration: 1 }}
-               className="text-xl md:text-2xl text-gray-400 font-light max-w-2xl mx-auto italic"
+               transition={{ delay: 0.2, duration: 0.8 }}
+               className="text-lg md:text-2xl text-gray-400 font-light max-w-2xl mx-auto italic"
              >
                Onde tradição e sofisticação se encontram para redefinir o seu estilo.
              </motion.p>
