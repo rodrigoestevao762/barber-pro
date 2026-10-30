@@ -520,7 +520,7 @@ export default function BookingModal({
                               </label>
                               <input 
                                 type="text" 
-                                placeholder="Ex: Rodrigo Estêvão"
+                                placeholder="Digite seu nome completo"
                                 value={clientName} 
                                 onChange={(e) => setClientName(e.target.value)}
                                 className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
@@ -552,7 +552,7 @@ export default function BookingModal({
                               </label>
                               <input 
                                 type="text" 
-                                placeholder="Ex: (75) 98888-7777"
+                                placeholder="Ex: (75) 99999-9999"
                                 value={clientPhone} 
                                 onChange={(e) => setClientPhone(e.target.value)}
                                 className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
@@ -566,7 +566,7 @@ export default function BookingModal({
                                 </label>
                                 <input 
                                   type="password" 
-                                  placeholder="Crie uma senha (ex: 123)"
+                                  placeholder="Crie uma senha de acesso"
                                   value={clientPassword} 
                                   onChange={(e) => setClientPassword(e.target.value)}
                                   className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"

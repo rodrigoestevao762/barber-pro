@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
 
 export async function GET() {
   try {
-    // Create services only if none exist
+    // Cria serviços oficiais apenas se nenhum existir
     const count = await prisma.service.count();
     if (count === 0) {
       await prisma.service.createMany({
@@ -22,23 +21,20 @@ export async function GET() {
       });
     }
 
-    // Cria conta Admin (Gestor Princípal)
-    const adminPassword = await bcrypt.hash("@Familia435", 10);
-    await prisma.user.upsert({
-      where: { phone: "21997073357" },
-      update: {
-        password: adminPassword,
-        role: "ADMIN"
-      },
-      create: {
-        name: "Gestor",
-        phone: "21997073357",
-        password: adminPassword,
-        role: "ADMIN"
-      }
-    });
+    // Remove qualquer conta do gestor anterior de teste (21997073357)
+    try {
+      await prisma.user.deleteMany({
+        where: {
+          OR: [
+            { phone: { contains: "21997073357" } },
+            { email: { contains: "21997073357" } },
+            { name: { contains: "Gestor" } },
+          ],
+        },
+      });
+    } catch (_) {}
 
-    return NextResponse.json({ success: true, message: "Banco Semeado com Sucesso!" });
+    return NextResponse.json({ success: true, message: "Banco Sincronizado e Serviços Oficiais Configurados!" });
   } catch (error) {
     console.error("SEED ERROR:", error);
     return NextResponse.json({ error: "Erro ao semear o banco" }, { status: 500 });

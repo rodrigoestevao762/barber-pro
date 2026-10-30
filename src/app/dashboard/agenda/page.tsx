@@ -335,7 +335,7 @@ export default function AgendaPage() {
                   <input 
                     required 
                     type="text" 
-                    placeholder="Ex: (75) 98888-7777"
+                    placeholder="Ex: (75) 99999-9999"
                     value={newClientPhone}
                     onChange={(e) => setNewClientPhone(e.target.value)}
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"

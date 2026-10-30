@@ -39,140 +39,9 @@ export function getLocalDateString(d: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-// Inicializa dados realistas distribuídos entre hoje, ontem e amanhã com a equipe oficial: Dono, Nando e Saul
+// Inicializa armazenamento limpo para uso oficial real (sem agendamentos de teste)
 function createInitialAppointments(): StoredAppointment[] {
-  const today = getLocalDateString();
-  
-  const dYesterday = new Date();
-  dYesterday.setDate(dYesterday.getDate() - 1);
-  const yesterday = getLocalDateString(dYesterday);
-
-  const dTomorrow = new Date();
-  dTomorrow.setDate(dTomorrow.getDate() + 1);
-  const tomorrow = getLocalDateString(dTomorrow);
-
-  return [
-    // ── ATENDIMENTOS DE HOJE ──
-    {
-      id: "apt-today-1",
-      date: `${today}T09:00:00.000Z`,
-      status: "COMPLETED",
-      barberId: "barbeiro-dono",
-      barber: { id: "barbeiro-dono", name: "Mr. Bastos (Dono)", role: "ADMIN" },
-      service: { id: "corte", name: "Corte", price: 35, duration: 30 },
-      user: { id: "u-1", name: "Marcos Vinicius", phone: "(75) 98811-2233", email: "marcos@gmail.com" },
-      durationSpent: 28,
-    },
-    {
-      id: "apt-today-2",
-      date: `${today}T10:30:00.000Z`,
-      status: "COMPLETED",
-      barberId: "barbeiro-dono",
-      barber: { id: "barbeiro-dono", name: "Mr. Bastos (Dono)", role: "ADMIN" },
-      service: { id: "combo-corte-barba", name: "Corte + Barba", price: 55, duration: 50 },
-      user: { id: "u-2", name: "Guilherme Santos", phone: "(75) 98822-3344", email: "guilherme@gmail.com" },
-      durationSpent: 48,
-    },
-    {
-      id: "apt-today-3",
-      date: `${today}T11:00:00.000Z`,
-      status: "CONFIRMED",
-      barberId: "barbeiro-nando",
-      barber: { id: "barbeiro-nando", name: "Nando Barbeiro", role: "BARBER" },
-      service: { id: "corte", name: "Corte", price: 35, duration: 30 },
-      user: { id: "u-3", name: "Thiago Lima", phone: "(75) 98833-4455", email: "thiago@gmail.com" },
-    },
-    {
-      id: "apt-today-4",
-      date: `${today}T14:00:00.000Z`,
-      status: "COMPLETED",
-      barberId: "barbeiro-nando",
-      barber: { id: "barbeiro-nando", name: "Nando Barbeiro", role: "BARBER" },
-      service: { id: "corte", name: "Corte", price: 35, duration: 30 },
-      user: { id: "u-4", name: "Rafael Silva", phone: "(75) 98844-5566", email: "rafael@gmail.com" },
-      durationSpent: 26,
-    },
-    {
-      id: "apt-today-5",
-      date: `${today}T15:30:00.000Z`,
-      status: "CONFIRMED",
-      barberId: "barbeiro-saul",
-      barber: { id: "barbeiro-saul", name: "Saul Barbeiro", role: "BARBER" },
-      service: { id: "barba", name: "Barba", price: 25, duration: 25 },
-      user: { id: "u-5", name: "Carlos Eduardo", phone: "(75) 98855-6677", email: "carlos@gmail.com" },
-    },
-    {
-      id: "apt-today-6",
-      date: `${today}T16:30:00.000Z`,
-      status: "COMPLETED",
-      barberId: "barbeiro-saul",
-      barber: { id: "barbeiro-saul", name: "Saul Barbeiro", role: "BARBER" },
-      service: { id: "combo-corte-barba", name: "Corte + Barba", price: 55, duration: 50 },
-      user: { id: "u-6", name: "André Matos", phone: "(75) 98866-7788", email: "andre@gmail.com" },
-      durationSpent: 42,
-    },
-
-    // ── ATENDIMENTOS DE ONTEM (HISTÓRICO) ──
-    {
-      id: "apt-yest-1",
-      date: `${yesterday}T10:00:00.000Z`,
-      status: "COMPLETED",
-      barberId: "barbeiro-dono",
-      barber: { id: "barbeiro-dono", name: "Mr. Bastos (Dono)", role: "ADMIN" },
-      service: { id: "corte", name: "Corte", price: 35, duration: 30 },
-      user: { id: "u-7", name: "Bruno Costa", phone: "(75) 98877-1122" },
-      durationSpent: 30,
-    },
-    {
-      id: "apt-yest-2",
-      date: `${yesterday}T14:30:00.000Z`,
-      status: "COMPLETED",
-      barberId: "barbeiro-nando",
-      barber: { id: "barbeiro-nando", name: "Nando Barbeiro", role: "BARBER" },
-      service: { id: "combo-corte-sobrancelha", name: "Corte + Sobrancelha", price: 45, duration: 40 },
-      user: { id: "u-8", name: "Fábio Souza", phone: "(75) 98877-3344" },
-      durationSpent: 38,
-    },
-    {
-      id: "apt-yest-3",
-      date: `${yesterday}T16:00:00.000Z`,
-      status: "COMPLETED",
-      barberId: "barbeiro-saul",
-      barber: { id: "barbeiro-saul", name: "Saul Barbeiro", role: "BARBER" },
-      service: { id: "pezinho-barba", name: "Pezinho + Barba", price: 40, duration: 35 },
-      user: { id: "u-9", name: "Lucas Gabriel", phone: "(75) 98877-5566" },
-      durationSpent: 32,
-    },
-
-    // ── AGENDAMENTOS FUTUROS (AMANHÃ) ──
-    {
-      id: "apt-tom-1",
-      date: `${tomorrow}T09:30:00.000Z`,
-      status: "CONFIRMED",
-      barberId: "barbeiro-dono",
-      barber: { id: "barbeiro-dono", name: "Mr. Bastos (Dono)", role: "ADMIN" },
-      service: { id: "combo-corte-barba", name: "Corte + Barba", price: 55, duration: 50 },
-      user: { id: "u-10", name: "Daniel Rocha", phone: "(75) 98899-0011", email: "daniel@gmail.com" },
-    },
-    {
-      id: "apt-tom-2",
-      date: `${tomorrow}T11:00:00.000Z`,
-      status: "CONFIRMED",
-      barberId: "barbeiro-nando",
-      barber: { id: "barbeiro-nando", name: "Nando Barbeiro", role: "BARBER" },
-      service: { id: "corte", name: "Corte", price: 35, duration: 30 },
-      user: { id: "u-11", name: "Henrique Mendes", phone: "(75) 98899-2233", email: "henrique@gmail.com" },
-    },
-    {
-      id: "apt-tom-3",
-      date: `${tomorrow}T15:00:00.000Z`,
-      status: "PENDING",
-      barberId: "barbeiro-saul",
-      barber: { id: "barbeiro-saul", name: "Saul Barbeiro", role: "BARBER" },
-      service: { id: "barba", name: "Barba", price: 25, duration: 25 },
-      user: { id: "u-12", name: "Rodrigo Estêvão", phone: "(75) 98888-7777", email: "cliente@mrbastos.com" },
-    },
-  ];
+  return [];
 }
 
 // Singleton global para persistência em memória entre chamadas de API
@@ -272,4 +141,10 @@ export function addStoredClosing(closingData: StoredClosing): StoredClosing {
   }
   global.__mrbastos_closings.unshift(closingData);
   return closingData;
+}
+
+export function clearAllStoredData(): void {
+  global.__mrbastos_appointments = [];
+  global.__mrbastos_closings = [];
+  global.__mrbastos_expenses = [];
 }

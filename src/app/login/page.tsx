@@ -133,7 +133,7 @@ export default function LoginPage() {
                   value={identifier} 
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
-                  placeholder="Ex: fabiobastos20v@hotmail.com ou 7598679820" 
+                  placeholder="seuemail@exemplo.com ou telefone (com DDD)" 
                 />
               </div>
             </div>

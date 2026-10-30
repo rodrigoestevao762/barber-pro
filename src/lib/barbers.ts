@@ -52,8 +52,9 @@ export const BARBERS: BarberData[] = [
 
 export function getBarberById(id?: string | null): BarberData | undefined {
   if (!id) return undefined;
-  if (id === "barbeiro-lucas") return BARBERS[1]; // Nando
-  if (id === "barbeiro-felipe") return BARBERS[2]; // Saul
+  if (id === "barbeiro-dono" || id === "barbeiro-fabio") return BARBERS[0]; // Mr. Bastos (Dono)
+  if (id === "barbeiro-nando" || id === "barbeiro-lucas") return BARBERS[1]; // Nando
+  if (id === "barbeiro-saul" || id === "barbeiro-felipe") return BARBERS[2]; // Saul
   return BARBERS.find((b) => b.id === id);
 }
 
