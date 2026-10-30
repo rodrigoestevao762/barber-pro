@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
-import { Calendar, ChevronRight, ChevronLeft, Menu, Scissors, Star, MapPin, Clock } from "lucide-react";
+import { Calendar, ChevronRight, ChevronLeft, Menu, X, Scissors, Star, MapPin, Clock } from "lucide-react";
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import BookingModal from "@/components/BookingModal";
@@ -131,6 +131,18 @@ export default function Home() {
     setIsModalOpen(true);
   };
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Trava a rolagem de fundo quando o menu mobile estiver aberto
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isMobileMenuOpen]);
   const { scrollYProgress } = useScroll();
   
   // Efeito Parallax suave para a imagem de fundo
@@ -189,12 +201,12 @@ export default function Home() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: isLoading ? 0 : 1, y: isLoading ? -20 : 0 }}
         transition={{ duration: 0.8, delay: 1 }}
-        className="fixed top-0 w-full px-8 py-6 flex justify-between items-center z-50 mix-blend-difference"
+        className="fixed top-0 left-0 w-full px-5 py-4 md:px-12 md:py-6 flex justify-between items-center z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/[0.06] transition-all duration-300"
       >
-        <div className="flex items-center gap-3 cursor-pointer group">
-           <LogoMrBastos size={36} color="#C88E70" className="group-hover:scale-110 transition-transform duration-500" />
-           <span className="text-xl font-serif tracking-[0.25em] text-white uppercase">MR. BASTOS</span>
-        </div>
+        <Link href="/" className="flex items-center gap-3 cursor-pointer group">
+           <LogoMrBastos size={34} color="#C88E70" className="group-hover:scale-110 transition-transform duration-500" />
+           <span className="text-lg md:text-xl font-serif tracking-[0.25em] text-white uppercase">MR. BASTOS</span>
+        </Link>
         
         <div className="hidden md:flex items-center gap-12 text-xs uppercase tracking-[0.2em] text-gray-300 font-semibold">
           <a href="#servicos" className="hover:text-[#C88E70] transition-colors relative group">
@@ -209,7 +221,7 @@ export default function Home() {
             Nossa Área
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
           </a>
-          <Link href={session ? "/dashboard" : "/login"} className="hover:text-[#C88E70] transition-colors relative group">
+          <Link href={session ? ((session?.user as any)?.role === "CLIENT" ? "/painel-cliente" : "/dashboard") : "/login"} className="hover:text-[#C88E70] transition-colors relative group">
             {session ? "Painel" : "Login"}
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
           </Link>
@@ -219,35 +231,129 @@ export default function Home() {
             </MagneticButton>
           </div>
         </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="md:hidden text-white z-50">
-          <Menu className="w-8 h-8" />
-        </button>
 
-        {/* MOBILE MENU */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="absolute top-full left-0 w-full bg-[#050B14]/95 backdrop-blur-xl border-b border-white/10 p-6 flex flex-col gap-6 md:hidden z-40"
-            >
-              <a href="#servicos" onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">Serviços</a>
-              <a href="#experiencia" onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">A Experiência</a>
-              <a href="#nossa-area" onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">Nossa Área</a>
-              <Link href={session ? "/dashboard" : "/login"} onClick={() => setIsMobileMenuOpen(false)} className="text-white text-lg tracking-widest uppercase hover:text-[#C88E70] transition-colors">
-                {session ? "Painel" : "Login"}
+        {/* Botão Hambúrguer Mobile */}
+        <button 
+          onClick={() => setIsMobileMenuOpen(true)} 
+          aria-label="Abrir Menu de Navegação"
+          className="md:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:text-[#C88E70] hover:border-[#C88E70]/40 transition-all flex items-center justify-center active:scale-95"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      </motion.nav>
+
+      {/* MENU MOBILE CINEMATOGRÁFICO DE LUXO (100% ISOLADO DOS COMPONENTES DO SITE) */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -25 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -25 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="fixed inset-0 z-[100] bg-[#03070E] flex flex-col justify-between p-6 overflow-y-auto md:hidden"
+          >
+            {/* Topo do Menu Mobile */}
+            <div className="flex items-center justify-between pb-5 border-b border-white/10 shrink-0">
+              <div className="flex items-center gap-3">
+                <LogoMrBastos size={32} color="#C88E70" />
+                <span className="text-lg font-serif tracking-[0.25em] text-white uppercase">MR. BASTOS</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-gray-300 hover:text-white transition-colors"
+                aria-label="Fechar Menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Links Estilo Cards VIP */}
+            <div className="flex-1 py-6 flex flex-col justify-center gap-3.5">
+              <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#C88E70] mb-0.5">Navegação Exclusiva</p>
+              
+              <a
+                href="#servicos"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#C88E70]/40 active:bg-[#C88E70]/10 flex items-center justify-between transition-all"
+              >
+                <div className="flex items-center gap-3.5">
+                  <span className="text-xs font-mono font-bold text-[#C88E70]">01</span>
+                  <div>
+                    <span className="text-base font-serif text-white block">Serviços Oficiais</span>
+                    <span className="text-[11px] text-gray-400 font-light">Cortes, barboterapia e combos</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-500" />
+              </a>
+
+              <a
+                href="#experiencia"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#C88E70]/40 active:bg-[#C88E70]/10 flex items-center justify-between transition-all"
+              >
+                <div className="flex items-center gap-3.5">
+                  <span className="text-xs font-mono font-bold text-[#C88E70]">02</span>
+                  <div>
+                    <span className="text-base font-serif text-white block">A Experiência</span>
+                    <span className="text-[11px] text-gray-400 font-light">Ritual de forjar grandes homens</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-500" />
+              </a>
+
+              <a
+                href="#nossa-area"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#C88E70]/40 active:bg-[#C88E70]/10 flex items-center justify-between transition-all"
+              >
+                <div className="flex items-center gap-3.5">
+                  <span className="text-xs font-mono font-bold text-[#C88E70]">03</span>
+                  <div>
+                    <span className="text-base font-serif text-white block">Nossa Barbearia</span>
+                    <span className="text-[11px] text-gray-400 font-light">Ambiente premium e estrutura</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-500" />
+              </a>
+
+              <Link
+                href={session ? ((session?.user as any)?.role === "CLIENT" ? "/painel-cliente" : "/dashboard") : "/login"}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#C88E70]/40 active:bg-[#C88E70]/10 flex items-center justify-between transition-all"
+              >
+                <div className="flex items-center gap-3.5">
+                  <span className="text-xs font-mono font-bold text-[#C88E70]">04</span>
+                  <div>
+                    <span className="text-base font-serif text-white block">
+                      {session ? "Meu Painel VIP" : "Área do Cliente / Barbeiro"}
+                    </span>
+                    <span className="text-[11px] text-gray-400 font-light">
+                      {session ? "Consulte seus cortes e fidelidade" : "Acesse com seu login e senha"}
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-gray-500" />
               </Link>
+            </div>
+
+            {/* Ações Inferiores do Menu */}
+            <div className="space-y-3.5 pt-4 border-t border-white/10 shrink-0">
               <button 
                 onClick={() => { setIsMobileMenuOpen(false); setIsModalOpen(true); }}
-                className="bg-[#C88E70] text-[#050B14] py-4 flex items-center justify-center gap-3 font-semibold tracking-widest uppercase"
+                className="w-full bg-[#C88E70] text-[#050B14] py-3.5 px-4 rounded-xl font-bold tracking-widest uppercase text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#C88E70]/20 hover:bg-white active:scale-[0.99] transition-all"
               >
-                <Calendar className="w-4 h-4" /> AGENDAR
+                <Calendar className="w-4 h-4" /> AGENDAR EXPERIÊNCIA
               </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.nav>
+
+              <div className="flex items-center justify-between text-[11px] text-gray-400 px-1 pt-1">
+                <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-[#C88E70]" /> Ter a Sáb · 09h às 19h</span>
+                <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-[#C88E70]" /> Mr. Bastos Barbearia</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <BookingModal 
         isOpen={isModalOpen} 
@@ -261,7 +367,7 @@ export default function Home() {
       />
 
       {/* HERO SECTION COM PARALLAX E MÁSCARAS */}
-      <main className="relative h-screen flex items-center justify-center overflow-hidden">
+      <main className="relative h-screen min-h-[640px] flex items-center justify-center overflow-hidden">
         
         {/* Imagem de Fundo (Parallax + Slider Ultra Suave Sem Tremor) */}
         <motion.div style={{ y, opacity }} className="absolute inset-0 w-full h-[120%] -top-[10%] pointer-events-none">
@@ -284,32 +390,38 @@ export default function Home() {
               />
             );
           })}
-          {/* Vinheta e Gradientes de Luxo Mr. Bastos */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#050B14]/70 via-[#050B14]/35 to-[#050B14]/85 pointer-events-none z-20" />
-          <div className="absolute inset-0 bg-[#050B14]/20 pointer-events-none z-20" />
+          {/* Vinheta Cinematográfica de Luxo Mr. Bastos - Iluminação Equilibrada (Fotos com Cores Vivas e Brilho Natural) */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#050B14]/40 via-transparent to-[#050B14]/85 pointer-events-none z-10" />
         </motion.div>
 
-        {/* Textos Centrais com Máscara */}
-        <div className="relative z-10 text-center flex flex-col items-center mt-20">
+        {/* Textos Centrais com Máscara e Brilho Impecável */}
+        <div className="relative z-20 text-center flex flex-col items-center mt-16 md:mt-20 px-4">
           <RevealText delay={1.2}>
-            <p className="text-[#C88E70] uppercase tracking-[0.4em] text-sm font-semibold mb-6 flex items-center gap-4">
-              <span className="w-12 h-[1px] bg-[#C88E70]"></span>
+            <p className="text-[#C88E70] uppercase tracking-[0.4em] text-xs md:text-sm font-semibold mb-4 md:mb-6 flex items-center gap-3 md:gap-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+              <span className="w-8 md:w-12 h-[1px] bg-[#C88E70]"></span>
               Arte & Precisão
-              <span className="w-12 h-[1px] bg-[#C88E70]"></span>
+              <span className="w-8 md:w-12 h-[1px] bg-[#C88E70]"></span>
             </p>
           </RevealText>
           
-          <h1 className="text-6xl md:text-[7rem] font-serif leading-[0.9] tracking-tight uppercase flex flex-col items-center">
-            <RevealText delay={1.3}>VISUAL <span className="italic text-transparent [-webkit-text-stroke:1px_white] hover:text-white transition-colors duration-500">IMPECÁVEL,</span></RevealText>
-            <RevealText delay={1.4}><span className="text-[#C88E70]">ATITUDE</span> ÚNICA.</RevealText>
+          <h1 className="text-5xl sm:text-6xl md:text-[7rem] font-serif leading-[0.92] tracking-tight uppercase flex flex-col items-center drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
+            <RevealText delay={1.3}>
+              VISUAL{" "}
+              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-[#C88E70]">
+                IMPECÁVEL,
+              </span>
+            </RevealText>
+            <RevealText delay={1.4}>
+              <span className="text-[#C88E70]">ATITUDE</span> ÚNICA.
+            </RevealText>
           </h1>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: isLoading ? 0 : 1, y: isLoading ? 20 : 0 }} transition={{ delay: 1.8, duration: 1 }}
-            className="mt-12 flex gap-6"
+            className="mt-8 md:mt-12 flex gap-6"
           >
             <div onClick={() => setIsModalOpen(true)}>
-              <MagneticButton className="border border-white/20 px-10 py-5 uppercase tracking-[0.2em] text-xs hover:bg-[#C88E70] hover:border-[#C88E70] hover:text-[#050B14] transition-all duration-500 flex items-center gap-4 group backdrop-blur-md bg-white/5">
+              <MagneticButton className="border border-white/20 px-8 md:px-10 py-4 md:py-5 uppercase tracking-[0.2em] text-xs hover:bg-[#C88E70] hover:border-[#C88E70] hover:text-[#050B14] transition-all duration-500 flex items-center gap-4 group backdrop-blur-md bg-white/5 shadow-xl shadow-black/40">
                 Agendar Experiência
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
               </MagneticButton>
