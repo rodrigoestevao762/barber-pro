@@ -677,13 +677,18 @@ export default function DashboardPage() {
       {/* ── MODAL: CLIENTE BALCÃO (WALK-IN) COM TODAS AS 9 OPÇÕES DE SERVIÇOS E PROSSEGUIR ── */}
       {mounted && isModalOpen && typeof document !== "undefined" && createPortal(
         <AnimatePresence>
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black/85 backdrop-blur-md" onClick={() => setIsModalOpen(false)} />
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            {/* Backdrop escuro e com blur profundo para isolar totalmente o modal do header */}
+            <div 
+              className="fixed inset-0 bg-[#02050A]/95 backdrop-blur-2xl transition-opacity duration-300" 
+              onClick={() => setIsModalOpen(false)} 
+            />
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-xl bg-[#050B14] border border-[#C88E70]/40 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[90vh] flex flex-col"
+              initial={{ scale: 0.95, opacity: 0, y: 15 }} 
+              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="relative w-full max-w-xl bg-[#050B14] border border-[#C88E70]/40 rounded-3xl p-6 md:p-8 z-10 shadow-[0_30px_100px_rgba(0,0,0,0.95)] max-h-[88vh] flex flex-col my-auto"
             >
               {/* Cabeçalho */}
               <div className="flex justify-between items-center mb-5 pb-4 border-b border-white/10 shrink-0">

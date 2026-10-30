@@ -5,38 +5,82 @@ import { Scissors, Calendar, Clock, RotateCcw, User, LogOut, Award, Star, CheckC
 import { useState, useEffect } from "react";
 import BookingModal from "@/components/BookingModal";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { LogoMrBastos } from "@/components/LogoMrBastos";
 import { BARBERS, getBarberById } from "@/lib/barbers";
 
 export default function ClientDashboard() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined);
   const [appointments, setAppointments] = useState<any[]>([]);
-  const [loyalty, setLoyalty] = useState({ currentCuts: 4, targetCuts: 10, freeCutsWon: 0 });
+  const [loyalty, setLoyalty] = useState({ currentCuts: 0, targetCuts: 10, freeCutsWon: 0 });
   const [loading, setLoading] = useState(true);
 
-  const clientName = session?.user?.name || "Rodrigo Estêvão";
-  const clientPhone = (session?.user as any)?.phone || "(75) 98888-7777";
-  const clientEmail = session?.user?.email || "cliente@mrbastos.com";
+  const [clientData, setClientData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+  }>({
+    name: session?.user?.name || "",
+    email: session?.user?.email || "",
+    phone: (session?.user as any)?.phone || "",
+  });
+
+  // Redireciona para o login se não estiver autenticado
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
 
   useEffect(() => {
-    fetch("/api/dashboard")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.isClient && data.appointments) {
-          const sorted = data.appointments.sort(
-            (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
-          );
-          setAppointments(sorted);
-          if (data.loyaltyCard) {
-            setLoyalty(data.loyaltyCard);
+    if (session?.user) {
+      setClientData((prev) => ({
+        name: session.user?.name || prev.name,
+        email: session.user?.email || prev.email,
+        phone: (session.user as any)?.phone || prev.phone,
+      }));
+    }
+  }, [session]);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetch("/api/dashboard")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.isClient) {
+            if (data.client) {
+              setClientData({
+                name: data.client.name || "",
+                email: data.client.email || "",
+                phone: data.client.phone || "",
+              });
+            }
+            if (data.appointments) {
+              const sorted = data.appointments.sort(
+                (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+              );
+              setAppointments(sorted);
+            }
+            if (data.loyaltyCard) {
+              setLoyalty(data.loyaltyCard);
+            }
           }
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    } else if (status === "unauthenticated") {
+      setLoading(false);
+    }
+  }, [status]);
+
+  const clientName = clientData.name || session?.user?.name || "Cliente VIP";
+  const clientPhone = clientData.phone || (session?.user as any)?.phone || "";
+  const clientEmail = clientData.email || session?.user?.email || "";
+  const vipDigits = clientPhone ? clientPhone.replace(/\D/g, "").slice(-4) : "VIP";
 
   // Próximo agendamento futuro
   const upcomingApt = appointments.find(
@@ -236,7 +280,7 @@ export default function ClientDashboard() {
                     ID VIP:
                   </span>
                   <p className="text-xs font-mono font-bold text-white tracking-widest">
-                    MRB-{(clientPhone.replace(/\D/g, "")).slice(-4) || "7777"}
+                    MRB-{vipDigits}
                   </p>
                 </div>
               </div>
@@ -361,8 +405,22 @@ export default function ClientDashboard() {
 
       <BookingModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false);
+          fetch("/api/dashboard")
+            .then((res) => res.json())
+            .then((data) => {
+              if (data?.isClient && data.appointments) {
+                setAppointments(data.appointments);
+              }
+              if (data?.isClient && data.loyaltyCard) {
+                setLoyalty(data.loyaltyCard);
+              }
+            })
+            .catch(() => {});
+        }}
         initialServiceId={selectedServiceId}
+        initialUserData={clientData}
       />
     </div>
   );

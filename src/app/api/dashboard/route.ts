@@ -23,9 +23,21 @@ export async function GET(req: Request) {
 
     // 1. FLUXO DO CLIENTE
     if (userRole === "CLIENT") {
+      const userEmail = session?.user?.email?.trim().toLowerCase();
+      const userPhone = (session?.user as any)?.phone?.replace(/\D/g, "");
+
       try {
-        const clientUser = await prisma.user.findUnique({
-          where: { id: userId },
+        const clientUser: any = await prisma.user.findFirst({
+          where: {
+            OR: [
+              ...(userId ? [{ id: userId }] : []),
+              ...(userEmail ? [{ email: { equals: userEmail, mode: "insensitive" as const } }] : []),
+              ...(userPhone ? [
+                { phone: userPhone },
+                { phone: userPhone.startsWith("55") ? userPhone.slice(2) : `55${userPhone}` },
+              ] : []),
+            ],
+          },
           include: {
             appointments: {
               include: { service: true, barber: true },
@@ -34,11 +46,39 @@ export async function GET(req: Request) {
           },
         });
 
-        const appointments = clientUser?.appointments || [];
+        // Agendamentos gravados no banco
+        const dbApts: any[] = clientUser?.appointments || [];
+
+        // Agendamentos também unificados da memória recente
+        const memApts: any[] = getAllStoredAppointments().filter(
+          (a: any) =>
+            (clientUser && a.user?.id === clientUser.id) ||
+            (userEmail && a.user?.email?.toLowerCase() === userEmail) ||
+            (userPhone && a.user?.phone?.replace(/\D/g, "").includes(userPhone))
+        );
+
+        const map = new Map<string, any>();
+        dbApts.forEach((a: any) => map.set(a.id, a));
+        memApts.forEach((a: any) => {
+          if (!map.has(a.id)) map.set(a.id, a);
+        });
+
+        const appointments = Array.from(map.values()).sort(
+          (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+
         const completedCuts = appointments.filter((a) => a.status === "COMPLETED").length;
+
+        const effectiveClient = {
+          id: clientUser?.id || userId || "client-id",
+          name: clientUser?.name || session?.user?.name || "Cliente VIP",
+          email: clientUser?.email || session?.user?.email || "",
+          phone: clientUser?.phone || (session?.user as any)?.phone || "",
+        };
 
         return NextResponse.json({
           isClient: true,
+          client: effectiveClient,
           appointments,
           loyaltyCard: {
             currentCuts: completedCuts % 10,
@@ -47,18 +87,28 @@ export async function GET(req: Request) {
           },
         });
       } catch (dbErr) {
-        // Fallback em memória para cliente
+        // Fallback dinâmico em memória para o cliente autenticado (sem dados fixos)
         const allApts = getAllStoredAppointments();
         const clientApts = allApts.filter(
-          (a) => a.user.phone?.includes("8888") || a.user.email?.includes("cliente")
+          (a) =>
+            (userEmail && a.user?.email?.toLowerCase() === userEmail) ||
+            (userPhone && a.user?.phone?.replace(/\D/g, "").includes(userPhone))
         );
+        const completedCuts = clientApts.filter((a) => a.status === "COMPLETED").length;
+
         return NextResponse.json({
           isClient: true,
+          client: {
+            id: userId || "client-fallback",
+            name: session?.user?.name || "Cliente VIP",
+            email: session?.user?.email || "",
+            phone: (session?.user as any)?.phone || "",
+          },
           appointments: clientApts,
           loyaltyCard: {
-            currentCuts: clientApts.filter((a) => a.status === "COMPLETED").length % 10,
+            currentCuts: completedCuts % 10,
             targetCuts: 10,
-            freeCutsWon: 0,
+            freeCutsWon: Math.floor(completedCuts / 10),
           },
         });
       }

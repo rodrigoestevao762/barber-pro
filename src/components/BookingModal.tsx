@@ -42,6 +42,22 @@ export default function BookingModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [confirmedBarber, setConfirmedBarber] = useState<BarberData>(BARBERS[0]);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  const handleGoToVipPanel = async () => {
+    setIsRedirecting(true);
+    try {
+      const loginId = clientEmail.trim().toLowerCase() || clientPhone.replace(/\D/g, "");
+      await signIn("credentials", {
+        identifier: loginId,
+        phone: loginId,
+        password: clientPassword || "123",
+        callbackUrl: "/painel-cliente",
+      });
+    } catch (_) {
+      window.location.href = "/painel-cliente";
+    }
+  };
 
   const isLoggedIn = status === "authenticated" || !!initialUserData?.name || !!(session as any)?.user?.name;
 
@@ -147,16 +163,16 @@ export default function BookingModal({
 
       if (res.ok) {
         setIsSuccess(true);
-        // Autentica o cliente automaticamente na sessão se ele não estiver logado
-        if (!isLoggedIn) {
-          try {
-            await signIn("credentials", {
-              identifier: clientEmail.trim().toLowerCase() || clientPhone.trim(),
-              password: clientPassword || "123",
-              redirect: false,
-            });
-          } catch (_) {}
-        }
+        // Autentica imediatamente na sessão do novo cliente criado
+        const loginId = clientEmail.trim().toLowerCase() || clientPhone.replace(/\D/g, "");
+        try {
+          await signIn("credentials", {
+            identifier: loginId,
+            phone: loginId,
+            password: clientPassword || "123",
+            redirect: false,
+          });
+        } catch (_) {}
       } else {
         const data = await res.json();
         setErrorMsg(data.error || "Erro ao agendar.");
@@ -283,14 +299,16 @@ export default function BookingModal({
                 </div>
 
                 {/* Botão Acessar Painel VIP */}
-                <a
-                  href="/painel-cliente"
-                  className="w-full max-w-md bg-[#C88E70] text-[#050B14] py-3.5 px-4 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-white transition-all duration-300 shadow-lg shadow-[#C88E70]/20 mb-3"
+                <button
+                  type="button"
+                  onClick={handleGoToVipPanel}
+                  disabled={isRedirecting}
+                  className="w-full max-w-md bg-[#C88E70] text-[#050B14] py-3.5 px-4 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-white transition-all duration-300 shadow-lg shadow-[#C88E70]/20 mb-3 disabled:opacity-50"
                 >
                   <Sparkles className="w-4 h-4" />
-                  <span>Acessar Meu Painel VIP Agora</span>
+                  <span>{isRedirecting ? "Acessando seu painel..." : "Acessar Meu Painel VIP Agora"}</span>
                   <ChevronRight className="w-4 h-4" />
-                </a>
+                </button>
 
                 <button 
                   onClick={onClose} 
