@@ -196,19 +196,19 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* NAVBAR */}
+      {/* NAVBAR (TRANSPARENTE E TOTALMENTE INTEGRADA À FOTO, SEM BARRA FIXA ESCURA BLOQUEANDO A IMAGEM) */}
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: isLoading ? 0 : 1, y: isLoading ? -20 : 0 }}
         transition={{ duration: 0.8, delay: 1 }}
-        className="fixed top-0 left-0 w-full px-5 py-4 md:px-12 md:py-6 flex justify-between items-center z-50 bg-[#050B14]/80 backdrop-blur-xl border-b border-white/[0.06] transition-all duration-300"
+        className="fixed top-0 left-0 w-full px-6 py-6 md:px-12 md:py-8 flex justify-between items-center z-50 bg-transparent pointer-events-auto"
       >
-        <Link href="/" className="flex items-center gap-3 cursor-pointer group">
-           <LogoMrBastos size={34} color="#C88E70" className="group-hover:scale-110 transition-transform duration-500" />
-           <span className="text-lg md:text-xl font-serif tracking-[0.25em] text-white uppercase">MR. BASTOS</span>
+        <Link href="/" className="flex items-center gap-3 cursor-pointer group drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+           <LogoMrBastos size={36} color="#C88E70" className="group-hover:scale-110 transition-transform duration-500" />
+           <span className="text-xl font-serif tracking-[0.25em] text-white uppercase">MR. BASTOS</span>
         </Link>
         
-        <div className="hidden md:flex items-center gap-12 text-xs uppercase tracking-[0.2em] text-gray-300 font-semibold">
+        <div className="hidden md:flex items-center gap-12 text-xs uppercase tracking-[0.2em] text-gray-200 font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
           <a href="#servicos" className="hover:text-[#C88E70] transition-colors relative group">
             Serviços
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
@@ -226,19 +226,19 @@ export default function Home() {
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
           </Link>
           <div onClick={() => setIsModalOpen(true)}>
-            <MagneticButton className="bg-[#C88E70] text-[#050B14] px-8 py-4 flex items-center gap-3 hover:bg-white transition-colors duration-300">
+            <MagneticButton className="bg-[#C88E70] text-[#050B14] px-8 py-4 flex items-center gap-3 hover:bg-white transition-colors duration-300 shadow-xl shadow-black/40 font-bold">
               <Calendar className="w-4 h-4" /> AGENDAR
             </MagneticButton>
           </div>
         </div>
 
-        {/* Botão Hambúrguer Mobile */}
+        {/* Três Traços do Menu Mobile (Direto sobre a foto, sem card ou caixa cinza atrapalhando) */}
         <button 
           onClick={() => setIsMobileMenuOpen(true)} 
           aria-label="Abrir Menu de Navegação"
-          className="md:hidden p-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:text-[#C88E70] hover:border-[#C88E70]/40 transition-all flex items-center justify-center active:scale-95"
+          className="md:hidden text-white hover:text-[#C88E70] transition-colors p-2 -mr-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
         >
-          <Menu className="w-6 h-6" />
+          <Menu className="w-8 h-8" />
         </button>
       </motion.nav>
 
