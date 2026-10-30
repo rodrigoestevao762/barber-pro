@@ -99,13 +99,13 @@ export default function ExperienciaSection() {
           {/* BADGES CINEMÁTICOS DE ALTA PERFORMANCE */}
           <div className="flex flex-col sm:flex-row gap-5 md:gap-8 w-full max-w-2xl justify-center mb-8">
             
-            {/* Badge 1 - Mestria */}
+            {/* Badge 1 - Maestria */}
             <div className="flex-1 bg-black/60 backdrop-blur-sm border border-[#C88E70]/30 hover:border-[#C88E70] p-5 sm:p-6 rounded-2xl flex items-center gap-5 transition-all duration-300 hover:bg-[#C88E70]/10 group shadow-lg">
               <div className="p-3.5 bg-[#050B14] rounded-full border border-[#C88E70]/40 shadow-inner group-hover:scale-105 transition-transform duration-300">
                 <ShieldCheck className="w-7 h-7 text-[#C88E70]" />
               </div>
               <div className="text-left">
-                <h4 className="text-white font-serif text-xl sm:text-2xl font-bold mb-0.5">Mestria</h4>
+                <h4 className="text-white font-serif text-xl sm:text-2xl font-bold mb-0.5">Maestria</h4>
                 <p className="text-[11px] text-gray-300 uppercase tracking-widest font-medium">Técnica Impecável</p>
               </div>
             </div>
