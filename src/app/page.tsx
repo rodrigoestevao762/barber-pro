@@ -407,7 +407,7 @@ export default function Home() {
           <h1 className="text-5xl sm:text-6xl md:text-[7rem] font-serif leading-[0.92] tracking-tight uppercase flex flex-col items-center drop-shadow-[0_4px_24px_rgba(0,0,0,0.9)]">
             <RevealText delay={1.3}>
               VISUAL{" "}
-              <span className="italic text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-[#C88E70]">
+              <span className="italic text-transparent [-webkit-text-stroke:1px_white] hover:text-white transition-colors duration-500 cursor-pointer">
                 IMPECÁVEL,
               </span>
             </RevealText>
