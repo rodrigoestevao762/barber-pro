@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mail, Lock, ArrowRight, ChevronLeft, Shield, User, Scissors, CheckCircle, X } from "lucide-react";
+import { Mail, Lock, ArrowRight, ChevronLeft, CheckCircle, X } from "lucide-react";
 import Link from "next/link";
 import { LogoMrBastos } from "@/components/LogoMrBastos";
 
@@ -52,7 +52,7 @@ export default function LoginPage() {
       });
 
       if (res?.error) {
-        setError("Credenciais inválidas. Verifique os dados ou utilize um dos acessos de teste.");
+        setError("E-mail, telefone ou senha incorretos. Por favor, tente novamente.");
         setLoading(false);
       } else if (res?.ok) {
         router.refresh();
@@ -88,12 +88,6 @@ export default function LoginPage() {
     } finally {
       setRecoveryLoading(false);
     }
-  };
-
-  const fillQuickAccess = (email: string, pass: string) => {
-    setIdentifier(email);
-    setPassword(pass);
-    setError("");
   };
 
   return (
@@ -185,59 +179,10 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Atalhos Rápidos para Teste dos 3 Barbeiros e Cliente */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <p className="text-[10px] uppercase tracking-[0.25em] text-[#C88E70] font-semibold mb-3 flex items-center gap-2">
-              <Shield className="w-3.5 h-3.5" /> Acessos Provisórios de Teste (1 Clique)
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-left">
-              <button
-                type="button"
-                onClick={() => fillQuickAccess("fabiobastos20v@hotmail.com", "123")}
-                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-[#C88E70] hover:bg-[#C88E70]/10 transition-all text-left group"
-              >
-                <p className="text-xs font-serif text-white group-hover:text-[#C88E70] font-medium flex items-center gap-1.5">
-                  <Shield className="w-3 h-3 text-[#C88E70]" /> Mr. Bastos (Dono)
-                </p>
-                <p className="text-[10px] text-gray-500 font-mono truncate">fabiobastos20v@hotmail.com</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillQuickAccess("nandomrbastos@gmail.com", "123")}
-                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-blue-400 hover:bg-blue-400/10 transition-all text-left group"
-              >
-                <p className="text-xs font-serif text-white group-hover:text-blue-400 font-medium flex items-center gap-1.5">
-                  <Scissors className="w-3 h-3 text-blue-400" /> Nando (Barbeiro)
-                </p>
-                <p className="text-[10px] text-gray-500 font-mono truncate">nandomrbastos@gmail.com</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillQuickAccess("Saultheobaldos@gmail.com", "123")}
-                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-emerald-400 hover:bg-emerald-400/10 transition-all text-left group"
-              >
-                <p className="text-xs font-serif text-white group-hover:text-emerald-400 font-medium flex items-center gap-1.5">
-                  <Scissors className="w-3 h-3 text-emerald-400" /> Saul (Barbeiro)
-                </p>
-                <p className="text-[10px] text-gray-500 font-mono truncate">Saultheobaldos@gmail.com</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => fillQuickAccess("cliente@mrbastos.com", "123")}
-                className="p-2.5 rounded-xl bg-white/[0.02] border border-white/10 hover:border-purple-400 hover:bg-purple-400/10 transition-all text-left group"
-              >
-                <p className="text-xs font-serif text-white group-hover:text-purple-400 font-medium flex items-center gap-1.5">
-                  <User className="w-3 h-3 text-purple-400" /> Rodrigo (Cliente)
-                </p>
-                <p className="text-[10px] text-gray-500 font-mono">cliente@mrbastos.com</p>
-              </button>
-            </div>
-            <p className="text-[10px] text-gray-500 mt-3 text-center">
-              Senha padrão provisória de teste: <span className="font-mono text-white">123</span>
-            </p>
+          {/* Garantia de Segurança e Privacidade Oficial */}
+          <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-2 text-gray-500 text-xs">
+            <Lock className="w-3.5 h-3.5 text-[#C88E70]" />
+            <span>Ambiente Seguro & Criptografado · Mr. Bastos Barbearia</span>
           </div>
         </div>
       </div>

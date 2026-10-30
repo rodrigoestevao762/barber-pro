@@ -9,6 +9,7 @@ import { useSession } from "next-auth/react";
 import ExperienciaSection from "@/components/ExperienciaSection";
 import NossaAreaSection from "@/components/NossaAreaSection";
 import { LogoMrBastos } from "@/components/LogoMrBastos";
+import FloatingSocialButtons from "@/components/FloatingSocialButtons";
 
 // --- DADOS ---
 const HERO_IMAGES = [
@@ -369,6 +370,26 @@ export default function Home() {
               <div className="flex items-center justify-between text-[11px] text-gray-400 px-1 pt-1">
                 <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-[#C88E70]" /> Ter a Sáb · 09h às 19h</span>
                 <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-[#C88E70]" /> Mr. Bastos Barbearia</span>
+              </div>
+
+              {/* Redes Sociais no Menu Celular */}
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+                <a
+                  href="https://www.instagram.com/mr.bastosbarbearia?utm_source=ig_web_button_share_sheet&vrfl=ZDNlZDc0MzIxNw=="
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-3 rounded-xl bg-gradient-to-r from-pink-500/10 to-purple-500/10 border border-pink-500/20 text-pink-300 text-[11px] font-semibold flex items-center justify-center gap-2"
+                >
+                  Instagram
+                </a>
+                <a
+                  href="https://wa.me/557598679820?text=Ol%C3%A1!%20Gostaria%20de%20agendar%20um%20hor%C3%A1rio%20na%20Mr.%20Bastos%20Barbearia"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-2 px-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-semibold flex items-center justify-center gap-2"
+                >
+                  WhatsApp
+                </a>
               </div>
             </div>
           </motion.div>
@@ -761,11 +782,29 @@ export default function Home() {
               >
                 <Star className="w-3.5 h-3.5 fill-amber-400" /> Avalie no Google (5.0 ★)
               </a>
-              <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors text-xs">Instagram</a>
+              <a 
+                href="https://www.instagram.com/mr.bastosbarbearia?utm_source=ig_web_button_share_sheet&vrfl=ZDNlZDc0MzIxNw==" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-gray-400 hover:text-[#C88E70] transition-colors text-xs"
+              >
+                Instagram
+              </a>
+              <a 
+                href="https://wa.me/557598679820?text=Ol%C3%A1!%20Gostaria%20de%20agendar%20um%20hor%C3%A1rio%20na%20Mr.%20Bastos%20Barbearia" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-emerald-400 hover:text-white transition-colors text-xs"
+              >
+                WhatsApp (75) 9867-9820
+              </a>
               <a href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião" target="_blank" rel="noopener noreferrer" title="Alagoinhas - BA" className="text-gray-500 hover:text-[#C88E70] transition-colors"><MapPin className="w-4 h-4" /></a>
            </div>
         </motion.footer>
       </section>
+
+      {/* Ícones Fixos do Instagram e WhatsApp */}
+      <FloatingSocialButtons />
 
     </div>
   );

@@ -43,17 +43,6 @@ const PROVISIONAL_USERS = [
     barberId: "barbeiro-saul",
     passwords: ["123", "barbeiro123"],
   },
-  {
-    id: "client-test",
-    email: "cliente@mrbastos.com",
-    aliases: [],
-    phone: "75988887777",
-    phoneAliases: ["5575988887777"],
-    name: "Rodrigo Estêvão",
-    role: "CLIENT",
-    barberId: null,
-    passwords: ["123", "123456"],
-  },
 ];
 
 export const authOptions: NextAuthOptions = {
@@ -75,35 +64,7 @@ export const authOptions: NextAuthOptions = {
         const cleanPhone = input.replace(/\D/g, "");
         const lowerInput = input.toLowerCase();
 
-        // 1. Verifica contas provisionadas dos barbeiros / dono / cliente de teste
-        const foundProvisional = PROVISIONAL_USERS.find(
-          (u) =>
-            u.email.toLowerCase() === lowerInput ||
-            u.aliases?.some((a) => a.toLowerCase() === lowerInput) ||
-            (cleanPhone && (
-              u.phone.includes(cleanPhone) ||
-              u.phoneAliases?.some((p) => p.includes(cleanPhone) || cleanPhone.includes(p))
-            ))
-        );
-
-        if (foundProvisional) {
-          const customPwd = (global as any).__mrbastos_custom_passwords?.[foundProvisional.email.toLowerCase()];
-          const isMatch = (customPwd && customPwd === pwd) || foundProvisional.passwords.includes(pwd);
-
-          if (isMatch) {
-            return {
-              id: foundProvisional.id,
-              name: foundProvisional.name,
-              email: foundProvisional.email,
-              phone: foundProvisional.phone,
-              role: foundProvisional.role,
-              barberId: foundProvisional.barberId,
-            } as any;
-          }
-          return null;
-        }
-
-        // 2. Busca no banco de dados Prisma (se disponível)
+        // 1. Busca primeiro no banco de dados Prisma (clientes reais e usuários cadastrados)
         try {
           const phoneVariants = cleanPhone ? [
             cleanPhone,
@@ -135,6 +96,33 @@ export const authOptions: NextAuthOptions = {
           }
         } catch (dbErr) {
           console.warn("DB offline ou não disponível na autorização:", dbErr);
+        }
+
+        // 2. Contas oficiais dos profissionais (Dono e Barbeiros)
+        const foundProvisional = PROVISIONAL_USERS.find(
+          (u) =>
+            u.email.toLowerCase() === lowerInput ||
+            u.aliases?.some((a) => a.toLowerCase() === lowerInput) ||
+            (cleanPhone && (
+              u.phone.includes(cleanPhone) ||
+              u.phoneAliases?.some((p) => p.includes(cleanPhone) || cleanPhone.includes(p))
+            ))
+        );
+
+        if (foundProvisional) {
+          const customPwd = (global as any).__mrbastos_custom_passwords?.[foundProvisional.email.toLowerCase()];
+          const isMatch = (customPwd && customPwd === pwd) || foundProvisional.passwords.includes(pwd);
+
+          if (isMatch) {
+            return {
+              id: foundProvisional.id,
+              name: foundProvisional.name,
+              email: foundProvisional.email,
+              phone: foundProvisional.phone,
+              role: foundProvisional.role,
+              barberId: foundProvisional.barberId,
+            } as any;
+          }
         }
 
         return null;
