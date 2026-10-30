@@ -54,19 +54,18 @@ export default function ExperienciaSection() {
           );
         })}
 
-        {/* OVERLAYS CINEMÁTICOS DE LUXO - Contraste e Elegância sem pesar no processamento */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(1,2,4,0.75)_100%)] z-20 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#010204] via-[#050B14]/65 to-[#010204] opacity-95 z-20 pointer-events-none" />
-        <div className="absolute inset-0 bg-[#010204]/30 z-20 pointer-events-none" />
+        {/* OVERLAYS SUAVES - Mantém as fotos de cortes nítidas, vivas e bem visíveis */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#010204]/80 via-transparent to-[#010204]/90 pointer-events-none z-10" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_45%,rgba(1,2,4,0.4)_100%)] pointer-events-none z-10" />
       </div>
 
-      {/* CAIXA DE TEXTO CINEMÁTICA (GLASSMORPHISM MONOLITH) */}
+      {/* CAIXA DE TEXTO CINEMÁTICA (GLASSMORPHISM COM ALTA VISIBILIDADE DAS FOTOS AO FUNDO) */}
       <motion.div
         initial={{ opacity: 0, y: 35 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.15 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-30 w-full max-w-5xl mx-auto p-7 sm:p-12 md:p-16 lg:p-20 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.85)] border border-[#C88E70]/20 bg-[#050B14]/90 backdrop-blur-md"
+        className="relative z-30 w-full max-w-5xl mx-auto p-7 sm:p-12 md:p-16 lg:p-20 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_30px_100px_rgba(0,0,0,0.7)] border border-[#C88E70]/30 bg-[#050B14]/60 md:bg-[#050B14]/75 backdrop-blur-md"
       >
         {/* Iluminação de borda dourada sutil */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[1px] bg-gradient-to-r from-transparent via-[#C88E70]/60 to-transparent pointer-events-none" />
@@ -85,15 +84,15 @@ export default function ExperienciaSection() {
           </div>
 
           {/* Título Principal de Impacto */}
-          <h2 className="text-4xl sm:text-5xl md:text-7xl lg:text-[5.2rem] font-serif font-black leading-[1.08] tracking-tight mb-8 text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-[#C88E70]">
+          <h2 className="text-4xl sm:text-5xl md:text-7xl lg:text-[5.2rem] font-serif font-black leading-[1.08] tracking-tight mb-8 text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-[#C88E70] drop-shadow-[0_4px_16px_rgba(0,0,0,0.95)]">
             A Arte de Forjar <br className="hidden md:block" /> Grandes Homens.
           </h2>
 
           {/* Divisor de Luxo */}
-          <div className="w-20 h-[2px] bg-gradient-to-r from-transparent via-[#C88E70]/60 to-transparent mb-8" />
+          <div className="w-20 h-[2px] bg-gradient-to-r from-transparent via-[#C88E70]/80 to-transparent mb-8" />
 
           {/* Texto de Filosofia da Barbearia */}
-          <p className="max-w-3xl text-gray-200 font-light text-base sm:text-lg md:text-2xl leading-relaxed mb-12 drop-shadow-sm">
+          <p className="max-w-3xl text-gray-100 font-light text-base sm:text-lg md:text-2xl leading-relaxed mb-12 drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">
             Não vendemos apenas cortes de cabelo. Entregamos um ritual cinematográfico de resgate da confiança e do bem-estar, onde o respeito às raízes clássicas encontra a excelência do homem moderno.
           </p>
 
@@ -101,24 +100,24 @@ export default function ExperienciaSection() {
           <div className="flex flex-col sm:flex-row gap-5 md:gap-8 w-full max-w-2xl justify-center mb-8">
             
             {/* Badge 1 - Mestria */}
-            <div className="flex-1 bg-black/40 border border-[#C88E70]/25 hover:border-[#C88E70] p-5 sm:p-6 rounded-2xl flex items-center gap-5 transition-all duration-300 hover:bg-[#C88E70]/5 group">
-              <div className="p-3.5 bg-[#050B14] rounded-full border border-[#C88E70]/30 shadow-inner group-hover:scale-105 transition-transform duration-300">
+            <div className="flex-1 bg-black/60 backdrop-blur-sm border border-[#C88E70]/30 hover:border-[#C88E70] p-5 sm:p-6 rounded-2xl flex items-center gap-5 transition-all duration-300 hover:bg-[#C88E70]/10 group shadow-lg">
+              <div className="p-3.5 bg-[#050B14] rounded-full border border-[#C88E70]/40 shadow-inner group-hover:scale-105 transition-transform duration-300">
                 <ShieldCheck className="w-7 h-7 text-[#C88E70]" />
               </div>
               <div className="text-left">
                 <h4 className="text-white font-serif text-xl sm:text-2xl font-bold mb-0.5">Mestria</h4>
-                <p className="text-[11px] text-gray-400 uppercase tracking-widest font-medium">Técnica Impecável</p>
+                <p className="text-[11px] text-gray-300 uppercase tracking-widest font-medium">Técnica Impecável</p>
               </div>
             </div>
 
             {/* Badge 2 - Premium */}
-            <div className="flex-1 bg-black/40 border border-[#C88E70]/25 hover:border-[#C88E70] p-5 sm:p-6 rounded-2xl flex items-center gap-5 transition-all duration-300 hover:bg-[#C88E70]/5 group">
-              <div className="p-3.5 bg-[#050B14] rounded-full border border-[#C88E70]/30 shadow-inner group-hover:scale-105 transition-transform duration-300">
+            <div className="flex-1 bg-black/60 backdrop-blur-sm border border-[#C88E70]/30 hover:border-[#C88E70] p-5 sm:p-6 rounded-2xl flex items-center gap-5 transition-all duration-300 hover:bg-[#C88E70]/10 group shadow-lg">
+              <div className="p-3.5 bg-[#050B14] rounded-full border border-[#C88E70]/40 shadow-inner group-hover:scale-105 transition-transform duration-300">
                 <Award className="w-7 h-7 text-[#C88E70]" />
               </div>
               <div className="text-left">
                 <h4 className="text-white font-serif text-xl sm:text-2xl font-bold mb-0.5">Premium</h4>
-                <p className="text-[11px] text-gray-400 uppercase tracking-widest font-medium">Atmosfera de Luxo</p>
+                <p className="text-[11px] text-gray-300 uppercase tracking-widest font-medium">Atmosfera de Luxo</p>
               </div>
             </div>
 
