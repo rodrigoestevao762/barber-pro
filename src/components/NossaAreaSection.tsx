@@ -2,21 +2,23 @@
 
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef, useState } from "react";
-import { MapPin, Clock, ChevronRight } from "lucide-react";
+import { MapPin, Clock, ChevronRight, Play, Pause, Volume2, VolumeX, Star, ExternalLink, Sparkles } from "lucide-react";
 import { LogoMrBastos } from "@/components/LogoMrBastos";
 
-const GALLERY = [
+const GOOGLE_REVIEW_URL = "https://g.page/r/CRXf9JwKqxNQEBM/review";
+
+const GALLERY_PHOTOS = [
+  {
+    src: "/nossa-area/area-02.jpg",
+    label: "O Espaço",
+    desc: "Ambiente climatizado e pensado para você.",
+    col: "col-span-2 row-span-1",
+  },
   {
     src: "/nossa-area/area-01.jpg",
     label: "O Mestre",
     desc: "Técnica e estilo em cada detalhe.",
-    col: "col-span-1 row-span-2",
-  },
-  {
-    src: "/nossa-area/area-02.jpg",
-    label: "O Espaço",
-    desc: "Ambiente pensado para você.",
-    col: "col-span-2 row-span-1",
+    col: "col-span-1 row-span-1",
   },
   {
     src: "/nossa-area/area-07.jpg",
@@ -45,7 +47,7 @@ const GALLERY = [
   {
     src: "/nossa-area/area-03.jpg",
     label: "Nossa Estrutura",
-    desc: "Equipamentos de alto padrão.",
+    desc: "Equipamentos de alto padrão e recepção VIP.",
     col: "col-span-2 row-span-1",
   },
 ];
@@ -55,11 +57,158 @@ const HORARIOS = [
   { dia: "Sábado", hora: "09:00 – 19:00" },
 ];
 
+// Card do Vídeo Tour em Formato Maior e Interativo
+function VideoTourCard() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
+  };
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!videoRef.current) return;
+    const nextMuted = !isMuted;
+    videoRef.current.muted = nextMuted;
+    setIsMuted(nextMuted);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 60, scale: 0.96 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+      onClick={togglePlay}
+      className="relative overflow-hidden rounded-3xl cursor-pointer col-span-1 row-span-2 border-2 border-[#C88E70]/40 shadow-[0_20px_60px_rgba(200,142,112,0.18)] group bg-[#050B14]"
+      style={{ minHeight: 520 }}
+    >
+      {/* Vídeo */}
+      <video
+        ref={videoRef}
+        src="/video-mrbastos-tour.mp4"
+        autoPlay
+        loop
+        muted={isMuted}
+        playsInline
+        preload="metadata"
+        className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+      />
+
+      {/* Gradientes de contraste para controles e textos */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#050B14]/90 via-[#050B14]/20 to-[#050B14]/70 pointer-events-none" />
+
+      {/* Topo: Badge Tour VIP */}
+      <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
+        <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-[#050B14]/85 text-[#C88E70] border border-[#C88E70]/40 backdrop-blur-md flex items-center gap-1.5 shadow-lg">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Tour em Vídeo
+        </span>
+        <span className="text-[10px] text-gray-300 font-serif italic bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
+          Mr. Bastos
+        </span>
+      </div>
+
+      {/* Centro: Botão Play/Pause Flutuante */}
+      <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+        <motion.div
+          animate={{ scale: isPlaying ? 0.9 : 1.1, opacity: isPlaying ? 0 : 1 }}
+          className="w-16 h-16 rounded-full bg-[#C88E70] text-[#050B14] flex items-center justify-center shadow-2xl transition-opacity duration-300 group-hover:opacity-90"
+        >
+          {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-1 fill-current" />}
+        </motion.div>
+      </div>
+
+      {/* Base: Informações e Botão de Som */}
+      <div className="absolute bottom-0 left-0 w-full p-5 md:p-6 z-10">
+        <div className="flex items-end justify-between gap-3">
+          <div>
+            <p className="text-[#C88E70] text-[10px] uppercase tracking-[0.3em] font-bold mb-1 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5" /> Ao Vivo
+            </p>
+            <h3 className="text-white font-serif text-2xl leading-tight drop-shadow-md">Nossa Barbearia</h3>
+            <p className="text-gray-300 text-xs mt-1 font-light leading-snug drop-shadow-sm max-w-[220px]">
+              Assista ao tour e veja cada detalhe da nossa casa.
+            </p>
+          </div>
+
+          {/* Botão de Som */}
+          <button
+            type="button"
+            onClick={toggleMute}
+            aria-label={isMuted ? "Ativar som do vídeo" : "Silenciar vídeo"}
+            className="p-3 rounded-full bg-[#050B14]/90 border border-[#C88E70]/50 text-[#C88E70] hover:bg-[#C88E70] hover:text-[#050B14] transition-all duration-300 shadow-xl backdrop-blur-md shrink-0 flex items-center gap-1.5 active:scale-95"
+            title={isMuted ? "Clique para ativar som" : "Clique para silenciar"}
+          >
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            <span className="text-[10px] font-bold uppercase tracking-wider hidden sm:inline">
+              {isMuted ? "Som" : "Ativo"}
+            </span>
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// Card de Avaliação no Google (Google Reviews)
+function GoogleReviewCard() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 60, scale: 0.96 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className="relative overflow-hidden rounded-2xl col-span-1 row-span-1 border border-amber-500/30 bg-gradient-to-br from-white/[0.05] via-amber-500/[0.04] to-transparent p-6 flex flex-col justify-between shadow-2xl group hover:border-amber-400/60 transition-all duration-500"
+      style={{ minHeight: 220 }}
+    >
+      <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-1 text-amber-400">
+            {[...Array(5)].map((_, i) => (
+              <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+            ))}
+          </div>
+          <span className="text-[11px] font-mono font-bold text-white bg-white/10 px-2 py-0.5 rounded-full border border-white/10">
+            5.0 ★
+          </span>
+        </div>
+
+        <h3 className="text-white font-serif text-xl leading-tight">Avaliações no Google</h3>
+        <p className="text-gray-300 text-xs mt-1.5 font-light leading-relaxed">
+          Mr. Bastos Barbearia · Sua opinião faz parte da nossa história e excelência.
+        </p>
+      </div>
+
+      <a
+        href={GOOGLE_REVIEW_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-4 w-full bg-gradient-to-r from-amber-500 to-[#C88E70] text-[#050B14] py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 hover:brightness-110 active:scale-[0.99] transition-all"
+      >
+        <Star className="w-3.5 h-3.5 fill-[#050B14]" />
+        <span>Avaliar no Google</span>
+        <ExternalLink className="w-3.5 h-3.5" />
+      </a>
+    </motion.div>
+  );
+}
+
 function GalleryCard({
   item,
   index,
 }: {
-  item: (typeof GALLERY)[0];
+  item: (typeof GALLERY_PHOTOS)[0];
   index: number;
 }) {
   const [hovered, setHovered] = useState(false);
@@ -69,12 +218,12 @@ function GalleryCard({
       initial={{ opacity: 0, y: 60, scale: 0.96 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.9, delay: index * 0.1, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.9, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={`relative overflow-hidden rounded-2xl cursor-pointer ${item.col}`}
       style={{
-        minHeight: item.col.includes("row-span-2") ? 500 : item.col.includes("col-span-2") ? 260 : 220,
+        minHeight: item.col.includes("row-span-2") ? 500 : item.col.includes("col-span-2") ? 250 : 220,
       }}
     >
       <motion.div
@@ -160,7 +309,7 @@ export default function NossaAreaSection() {
             </p>
           </motion.div>
 
-          {/* ── CARD DE LOCALIZAÇÃO & HORÁRIO ── */}
+          {/* ── CARD DE LOCALIZAÇÃO, HORÁRIO & AVALIAÇÃO GOOGLE ── */}
           <motion.div
             initial={{ opacity: 0, x: 50, y: 20 }}
             whileInView={{ opacity: 1, x: 0, y: 0 }}
@@ -198,7 +347,7 @@ export default function NossaAreaSection() {
               </div>
 
               {/* Endereço */}
-              <div className="relative px-6 pt-5 pb-6">
+              <div className="relative px-6 pt-5 pb-5 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2 mb-3">
                   <MapPin className="w-4 h-4 text-[#C88E70]" />
                   <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500">Localização</span>
@@ -212,10 +361,33 @@ export default function NossaAreaSection() {
                   href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 text-[#C88E70] text-xs uppercase tracking-[0.2em] font-semibold group"
+                  className="mt-3 inline-flex items-center gap-2 text-[#C88E70] text-xs uppercase tracking-[0.2em] font-semibold group"
                 >
                   Ver no mapa
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </a>
+              </div>
+
+              {/* Bloco de Avaliações no Google */}
+              <div className="relative px-6 py-5 bg-amber-500/[0.04]">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    ))}
+                    <span className="text-xs font-bold text-white ml-1">5.0</span>
+                  </div>
+                  <span className="text-[10px] uppercase tracking-wider text-amber-400/90 font-bold">Google</span>
+                </div>
+                <a
+                  href={GOOGLE_REVIEW_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full mt-2 bg-white/5 hover:bg-[#C88E70] text-gray-200 hover:text-[#050B14] border border-white/10 hover:border-[#C88E70] py-2 px-3 rounded-xl text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300"
+                >
+                  <Star className="w-3.5 h-3.5 fill-amber-400" />
+                  <span>Avaliar Barbearia no Google</span>
+                  <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
             </div>
@@ -255,12 +427,16 @@ export default function NossaAreaSection() {
         </motion.div>
       </div>
 
-      {/* ── GALERIA ── */}
+      {/* ── GALERIA COM VÍDEO TOUR EM FORMATO MAIOR E FOTOS OFICIAIS ── */}
       <div className="max-w-7xl mx-auto">
 
-        {/* Mobile */}
-        <div className="flex flex-col gap-4 md:hidden">
-          {GALLERY.map((item, i) => (
+        {/* Versão Mobile: Vídeo Tour em Destaque Vertical Maior + Fotos */}
+        <div className="flex flex-col gap-5 md:hidden">
+          {/* Vídeo Tour em Formato Maior no Celular */}
+          <VideoTourCard />
+
+          {/* Fotos da Galeria */}
+          {GALLERY_PHOTOS.map((item, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 40 }}
@@ -281,13 +457,23 @@ export default function NossaAreaSection() {
               </div>
             </motion.div>
           ))}
+
+          {/* Card Google Reviews no Mobile */}
+          <GoogleReviewCard />
         </div>
 
-        {/* Desktop Bento */}
-        <div className="hidden md:grid grid-cols-3 gap-4" style={{ gridAutoRows: "220px" }}>
-          {GALLERY.map((item, i) => (
+        {/* Versão Desktop: Bento Grid com Vídeo Tour em Formato Maior (2 Linhas) + 7 Fotos + Card Google Reviews */}
+        <div className="hidden md:grid grid-cols-3 gap-4" style={{ gridAutoRows: "250px" }}>
+          {/* 1. Vídeo Tour Maior ocupando 2 linhas inteiras (520px+ altura) */}
+          <VideoTourCard />
+
+          {/* 2. Fotos Oficiais da Barbearia */}
+          {GALLERY_PHOTOS.map((item, i) => (
             <GalleryCard key={i} item={item} index={i} />
           ))}
+
+          {/* 3. Card Google Reviews integrado ao Bento Grid */}
+          <GoogleReviewCard />
         </div>
       </div>
 
@@ -299,14 +485,28 @@ export default function NossaAreaSection() {
         transition={{ duration: 0.8, delay: 0.3 }}
         className="max-w-7xl mx-auto mt-14 flex flex-col md:flex-row items-center justify-between gap-6 pt-10 border-t border-white/[0.06]"
       >
-        <div className="flex items-center gap-3 text-gray-400">
-          <Clock className="w-4 h-4 text-[#C88E70]" />
-          <span className="text-sm font-light tracking-wide">
-            Seg – Sex: <span className="text-white font-medium">09:00 – 20:00</span>
-            <span className="mx-3 text-white/20">·</span>
-            Sáb: <span className="text-white font-medium">09:00 – 19:00</span>
-          </span>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 text-gray-400">
+          <div className="flex items-center gap-3">
+            <Clock className="w-4 h-4 text-[#C88E70]" />
+            <span className="text-sm font-light tracking-wide">
+              Seg – Sex: <span className="text-white font-medium">09:00 – 20:00</span>
+              <span className="mx-3 text-white/20">·</span>
+              Sáb: <span className="text-white font-medium">09:00 – 19:00</span>
+            </span>
+          </div>
+
+          <a
+            href={GOOGLE_REVIEW_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs text-amber-400/90 hover:text-amber-300 font-semibold tracking-wider transition-colors"
+          >
+            <Star className="w-3.5 h-3.5 fill-amber-400" />
+            <span>Avalie-nos no Google (5.0 ★)</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
         </div>
+
         <motion.a
           href="#servicos"
           whileHover={{ scale: 1.02 }}

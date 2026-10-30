@@ -335,6 +335,26 @@ export default function Home() {
                 </div>
                 <ChevronRight className="w-4 h-4 text-gray-500" />
               </Link>
+
+              {/* Avaliação no Google no Menu Mobile */}
+              <a
+                href="https://g.page/r/CRXf9JwKqxNQEBM/review"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="p-4 rounded-2xl bg-amber-500/[0.08] border border-amber-500/30 active:bg-amber-500/20 flex items-center justify-between transition-all"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/40">
+                    <Star className="w-4 h-4 fill-amber-400" />
+                  </div>
+                  <div>
+                    <span className="text-base font-serif text-white block">Avalie no Google (5.0 ★)</span>
+                    <span className="text-[11px] text-amber-300/80 font-light">Mr. Bastos Barbearia no Google</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-amber-400" />
+              </a>
             </div>
 
             {/* Ações Inferiores do Menu */}
@@ -732,8 +752,16 @@ export default function Home() {
            <p className="text-gray-600 text-[10px] tracking-[0.3em] uppercase">
              © {new Date().getFullYear()} O PADRÃO DE EXCELÊNCIA.
            </p>
-           <div className="flex gap-6 mt-4 md:mt-0">
-              <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors">Instagram</a>
+           <div className="flex flex-wrap items-center gap-6 mt-4 md:mt-0">
+              <a 
+                href="https://g.page/r/CRXf9JwKqxNQEBM/review" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-amber-400 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold"
+              >
+                <Star className="w-3.5 h-3.5 fill-amber-400" /> Avalie no Google (5.0 ★)
+              </a>
+              <a href="#" className="text-gray-500 hover:text-[#C88E70] transition-colors text-xs">Instagram</a>
               <a href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião" target="_blank" rel="noopener noreferrer" title="Alagoinhas - BA" className="text-gray-500 hover:text-[#C88E70] transition-colors"><MapPin className="w-4 h-4" /></a>
            </div>
         </motion.footer>
