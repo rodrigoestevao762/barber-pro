@@ -18,6 +18,18 @@ export default function ClientDashboard() {
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loyalty, setLoyalty] = useState({ currentCuts: 0, targetCuts: 10, freeCutsWon: 0 });
   const [loading, setLoading] = useState(true);
+  const [greeting, setGreeting] = useState("Olá");
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      setGreeting("Bom dia");
+    } else if (hour >= 12 && hour < 18) {
+      setGreeting("Boa tarde");
+    } else {
+      setGreeting("Boa noite");
+    }
+  }, []);
 
   const [clientData, setClientData] = useState<{
     name: string;
@@ -122,7 +134,7 @@ export default function ClientDashboard() {
               <p className="text-[10px] uppercase tracking-[0.3em] text-[#C88E70] font-semibold">
                 Painel do Cliente
               </p>
-              <h1 className="text-xl font-serif text-white">{clientName}</h1>
+              <h1 className="text-xl font-serif text-white">{greeting}, {clientName}</h1>
             </div>
           </div>
 

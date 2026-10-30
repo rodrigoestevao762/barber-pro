@@ -12,9 +12,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [greeting, setGreeting] = useState("BOM DIA");
 
   const userRole = (session?.user as any)?.role || "ADMIN";
   const isAdmin = userRole === "ADMIN";
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) {
+      setGreeting("BOM DIA");
+    } else if (hour >= 12 && hour < 18) {
+      setGreeting("BOA TARDE");
+    } else {
+      setGreeting("BOA NOITE");
+    }
+  }, []);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -126,7 +138,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             animate={{ opacity: 1, y: 0 }}
             className="text-3xl md:text-5xl font-serif text-white tracking-tight"
           >
-            BOM DIA, <span className="text-[#C88E70] italic">{(session?.user?.name || 'BARBEIRO').toUpperCase()}</span>
+            {greeting}, <span className="text-[#C88E70] italic">{(session?.user?.name || 'BARBEIRO').toUpperCase()}</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }}
