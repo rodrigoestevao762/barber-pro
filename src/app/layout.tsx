@@ -28,10 +28,18 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Mr. Bastos Barbearia" }],
   icons: {
-    icon: "/icon.jpg",
-    apple: "/icon.jpg",
-    shortcut: "/icon.jpg",
+    icon: [
+      { url: "/icon.png?v=2", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png?v=2", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.ico?v=2", sizes: "any" },
+    ],
+    apple: [
+      { url: "/apple-icon.png?v=2", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/favicon.ico?v=2",
   },
+  manifest: "/manifest.json",
   verification: {
     google: "-VKaG-kU7v50FaW3bA9SZVnvloirfRaPLWV7Bwjp6MI",
   },
@@ -70,6 +78,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         <meta name="google-site-verification" content="-VKaG-kU7v50FaW3bA9SZVnvloirfRaPLWV7Bwjp6MI" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icon.png?v=2" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png?v=2" />
       </head>
       <body className="min-h-full flex flex-col bg-[#050B14] text-white font-sans">
         <Providers>{children}</Providers>
