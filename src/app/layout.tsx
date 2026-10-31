@@ -32,6 +32,9 @@ export const metadata: Metadata = {
     apple: "/icon.jpg",
     shortcut: "/icon.jpg",
   },
+  verification: {
+    google: "-VKaG-kU7v50FaW3bA9SZVnvloirfRaPLWV7Bwjp6MI",
+  },
   openGraph: {
     title: "Mr. Bastos Barbearia | O Padrão de Excelência",
     description: "Tradição, conforto e sofisticação em corte masculino, barba e visagismo em Alagoinhas - BA. Agendamentos online e atendimento de primeira.",
@@ -65,6 +68,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="pt-BR"
       className={`${inter.variable} ${playfair.variable} h-full antialiased dark`}
     >
+      <head>
+        <meta name="google-site-verification" content="-VKaG-kU7v50FaW3bA9SZVnvloirfRaPLWV7Bwjp6MI" />
+      </head>
       <body className="min-h-full flex flex-col bg-[#050B14] text-white font-sans">
         <Providers>{children}</Providers>
       </body>
