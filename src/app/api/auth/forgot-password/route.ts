@@ -51,7 +51,7 @@ export async function POST(req: Request) {
     };
 
     // 3. Monta o link de redefinição
-    const origin = process.env.NEXTAUTH_URL || "https://barber-pro-six.vercel.app";
+    const origin = process.env.NEXTAUTH_URL || "https://mrbastos.com.br";
     const resetUrl = `${origin}/recuperar-senha?token=${token}`;
 
     // 4. Monta mensagem e link para WhatsApp
