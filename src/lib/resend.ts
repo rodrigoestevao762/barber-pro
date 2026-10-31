@@ -28,7 +28,7 @@ export async function sendPasswordResetEmail({
   }
 
   try {
-    const fromSender = process.env.RESEND_FROM || "Mr. Bastos Barbearia <onboarding@resend.dev>";
+    const fromSender = process.env.RESEND_FROM || "Mr. Bastos Barbearia <nao-responda@mrbastos.com.br>";
 
     const { data, error } = await resend.emails.send({
       from: fromSender,
@@ -41,14 +41,14 @@ export async function sendPasswordResetEmail({
           <meta charset="UTF-8">
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #050B14; color: #FFFFFF; margin: 0; padding: 40px 20px; }
-            .card { max-width: 540px; margin: 0 auto; background-color: #091220; border: 1px solid rgba(200, 142, 112, 0.3); border-radius: 20px; padding: 40px 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+            .card { max-width: 540px; margin: 0 auto; background-color: #091220; border: 1px solid rgba(37, 99, 235, 0.35); border-radius: 20px; padding: 40px 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
             .logo-text { font-family: Georgia, serif; font-size: 26px; color: #FFFFFF; letter-spacing: 3px; text-transform: uppercase; text-align: center; margin: 0 0 6px 0; }
-            .tagline { color: #C88E70; font-size: 11px; text-transform: uppercase; letter-spacing: 4px; text-align: center; margin: 0 0 32px 0; font-weight: 600; }
+            .tagline { color: #3B82F6; font-size: 11px; text-transform: uppercase; letter-spacing: 4px; text-align: center; margin: 0 0 32px 0; font-weight: 600; }
             .divider { height: 1px; background: rgba(255,255,255,0.08); margin: 24px 0; }
             h2 { font-size: 20px; font-weight: 600; color: #FFFFFF; margin-top: 0; }
             p { color: #A0AEC0; font-size: 14px; line-height: 1.6; margin: 16px 0; }
-            .btn { display: inline-block; background-color: #C88E70; color: #050B14 !important; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; text-decoration: none; padding: 16px 36px; border-radius: 12px; margin: 24px 0; text-align: center; }
-            .link-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 8px; font-size: 11px; color: #C88E70; word-break: break-all; }
+            .btn { display: inline-block; background-color: #2563EB; color: #FFFFFF !important; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; text-decoration: none; padding: 16px 36px; border-radius: 12px; margin: 24px 0; text-align: center; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4); }
+            .link-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 8px; font-size: 11px; color: #60A5FA; word-break: break-all; }
             .footer { text-align: center; color: #4A5568; font-size: 11px; margin-top: 32px; letter-spacing: 1px; text-transform: uppercase; }
           </style>
         </head>

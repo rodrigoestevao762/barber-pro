@@ -89,7 +89,7 @@ function VideoTourCard() {
       viewport={{ once: true, margin: "-80px" }}
       transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
       onClick={togglePlay}
-      className="relative overflow-hidden rounded-3xl cursor-pointer col-span-1 row-span-2 border-2 border-[#C88E70]/40 shadow-[0_20px_60px_rgba(200,142,112,0.18)] group bg-[#050B14]"
+      className="relative overflow-hidden rounded-3xl cursor-pointer col-span-1 row-span-2 border-2 border-blue-500/40 shadow-[0_20px_60px_rgba(200,142,112,0.18)] group bg-[#050B14]"
       style={{ minHeight: 520 }}
     >
       {/* Vídeo */}
@@ -109,7 +109,7 @@ function VideoTourCard() {
 
       {/* Topo: Badge Tour VIP */}
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
-        <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-[#050B14]/85 text-[#C88E70] border border-[#C88E70]/40 backdrop-blur-md flex items-center gap-1.5 shadow-lg">
+        <span className="px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest bg-[#050B14]/85 text-blue-400 border border-blue-500/40 backdrop-blur-md flex items-center gap-1.5 shadow-lg">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" /> Tour em Vídeo
         </span>
         <span className="text-[10px] text-gray-300 font-serif italic bg-black/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/10">
@@ -121,7 +121,7 @@ function VideoTourCard() {
       <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
         <motion.div
           animate={{ scale: isPlaying ? 0.9 : 1.1, opacity: isPlaying ? 0 : 1 }}
-          className="w-16 h-16 rounded-full bg-[#C88E70] text-[#050B14] flex items-center justify-center shadow-2xl transition-opacity duration-300 group-hover:opacity-90"
+          className="w-16 h-16 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-2xl transition-opacity duration-300 group-hover:opacity-90"
         >
           {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-1 fill-current" />}
         </motion.div>
@@ -131,7 +131,7 @@ function VideoTourCard() {
       <div className="absolute bottom-0 left-0 w-full p-5 md:p-6 z-10">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-[#C88E70] text-[10px] uppercase tracking-[0.3em] font-bold mb-1 flex items-center gap-1.5">
+            <p className="text-blue-400 text-[10px] uppercase tracking-[0.3em] font-bold mb-1 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5" /> Ao Vivo
             </p>
             <h3 className="text-white font-serif text-2xl leading-tight drop-shadow-md">Nossa Barbearia</h3>
@@ -145,7 +145,7 @@ function VideoTourCard() {
             type="button"
             onClick={toggleMute}
             aria-label={isMuted ? "Ativar som do vídeo" : "Silenciar vídeo"}
-            className="p-3 rounded-full bg-[#050B14]/90 border border-[#C88E70]/50 text-[#C88E70] hover:bg-[#C88E70] hover:text-[#050B14] transition-all duration-300 shadow-xl backdrop-blur-md shrink-0 flex items-center gap-1.5 active:scale-95"
+            className="p-3 rounded-full bg-[#050B14]/90 border border-blue-500/50 text-blue-400 hover:bg-blue-600 hover:text-white transition-all duration-300 shadow-xl backdrop-blur-md shrink-0 flex items-center gap-1.5 active:scale-95"
             title={isMuted ? "Clique para ativar som" : "Clique para silenciar"}
           >
             {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
@@ -194,7 +194,7 @@ function GoogleReviewCard() {
         href={GOOGLE_REVIEW_URL}
         target="_blank"
         rel="noopener noreferrer"
-        className="mt-4 w-full bg-gradient-to-r from-amber-500 to-[#C88E70] text-[#050B14] py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 hover:brightness-110 active:scale-[0.99] transition-all"
+        className="mt-4 w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[#050B14] py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 hover:brightness-110 active:scale-[0.99] transition-all"
       >
         <Star className="w-3.5 h-3.5 fill-[#050B14]" />
         <span>Avaliar no Google</span>
@@ -236,18 +236,18 @@ function GalleryCard({
       <motion.div
         animate={{ opacity: hovered ? 1 : 0 }}
         transition={{ duration: 0.4 }}
-        className="absolute inset-0 bg-gradient-to-br from-[#C88E70]/15 via-transparent to-transparent pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-br from-blue-600/15 via-transparent to-transparent pointer-events-none"
       />
       <motion.div
         animate={{ scaleX: hovered ? 1 : 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#C88E70] to-transparent origin-left"
+        className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-blue-500 to-transparent origin-left"
       />
       <div className="absolute bottom-0 left-0 w-full p-5 md:p-6">
         <motion.p
           animate={{ y: hovered ? 0 : 6, opacity: hovered ? 1 : 0 }}
           transition={{ duration: 0.35 }}
-          className="text-[#C88E70] text-[10px] uppercase tracking-[0.3em] mb-1 font-semibold"
+          className="text-blue-400 text-[10px] uppercase tracking-[0.3em] mb-1 font-semibold"
         >
           {item.label}
         </motion.p>
@@ -281,8 +281,8 @@ export default function NossaAreaSection() {
       className="relative bg-[#02050A] py-28 md:py-40 px-5 md:px-12 lg:px-24 overflow-hidden"
     >
       {/* Luzes atmosféricas */}
-      <div className="absolute -top-60 -left-40 w-[600px] h-[600px] bg-[#C88E70]/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-[#C88E70]/7 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute -top-60 -left-40 w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 w-[500px] h-[500px] bg-blue-600/7 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute left-5 md:left-12 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-white/5 to-transparent" />
 
       {/* ── HEADER ── */}
@@ -291,17 +291,17 @@ export default function NossaAreaSection() {
 
           {/* Título */}
           <motion.div style={{ y: titleY, opacity: titleOpacity }} className="flex-1">
-            <p className="text-[#C88E70] uppercase tracking-[0.45em] text-xs font-semibold flex items-center gap-3 mb-8">
-              <span className="w-10 h-[1px] bg-[#C88E70]" />
+            <p className="text-blue-400 uppercase tracking-[0.45em] text-xs font-semibold flex items-center gap-3 mb-8">
+              <span className="w-10 h-[1px] bg-blue-600" />
               Nossa Área
             </p>
             <h2 className="text-5xl md:text-7xl font-serif leading-[0.95] tracking-tight">
               Um Espaço{" "}
-              <span className="text-transparent [-webkit-text-stroke:1px_#C88E70] italic">
+              <span className="text-transparent [-webkit-text-stroke:1px_#3B82F6] italic">
                 Criado
               </span>
               <br /> Para{" "}
-              <span className="text-[#C88E70]">Você.</span>
+              <span className="text-blue-400">Você.</span>
             </h2>
             <p className="text-gray-400 font-light text-base leading-relaxed mt-8 max-w-md">
               Cada detalhe do nosso espaço foi pensado para que você se sinta em
@@ -320,20 +320,20 @@ export default function NossaAreaSection() {
             <div className="relative rounded-3xl border border-white/8 bg-white/[0.03] backdrop-blur-xl overflow-hidden shadow-[0_30px_80px_rgba(0,0,0,0.6)]">
 
               {/* Fundo dourado sutil */}
-              <div className="absolute -top-16 -right-16 w-48 h-48 bg-[#C88E70]/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="absolute -top-16 -right-16 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
               <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
               {/* Cabeçalho do card — Logo + Nome */}
               <div className="relative flex flex-col items-center py-8 px-6 border-b border-white/[0.06]">
                 <LogoMrBastos size={96} color="white" className="mb-3 opacity-90" />
                 <p className="text-white font-serif text-xl tracking-wide">Mr. Bastos</p>
-                <p className="text-[#C88E70] text-[10px] uppercase tracking-[0.45em] mt-1">Barbearia</p>
+                <p className="text-blue-400 text-[10px] uppercase tracking-[0.45em] mt-1">Barbearia</p>
               </div>
 
               {/* Horários */}
               <div className="relative px-6 pt-6 pb-5 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2 mb-4">
-                  <Clock className="w-4 h-4 text-[#C88E70]" />
+                  <Clock className="w-4 h-4 text-blue-400" />
                   <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500">Horário de Funcionamento</span>
                 </div>
                 <div className="space-y-3">
@@ -349,19 +349,19 @@ export default function NossaAreaSection() {
               {/* Endereço */}
               <div className="relative px-6 pt-5 pb-5 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2 mb-3">
-                  <MapPin className="w-4 h-4 text-[#C88E70]" />
+                  <MapPin className="w-4 h-4 text-blue-400" />
                   <span className="text-[10px] uppercase tracking-[0.3em] text-gray-500">Localização</span>
                 </div>
                 <p className="text-gray-200 text-sm font-light leading-relaxed">
                   Av. Dantas Bião, s/n<br />
                   <span className="text-gray-400">Estacionamento do Hiper Gbarbosa</span><br />
-                  <span className="text-[#C88E70] text-xs font-medium tracking-wide">Alagoinhas – BA</span>
+                  <span className="text-blue-400 text-xs font-medium tracking-wide">Alagoinhas – BA</span>
                 </p>
                 <a
                   href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-center gap-2 text-[#C88E70] text-xs uppercase tracking-[0.2em] font-semibold group"
+                  className="mt-3 inline-flex items-center gap-2 text-blue-400 text-xs uppercase tracking-[0.2em] font-semibold group"
                 >
                   Ver no mapa
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -383,7 +383,7 @@ export default function NossaAreaSection() {
                   href={GOOGLE_REVIEW_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="w-full mt-2 bg-white/5 hover:bg-[#C88E70] text-gray-200 hover:text-[#050B14] border border-white/10 hover:border-[#C88E70] py-2 px-3 rounded-xl text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300"
+                  className="w-full mt-2 bg-white/5 hover:bg-blue-600 text-gray-200 hover:text-[#050B14] border border-white/10 hover:border-blue-500 py-2 px-3 rounded-xl text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-300"
                 >
                   <Star className="w-3.5 h-3.5 fill-amber-400" />
                   <span>Avaliar Barbearia no Google</span>
@@ -419,7 +419,7 @@ export default function NossaAreaSection() {
             </div>
           </div>
           <div className="flex items-center gap-4 max-w-xs">
-            <div className="w-10 h-[1px] bg-[#C88E70]/50 shrink-0" />
+            <div className="w-10 h-[1px] bg-blue-600/50 shrink-0" />
             <p className="text-gray-400 text-sm font-light italic leading-snug">
               "Não fazemos apenas cortes. Moldamos identidades."
             </p>
@@ -452,7 +452,7 @@ export default function NossaAreaSection() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#050B14]/80 via-[#050B14]/10 to-transparent" />
               <div className="absolute bottom-5 left-5">
-                <p className="text-[#C88E70] text-[10px] uppercase tracking-widest mb-1 font-semibold">{item.label}</p>
+                <p className="text-blue-400 text-[10px] uppercase tracking-widest mb-1 font-semibold">{item.label}</p>
                 <p className="text-gray-200 text-sm font-light">{item.desc}</p>
               </div>
             </motion.div>
@@ -487,7 +487,7 @@ export default function NossaAreaSection() {
       >
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 text-gray-400">
           <div className="flex items-center gap-3">
-            <Clock className="w-4 h-4 text-[#C88E70]" />
+            <Clock className="w-4 h-4 text-blue-400" />
             <span className="text-sm font-light tracking-wide">
               Seg – Sex: <span className="text-white font-medium">09:00 – 20:00</span>
               <span className="mx-3 text-white/20">·</span>
@@ -511,7 +511,7 @@ export default function NossaAreaSection() {
           href="#servicos"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="w-full md:w-auto text-center border border-[#C88E70]/40 text-[#C88E70] hover:bg-[#C88E70] hover:text-[#050B14] px-10 py-4 uppercase tracking-[0.2em] text-xs font-semibold transition-all duration-300"
+          className="w-full md:w-auto text-center border border-blue-500/40 text-blue-400 hover:bg-blue-600 hover:text-white px-10 py-4 uppercase tracking-[0.2em] text-xs font-semibold transition-all duration-300"
         >
           Agendar Visita
         </motion.a>

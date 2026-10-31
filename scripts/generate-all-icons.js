@@ -133,3 +133,4 @@ async function buildAllIcons() {
 }
 
 buildAllIcons().catch(console.error);
+

@@ -159,7 +159,7 @@ export default function Home() {
       img.src = src;
     });
     // Simula um carregamento premium inicial
-    setTimeout(() => setIsLoading(false), 1500);
+    setTimeout(() => setIsLoading(false), 450);
     const timer = setInterval(() => {
       setCurrentImage((prev) => (prev + 1) % HERO_IMAGES.length);
     }, 6000);
@@ -170,7 +170,7 @@ export default function Home() {
   const prevSlide = () => setCurrentImage((prev) => (prev - 1 + HERO_IMAGES.length) % HERO_IMAGES.length);
 
   return (
-    <div className="min-h-screen bg-[#050B14] text-white font-sans selection:bg-[#C88E70] selection:text-white">
+    <div className="min-h-screen bg-[#050B14] text-white font-sans selection:bg-blue-600 selection:text-white">
       
       {/* LOADER INICIAL */}
       <AnimatePresence>
@@ -185,11 +185,11 @@ export default function Home() {
               animate={{ rotate: 360 }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             >
-              <LogoMrBastos size={80} color="#C88E70" />
+              <LogoMrBastos size={80} color="#3B82F6" />
             </motion.div>
             <motion.p 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              className="mt-4 font-serif text-[#C88E70] tracking-[0.3em] uppercase text-sm"
+              className="mt-4 font-serif text-blue-400 tracking-[0.3em] uppercase text-sm"
             >
               MR. BASTOS
             </motion.p>
@@ -205,29 +205,29 @@ export default function Home() {
         className="fixed top-0 left-0 w-full px-6 py-6 md:px-12 md:py-8 flex justify-between items-center z-50 bg-transparent pointer-events-auto"
       >
         <Link href="/" className="flex items-center gap-3 cursor-pointer group drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
-           <LogoMrBastos size={36} color="#C88E70" className="group-hover:scale-110 transition-transform duration-500" />
+           <LogoMrBastos size={36} color="#3B82F6" className="group-hover:scale-110 transition-transform duration-500" />
            <span className="text-xl font-serif tracking-[0.25em] text-white uppercase">MR. BASTOS</span>
         </Link>
         
         <div className="hidden md:flex items-center gap-12 text-xs uppercase tracking-[0.2em] text-gray-200 font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-          <a href="#servicos" className="hover:text-[#C88E70] transition-colors relative group">
+          <a href="#servicos" className="hover:text-blue-400 transition-colors relative group">
             Serviços
-            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
+            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
           </a>
-          <a href="#experiencia" className="hover:text-[#C88E70] transition-colors relative group">
+          <a href="#experiencia" className="hover:text-blue-400 transition-colors relative group">
             A Experiência
-            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
+            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
           </a>
-          <a href="#nossa-area" className="hover:text-[#C88E70] transition-colors relative group">
+          <a href="#nossa-area" className="hover:text-blue-400 transition-colors relative group">
             Nossa Área
-            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
+            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
           </a>
-          <Link href={session ? ((session?.user as any)?.role === "CLIENT" ? "/painel-cliente" : "/dashboard") : "/login"} className="hover:text-[#C88E70] transition-colors relative group">
+          <Link href={session ? ((session?.user as any)?.role === "CLIENT" ? "/painel-cliente" : "/dashboard") : "/login"} className="hover:text-blue-400 transition-colors relative group">
             {session ? "Painel" : "Login"}
-            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-[#C88E70] transition-all duration-300 group-hover:w-full"></span>
+            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
           </Link>
           <div onClick={() => setIsModalOpen(true)}>
-            <MagneticButton className="bg-[#C88E70] text-[#050B14] px-8 py-4 flex items-center gap-3 hover:bg-white transition-colors duration-300 shadow-xl shadow-black/40 font-bold">
+            <MagneticButton className="bg-gradient-to-r from-blue-700 to-blue-600 text-white px-8 py-4 flex items-center gap-3 hover:bg-white transition-colors duration-300 shadow-xl shadow-black/40 font-bold">
               <Calendar className="w-4 h-4" /> AGENDAR
             </MagneticButton>
           </div>
@@ -237,7 +237,7 @@ export default function Home() {
         <button 
           onClick={() => setIsMobileMenuOpen(true)} 
           aria-label="Abrir Menu de Navegação"
-          className="md:hidden text-white hover:text-[#C88E70] transition-colors p-2 -mr-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
+          className="md:hidden text-white hover:text-blue-400 transition-colors p-2 -mr-2 drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]"
         >
           <Menu className="w-8 h-8" />
         </button>
@@ -256,7 +256,7 @@ export default function Home() {
             {/* Topo do Menu Mobile */}
             <div className="flex items-center justify-between pb-5 border-b border-white/10 shrink-0">
               <div className="flex items-center gap-3">
-                <LogoMrBastos size={32} color="#C88E70" />
+                <LogoMrBastos size={32} color="#3B82F6" />
                 <span className="text-lg font-serif tracking-[0.25em] text-white uppercase">MR. BASTOS</span>
               </div>
               <button
@@ -271,15 +271,15 @@ export default function Home() {
 
             {/* Links Estilo Cards VIP */}
             <div className="flex-1 py-6 flex flex-col justify-center gap-3.5">
-              <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-[#C88E70] mb-0.5">Navegação Exclusiva</p>
+              <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-blue-400 mb-0.5">Navegação Exclusiva</p>
               
               <a
                 href="#servicos"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#C88E70]/40 active:bg-[#C88E70]/10 flex items-center justify-between transition-all"
+                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-3.5">
-                  <span className="text-xs font-mono font-bold text-[#C88E70]">01</span>
+                  <span className="text-xs font-mono font-bold text-blue-400">01</span>
                   <div>
                     <span className="text-base font-serif text-white block">Serviços Oficiais</span>
                     <span className="text-[11px] text-gray-400 font-light">Cortes, barboterapia e combos</span>
@@ -291,10 +291,10 @@ export default function Home() {
               <a
                 href="#experiencia"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#C88E70]/40 active:bg-[#C88E70]/10 flex items-center justify-between transition-all"
+                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-3.5">
-                  <span className="text-xs font-mono font-bold text-[#C88E70]">02</span>
+                  <span className="text-xs font-mono font-bold text-blue-400">02</span>
                   <div>
                     <span className="text-base font-serif text-white block">A Experiência</span>
                     <span className="text-[11px] text-gray-400 font-light">Ritual de forjar grandes homens</span>
@@ -306,10 +306,10 @@ export default function Home() {
               <a
                 href="#nossa-area"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#C88E70]/40 active:bg-[#C88E70]/10 flex items-center justify-between transition-all"
+                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-3.5">
-                  <span className="text-xs font-mono font-bold text-[#C88E70]">03</span>
+                  <span className="text-xs font-mono font-bold text-blue-400">03</span>
                   <div>
                     <span className="text-base font-serif text-white block">Nossa Barbearia</span>
                     <span className="text-[11px] text-gray-400 font-light">Ambiente premium e estrutura</span>
@@ -321,10 +321,10 @@ export default function Home() {
               <Link
                 href={session ? ((session?.user as any)?.role === "CLIENT" ? "/painel-cliente" : "/dashboard") : "/login"}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-[#C88E70]/40 active:bg-[#C88E70]/10 flex items-center justify-between transition-all"
+                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-3.5">
-                  <span className="text-xs font-mono font-bold text-[#C88E70]">04</span>
+                  <span className="text-xs font-mono font-bold text-blue-400">04</span>
                   <div>
                     <span className="text-base font-serif text-white block">
                       {session ? "Meu Painel VIP" : "Área do Cliente / Barbeiro"}
@@ -362,14 +362,14 @@ export default function Home() {
             <div className="space-y-3.5 pt-4 border-t border-white/10 shrink-0">
               <button 
                 onClick={() => { setIsMobileMenuOpen(false); setIsModalOpen(true); }}
-                className="w-full bg-[#C88E70] text-[#050B14] py-3.5 px-4 rounded-xl font-bold tracking-widest uppercase text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#C88E70]/20 hover:bg-white active:scale-[0.99] transition-all"
+                className="w-full bg-gradient-to-r from-blue-700 to-blue-600 text-white py-3.5 px-4 rounded-xl font-bold tracking-widest uppercase text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 hover:bg-white active:scale-[0.99] transition-all"
               >
                 <Calendar className="w-4 h-4" /> AGENDAR EXPERIÊNCIA
               </button>
 
               <div className="flex items-center justify-between text-[11px] text-gray-400 px-1 pt-1">
-                <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-[#C88E70]" /> Ter a Sáb · 09h às 19h</span>
-                <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-[#C88E70]" /> Mr. Bastos Barbearia</span>
+                <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5 text-blue-400" /> Ter a Sáb · 09h às 19h</span>
+                <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-blue-400" /> Mr. Bastos Barbearia</span>
               </div>
 
               {/* Redes Sociais no Menu Celular */}
@@ -438,10 +438,10 @@ export default function Home() {
         {/* Textos Centrais com Máscara e Brilho Impecável */}
         <div className="relative z-20 text-center flex flex-col items-center mt-16 md:mt-20 px-4">
           <RevealText delay={1.2}>
-            <p className="text-[#C88E70] uppercase tracking-[0.4em] text-xs md:text-sm font-semibold mb-4 md:mb-6 flex items-center gap-3 md:gap-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-              <span className="w-8 md:w-12 h-[1px] bg-[#C88E70]"></span>
+            <p className="text-blue-400 uppercase tracking-[0.4em] text-xs md:text-sm font-semibold mb-4 md:mb-6 flex items-center gap-3 md:gap-4 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+              <span className="w-8 md:w-12 h-[1px] bg-blue-600"></span>
               Arte & Precisão
-              <span className="w-8 md:w-12 h-[1px] bg-[#C88E70]"></span>
+              <span className="w-8 md:w-12 h-[1px] bg-blue-600"></span>
             </p>
           </RevealText>
           
@@ -453,7 +453,7 @@ export default function Home() {
               </span>
             </RevealText>
             <RevealText delay={1.4}>
-              <span className="text-[#C88E70]">ATITUDE</span> ÚNICA.
+              <span className="text-blue-400">ATITUDE</span> ÚNICA.
             </RevealText>
           </h1>
 
@@ -462,7 +462,7 @@ export default function Home() {
             className="mt-8 md:mt-12 flex gap-6"
           >
             <div onClick={() => setIsModalOpen(true)}>
-              <MagneticButton className="border border-white/20 px-8 md:px-10 py-4 md:py-5 uppercase tracking-[0.2em] text-xs hover:bg-[#C88E70] hover:border-[#C88E70] hover:text-[#050B14] transition-all duration-500 flex items-center gap-4 group backdrop-blur-md bg-white/5 shadow-xl shadow-black/40">
+              <MagneticButton className="border border-white/20 px-8 md:px-10 py-4 md:py-5 uppercase tracking-[0.2em] text-xs hover:bg-blue-600 hover:border-blue-500 hover:text-[#050B14] transition-all duration-500 flex items-center gap-4 group backdrop-blur-md bg-white/5 shadow-xl shadow-black/40">
                 Agendar Experiência
                 <ChevronRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
               </MagneticButton>
@@ -480,7 +480,7 @@ export default function Home() {
            </button>
            <div className="flex gap-3">
              {HERO_IMAGES.map((_, idx) => (
-               <div key={idx} onClick={() => setCurrentImage(idx)} className={`h-1 cursor-pointer transition-all duration-700 ease-out ${idx === currentImage ? "w-16 bg-[#C88E70]" : "w-6 bg-white/20 hover:bg-white/50"}`} />
+               <div key={idx} onClick={() => setCurrentImage(idx)} className={`h-1 cursor-pointer transition-all duration-700 ease-out ${idx === currentImage ? "w-16 bg-blue-600" : "w-6 bg-white/20 hover:bg-white/50"}`} />
              ))}
            </div>
            <button onClick={nextSlide} className="p-3 border border-white/20 rounded-full hover:bg-white hover:text-black transition-colors">
@@ -494,7 +494,7 @@ export default function Home() {
         <motion.div 
           animate={{ x: ["-50%", "0%"] }} 
           transition={{ repeat: Infinity, ease: "linear", duration: 25 }}
-          className="flex font-serif text-5xl uppercase tracking-widest text-[#C88E70] opacity-80"
+          className="flex font-serif text-5xl uppercase tracking-widest text-blue-400 opacity-80"
         >
            {[...Array(6)].map((_, i) => (
               <span key={i} className="mx-12 flex items-center gap-12">
@@ -510,14 +510,14 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-end mb-20">
             <div className="max-w-2xl">
               <RevealText>
-                <p className="text-[#C88E70] uppercase tracking-[0.45em] text-xs font-semibold flex items-center gap-3 mb-4">
-                  <span className="w-10 h-[1px] bg-[#C88E70]"></span>
+                <p className="text-blue-400 uppercase tracking-[0.45em] text-xs font-semibold flex items-center gap-3 mb-4">
+                  <span className="w-10 h-[1px] bg-blue-600"></span>
                   Tabela Oficial
                 </p>
               </RevealText>
               <RevealText delay={0.1}>
                 <h2 className="text-5xl md:text-7xl font-serif mb-6 leading-tight">
-                  Nossos <span className="text-[#C88E70] italic">Serviços</span> & Valores
+                  Nossos <span className="text-blue-400 italic">Serviços</span> & Valores
                 </h2>
               </RevealText>
               <RevealText delay={0.2}>
@@ -527,7 +527,7 @@ export default function Home() {
               </RevealText>
             </div>
             <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="hidden md:block mt-8 md:mt-0">
-               <button onClick={() => openBooking()} className="text-[#C88E70] uppercase tracking-[0.2em] text-xs font-semibold border border-[#C88E70]/40 px-8 py-4 hover:bg-[#C88E70] hover:text-[#050B14] transition-all duration-300">
+               <button onClick={() => openBooking()} className="text-blue-400 uppercase tracking-[0.2em] text-xs font-semibold border border-blue-500/40 px-8 py-4 hover:bg-blue-600 hover:text-white transition-all duration-300">
                  Agendar Qualquer Horário
                </button>
             </motion.div>
@@ -543,7 +543,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ delay: idx * 0.15, duration: 0.8, ease: [0.33, 1, 0.68, 1] }}
-                className={`group relative overflow-hidden bg-gray-900 cursor-pointer rounded-2xl border border-white/5 ${idx === 1 ? "md:-translate-y-6 md:border-[#C88E70]/30 shadow-[0_20px_50px_rgba(200,142,112,0.15)]" : ""}`}
+                className={`group relative overflow-hidden bg-gray-900 cursor-pointer rounded-2xl border border-white/5 ${idx === 1 ? "md:-translate-y-6 md:border-blue-500/30 shadow-[0_20px_50px_rgba(200,142,112,0.15)]" : ""}`}
                 style={{ height: idx === 1 ? '520px' : '460px' }}
               >
                 <div className="absolute inset-0 bg-cover bg-center transition-transform duration-[1.5s] ease-out md:group-hover:scale-110 opacity-90 md:opacity-50 md:group-hover:opacity-100 grayscale-0 md:grayscale md:group-hover:grayscale-0" style={{ backgroundImage: `url(${service.img})` }} />
@@ -551,7 +551,7 @@ export default function Home() {
                 
                 {/* Badge Superior */}
                 <div className="absolute top-6 left-6 z-10">
-                  <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.2em] font-semibold bg-[#C88E70] text-[#050B14]">
+                  <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-[0.2em] font-semibold bg-gradient-to-r from-blue-700 to-blue-600 text-white">
                     {service.badge}
                   </span>
                 </div>
@@ -564,8 +564,8 @@ export default function Home() {
                     {service.desc}
                   </p>
                   <div className="flex justify-between items-center border-t border-white/10 pt-5">
-                    <span className="text-[#C88E70] font-sans tracking-widest text-2xl font-bold">{service.price}</span>
-                    <div className="px-4 py-2 rounded-full border border-[#C88E70] md:border-white/20 bg-[#C88E70] md:bg-transparent text-black md:text-white flex items-center gap-2 text-xs uppercase tracking-wider font-semibold md:group-hover:bg-[#C88E70] md:group-hover:border-[#C88E70] md:group-hover:text-black transition-all duration-300">
+                    <span className="text-blue-400 font-sans tracking-widest text-2xl font-bold">{service.price}</span>
+                    <div className="px-4 py-2 rounded-full border border-blue-500 md:border-white/20 bg-blue-600 md:bg-transparent text-white flex items-center gap-2 text-xs uppercase tracking-wider font-semibold md:group-hover:bg-blue-600 md:group-hover:border-blue-500 md:group-hover:text-white transition-all duration-300">
                       <span>Agendar</span>
                       <ChevronRight className="w-4 h-4" />
                     </div>
@@ -587,7 +587,7 @@ export default function Home() {
               className="lg:col-span-7 bg-[#02050A]/70 border border-white/5 rounded-3xl p-6 md:p-10 backdrop-blur-md"
             >
               <div className="flex items-center gap-3 mb-8 pb-5 border-b border-white/5">
-                <Scissors className="w-5 h-5 text-[#C88E70]" />
+                <Scissors className="w-5 h-5 text-blue-400" />
                 <h3 className="font-serif text-2xl text-white tracking-wide">Serviços Individuais</h3>
               </div>
 
@@ -596,11 +596,11 @@ export default function Home() {
                   <div 
                     key={item.id}
                     onClick={() => openBooking(item.id)}
-                    className="group flex items-baseline justify-between py-3 border-b border-white/[0.04] hover:border-[#C88E70]/30 cursor-pointer transition-all duration-300"
+                    className="group flex items-baseline justify-between py-3 border-b border-white/[0.04] hover:border-blue-500/30 cursor-pointer transition-all duration-300"
                   >
                     <div className="flex-1 pr-4">
                       <div className="flex items-center gap-3">
-                        <span className="text-white text-lg font-serif group-hover:text-[#C88E70] transition-colors">
+                        <span className="text-white text-lg font-serif group-hover:text-blue-400 transition-colors">
                           {item.name}
                         </span>
                       </div>
@@ -610,10 +610,10 @@ export default function Home() {
                     </div>
 
                     <div className="flex items-center gap-4">
-                      <span className="text-white font-mono text-lg font-semibold tracking-wider group-hover:text-[#C88E70] transition-colors">
+                      <span className="text-white font-mono text-lg font-semibold tracking-wider group-hover:text-blue-400 transition-colors">
                         {item.price}
                       </span>
-                      <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-gray-400 group-hover:border-[#C88E70] group-hover:bg-[#C88E70] group-hover:text-[#050B14] transition-all duration-300">
+                      <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-gray-400 group-hover:border-blue-500 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
                         <ChevronRight className="w-4 h-4" />
                       </div>
                     </div>
@@ -630,16 +630,16 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="lg:col-span-5 flex flex-col justify-between gap-6"
             >
-              <div className="bg-gradient-to-b from-[#C88E70]/10 via-[#02050A]/80 to-[#02050A] border border-[#C88E70]/25 rounded-3xl p-6 md:p-10 relative overflow-hidden h-full flex flex-col justify-between">
-                <div className="absolute top-0 right-0 w-48 h-48 bg-[#C88E70]/10 rounded-full blur-3xl pointer-events-none" />
+              <div className="bg-gradient-to-b from-blue-600/10 via-[#02050A]/80 to-[#02050A] border border-blue-500/25 rounded-3xl p-6 md:p-10 relative overflow-hidden h-full flex flex-col justify-between">
+                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
                 <div>
                   <div className="flex items-center justify-between mb-8 pb-5 border-b border-white/10">
                     <div className="flex items-center gap-3">
-                      <Star className="w-5 h-5 text-[#C88E70]" />
+                      <Star className="w-5 h-5 text-blue-400" />
                       <h3 className="font-serif text-2xl text-white tracking-wide">Combos</h3>
                     </div>
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-[#C88E70] font-semibold">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-blue-400 font-semibold">
                       Mais Vantagem
                     </span>
                   </div>
@@ -649,13 +649,13 @@ export default function Home() {
                       <div
                         key={combo.id}
                         onClick={() => openBooking(combo.id)}
-                        className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-[#C88E70]/50 hover:bg-[#C88E70]/5 cursor-pointer transition-all duration-300 group"
+                        className="p-5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-blue-500/50 hover:bg-blue-600/5 cursor-pointer transition-all duration-300 group"
                       >
                         <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-white font-serif text-xl group-hover:text-[#C88E70] transition-colors">
+                          <span className="text-white font-serif text-xl group-hover:text-blue-400 transition-colors">
                             {combo.name}
                           </span>
-                          <span className="text-[#C88E70] font-mono text-xl font-bold">
+                          <span className="text-blue-400 font-mono text-xl font-bold">
                             {combo.price}
                           </span>
                         </div>
@@ -666,7 +666,7 @@ export default function Home() {
                           <span className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">
                             {combo.badge}
                           </span>
-                          <span className="text-xs uppercase tracking-widest text-[#C88E70] font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                          <span className="text-xs uppercase tracking-widest text-blue-400 font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                             Agendar Combo <ChevronRight className="w-3.5 h-3.5" />
                           </span>
                         </div>
@@ -694,7 +694,7 @@ export default function Home() {
       <NossaAreaSection />
 
       {/* MEGA BRAIN FINAL CTA & FOOTER */}
-      <section className="relative bg-[#02050A] text-[#C88E70] min-h-screen flex flex-col items-center justify-center overflow-hidden">
+      <section className="relative bg-[#02050A] text-blue-400 min-h-screen flex flex-col items-center justify-center overflow-hidden">
         {/* Fundo Parallax Sombrio */}
         <motion.div 
           style={{ y: footerY, opacity: footerOpacity }}
@@ -708,9 +708,9 @@ export default function Home() {
             whileInView={{ scale: 1, opacity: 1 }}
             viewport={{ once: true, amount: 0.2 }}
             transition={{ duration: 0.7, ease: "easeOut" }}
-            className="w-24 h-24 rounded-full border border-[#C88E70]/30 flex items-center justify-center mb-12 backdrop-blur-sm"
+            className="w-24 h-24 rounded-full border border-blue-500/30 flex items-center justify-center mb-12 backdrop-blur-sm"
           >
-            <Scissors className="w-10 h-10 text-[#C88E70]" />
+            <Scissors className="w-10 h-10 text-blue-400" />
           </motion.div>
 
           <div className="text-center space-y-4 mb-16 relative">
@@ -722,7 +722,7 @@ export default function Home() {
                className="text-[3.5rem] sm:text-[4.5rem] md:text-[8rem] font-serif leading-[0.88] tracking-tighter uppercase"
              >
                A Sua Nova <br /> 
-               <span className="text-transparent [-webkit-text-stroke:2px_#C88E70] hover:text-[#C88E70] transition-colors duration-1000">
+               <span className="text-transparent [-webkit-text-stroke:2px_#3B82F6] hover:text-blue-400 transition-colors duration-1000">
                  Assinatura
                </span>
              </motion.h2>
@@ -745,8 +745,8 @@ export default function Home() {
              onClick={() => setIsModalOpen(true)} 
              className="relative group cursor-pointer"
            >
-             <div className="absolute -inset-4 rounded-full bg-[#C88E70]/20 blur-2xl group-hover:bg-[#C88E70]/40 transition-all duration-700" />
-             <MagneticButton className="relative bg-[#C88E70] text-[#050B14] px-16 py-8 rounded-full uppercase tracking-[0.4em] text-sm font-black overflow-hidden transform hover:scale-110 transition-transform duration-500">
+             <div className="absolute -inset-4 rounded-full bg-blue-600/20 blur-2xl group-hover:bg-blue-600/40 transition-all duration-700" />
+             <MagneticButton className="relative bg-gradient-to-r from-blue-700 to-blue-600 text-white px-16 py-8 rounded-full uppercase tracking-[0.4em] text-sm font-black overflow-hidden transform hover:scale-110 transition-transform duration-500">
                <motion.div 
                  animate={{ y: ["0%", "-100%", "0%"] }}
                  transition={{ duration: 5, repeat: Infinity, ease: "linear" }}
@@ -767,7 +767,7 @@ export default function Home() {
           className="w-full border-t border-white/5 py-8 flex flex-col md:flex-row items-center justify-between px-12 z-20 bg-[#02050A]/80 backdrop-blur-xl"
         >
            <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <LogoMrBastos size={32} color="#C88E70" />
+              <LogoMrBastos size={32} color="#3B82F6" />
               <span className="text-white font-serif text-lg tracking-widest uppercase">MR. BASTOS</span>
            </div>
            <p className="text-gray-600 text-[10px] tracking-[0.3em] uppercase">
@@ -786,7 +786,7 @@ export default function Home() {
                 href="https://www.instagram.com/mr.bastosbarbearia?utm_source=ig_web_button_share_sheet&vrfl=ZDNlZDc0MzIxNw==" 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="text-gray-400 hover:text-[#C88E70] transition-colors text-xs"
+                className="text-gray-400 hover:text-blue-400 transition-colors text-xs"
               >
                 Instagram
               </a>
@@ -798,7 +798,7 @@ export default function Home() {
               >
                 WhatsApp (75) 9867-9820
               </a>
-              <a href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião" target="_blank" rel="noopener noreferrer" title="Alagoinhas - BA" className="text-gray-500 hover:text-[#C88E70] transition-colors"><MapPin className="w-4 h-4" /></a>
+              <a href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião" target="_blank" rel="noopener noreferrer" title="Alagoinhas - BA" className="text-gray-500 hover:text-blue-400 transition-colors"><MapPin className="w-4 h-4" /></a>
            </div>
         </motion.footer>
       </section>

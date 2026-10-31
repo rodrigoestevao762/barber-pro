@@ -226,12 +226,12 @@ export default function BookingModal({
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden text-white"
+          className="relative w-full max-w-2xl bg-[#050B14] border border-blue-500/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden text-white"
         >
           {/* Header */}
           <div className="flex justify-between items-center pb-5 border-b border-white/10 shrink-0">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-[#C88E70] font-semibold">
+              <p className="text-[10px] uppercase tracking-[0.25em] text-blue-400 font-semibold">
                 Agendamento Online
               </p>
               <h2 className="text-2xl font-serif text-white mt-0.5">Mr. Bastos Barbearia</h2>
@@ -247,15 +247,15 @@ export default function BookingModal({
           {/* Stepper (Passos 1, 2, 3) */}
           {!isSuccess && (
             <div className="flex items-center gap-2 py-4 border-b border-white/5 shrink-0 text-xs">
-              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 1 ? 'bg-[#C88E70] text-black shadow-md' : selectedService ? 'bg-white/10 text-white' : 'text-gray-500'}`}>
+              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 1 ? 'bg-blue-600 text-white shadow-md' : selectedService ? 'bg-white/10 text-white' : 'text-gray-500'}`}>
                 1. Serviço
               </span>
               <span className="text-gray-600">→</span>
-              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 2 ? 'bg-[#C88E70] text-black shadow-md' : selectedBarber ? 'bg-white/10 text-white' : 'text-gray-500'}`}>
+              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 2 ? 'bg-blue-600 text-white shadow-md' : selectedBarber ? 'bg-white/10 text-white' : 'text-gray-500'}`}>
                 2. Barbeiro
               </span>
               <span className="text-gray-600">→</span>
-              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 3 ? 'bg-[#C88E70] text-black shadow-md' : 'text-gray-500'}`}>
+              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 3 ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500'}`}>
                 3. Data, Horário & E-mail
               </span>
             </div>
@@ -266,7 +266,7 @@ export default function BookingModal({
             {isSuccess ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
-                  <CheckCircle2 className="w-20 h-20 text-[#C88E70] mb-4" />
+                  <CheckCircle2 className="w-20 h-20 text-blue-400 mb-4" />
                 </motion.div>
                 <h3 className="text-3xl font-serif text-white mb-2">Tudo Pronto, {clientName}!</h3>
                 <p className="text-gray-300 font-light max-w-md text-sm mb-4 leading-relaxed">
@@ -303,7 +303,7 @@ export default function BookingModal({
                   type="button"
                   onClick={handleGoToVipPanel}
                   disabled={isRedirecting}
-                  className="w-full max-w-md bg-[#C88E70] text-[#050B14] py-3.5 px-4 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-white transition-all duration-300 shadow-lg shadow-[#C88E70]/20 mb-3 disabled:opacity-50"
+                  className="w-full max-w-md bg-blue-600 text-white py-3.5 px-4 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-white transition-all duration-300 shadow-lg shadow-blue-500/20 mb-3 disabled:opacity-50"
                 >
                   <Sparkles className="w-4 h-4" />
                   <span>{isRedirecting ? "Acessando seu painel..." : "Acessar Meu Painel VIP Agora"}</span>
@@ -323,7 +323,7 @@ export default function BookingModal({
                 {step === 1 && (
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold">
+                      <p className="text-blue-400 text-xs uppercase tracking-widest font-semibold">
                         Passo 1: Selecione o Serviço Desejado
                       </p>
                       <span className="text-xs text-gray-400 font-mono">9 opções disponíveis</span>
@@ -334,13 +334,13 @@ export default function BookingModal({
                         <div 
                           key={s.id} 
                           onClick={() => setSelectedService(s)}
-                          className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex justify-between items-center ${selectedService?.id === s.id ? 'border-[#C88E70] bg-[#C88E70]/15 shadow-md shadow-[#C88E70]/10' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
+                          className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex justify-between items-center ${selectedService?.id === s.id ? 'border-blue-500 bg-blue-600/15 shadow-md shadow-blue-500/10' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
                         >
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="text-base font-serif text-white">{s.name}</h4>
                               {s.isCombo && (
-                                <span className="text-[9px] bg-[#C88E70]/20 text-[#C88E70] border border-[#C88E70]/30 px-1.5 py-0.2 rounded font-bold uppercase">
+                                <span className="text-[9px] bg-blue-600/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
                                   Combo
                                 </span>
                               )}
@@ -348,7 +348,7 @@ export default function BookingModal({
                             <p className="text-xs text-gray-400 mt-1 line-clamp-1">{s.description}</p>
                             <p className="text-[11px] text-gray-500 mt-0.5">{s.duration} minutos</p>
                           </div>
-                          <span className="text-[#C88E70] font-mono font-bold text-base shrink-0 ml-3">R$ {s.price}</span>
+                          <span className="text-blue-400 font-mono font-bold text-base shrink-0 ml-3">R$ {s.price}</span>
                         </div>
                       ))}
                     </div>
@@ -359,7 +359,7 @@ export default function BookingModal({
                 {step === 2 && (
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
                     <div className="flex justify-between items-baseline">
-                      <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold">
+                      <p className="text-blue-400 text-xs uppercase tracking-widest font-semibold">
                         Passo 2: Escolha o Barbeiro Responsável
                       </p>
                       <span className="text-xs text-gray-400 font-light">
@@ -380,7 +380,7 @@ export default function BookingModal({
                           <div
                             key={barber.id}
                             onClick={() => setSelectedBarber(barber)}
-                            className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex items-center justify-between ${isSelected ? 'border-[#C88E70] bg-[#C88E70]/15 shadow-md shadow-[#C88E70]/10 ring-1 ring-[#C88E70]' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
+                            className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex items-center justify-between ${isSelected ? 'border-blue-500 bg-blue-600/15 shadow-md shadow-blue-500/10 ring-1 ring-blue-500' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
                           >
                             <div className="flex items-center gap-4">
                               <div 
@@ -391,7 +391,7 @@ export default function BookingModal({
                                 <div className="flex items-center gap-2">
                                   <h4 className="text-base font-serif text-white">{barber.name}</h4>
                                   {isOwner ? (
-                                    <span className="text-[9px] bg-[#C88E70] text-[#050B14] px-2 py-0.5 rounded font-bold uppercase">
+                                    <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded font-bold uppercase">
                                       Fundador / Dono
                                     </span>
                                   ) : (
@@ -400,13 +400,13 @@ export default function BookingModal({
                                     </span>
                                   )}
                                 </div>
-                                <p className="text-xs text-[#C88E70] mt-0.5">{barber.specialty}</p>
+                                <p className="text-xs text-blue-400 mt-0.5">{barber.specialty}</p>
                                 <p className="text-[11px] text-gray-400 mt-0.5">{barber.bio}</p>
                               </div>
                             </div>
 
                             <div className="text-right shrink-0 ml-2">
-                              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-lg ${isSelected ? 'bg-[#C88E70] text-black' : 'text-gray-400 border border-white/10'}`}>
+                              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-lg ${isSelected ? 'bg-blue-600 text-white' : 'text-gray-400 border border-white/10'}`}>
                                 {isSelected ? 'Selecionado' : 'Escolher'}
                               </span>
                             </div>
@@ -422,7 +422,7 @@ export default function BookingModal({
                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
                     <div className="flex justify-between items-baseline border-b border-white/5 pb-3">
                       <div>
-                        <p className="text-[#C88E70] text-xs uppercase tracking-widest font-semibold flex items-center gap-2">
+                        <p className="text-blue-400 text-xs uppercase tracking-widest font-semibold flex items-center gap-2">
                           <span>Passo 3: Data, Horário & Identificação</span>
                           {isLoggedIn && (
                             <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
@@ -437,7 +437,7 @@ export default function BookingModal({
                         </p>
                       </div>
                       <span className="text-xs text-gray-400 font-light">
-                        Barbeiro: <strong className="text-[#C88E70]">{selectedBarber?.name}</strong>
+                        Barbeiro: <strong className="text-blue-400">{selectedBarber?.name}</strong>
                       </span>
                     </div>
 
@@ -451,10 +451,10 @@ export default function BookingModal({
                       {/* Coluna 1: Dados do Cliente com Tratamento Especial para Usuário Logado */}
                       <div className="space-y-4">
                         {isLoggedIn && !isEditingData ? (
-                          <div className="p-5 rounded-2xl bg-gradient-to-br from-[#C88E70]/15 via-white/[0.02] to-transparent border border-[#C88E70]/40 space-y-4 shadow-xl">
+                          <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-600/15 via-white/[0.02] to-transparent border border-blue-500/40 space-y-4 shadow-xl">
                             <div className="flex items-start justify-between border-b border-white/10 pb-3">
                               <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-[#C88E70] text-[#050B14] flex items-center justify-center font-serif text-xl font-bold shadow-lg shadow-[#C88E70]/30">
+                                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-serif text-xl font-bold shadow-lg shadow-blue-500/30">
                                   {(clientName || "C")[0].toUpperCase()}
                                 </div>
                                 <div>
@@ -467,7 +467,7 @@ export default function BookingModal({
                               <button
                                 type="button"
                                 onClick={() => setIsEditingData(true)}
-                                className="text-[11px] text-[#C88E70] hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
+                                className="text-[11px] text-blue-400 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
                                 title="Editar dados para este agendamento"
                               >
                                 <Edit3 className="w-3.5 h-3.5" /> Editar
@@ -476,7 +476,7 @@ export default function BookingModal({
 
                             <div className="space-y-2.5 text-xs">
                               <div className="flex items-center gap-2.5 text-gray-200 bg-white/[0.03] p-2.5 rounded-xl border border-white/5">
-                                <Phone className="w-4 h-4 text-[#C88E70] shrink-0" />
+                                <Phone className="w-4 h-4 text-blue-400 shrink-0" />
                                 <div>
                                   <span className="text-[10px] text-gray-500 uppercase block font-medium">WhatsApp Cadastrado</span>
                                   <strong className="text-white font-mono text-sm">{clientPhone || "(75) 98888-7777"}</strong>
@@ -484,7 +484,7 @@ export default function BookingModal({
                               </div>
 
                               <div className="flex items-center gap-2.5 text-gray-200 bg-white/[0.03] p-2.5 rounded-xl border border-white/5">
-                                <Mail className="w-4 h-4 text-[#C88E70] shrink-0" />
+                                <Mail className="w-4 h-4 text-blue-400 shrink-0" />
                                 <div className="truncate">
                                   <span className="text-[10px] text-gray-500 uppercase block font-medium">E-mail Oficial da Conta</span>
                                   <strong className="text-white truncate block text-xs">{clientEmail || "cliente@mrbastos.com"}</strong>
@@ -507,7 +507,7 @@ export default function BookingModal({
                                 <button
                                   type="button"
                                   onClick={() => setIsEditingData(false)}
-                                  className="text-xs text-[#C88E70] hover:underline"
+                                  className="text-xs text-blue-400 hover:underline"
                                 >
                                   Usar dados da minha conta
                                 </button>
@@ -516,29 +516,29 @@ export default function BookingModal({
 
                             <div>
                               <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                                <User className="w-3.5 h-3.5 text-[#C88E70]" /> Seu Nome Completo
+                                <User className="w-3.5 h-3.5 text-blue-400" /> Seu Nome Completo
                               </label>
                               <input 
                                 type="text" 
                                 placeholder="Digite seu nome completo"
                                 value={clientName} 
                                 onChange={(e) => setClientName(e.target.value)}
-                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors"
                               />
                             </div>
 
                             {/* CAMPO DE E-MAIL OFICIAL (PARA CONTA E RECUPERAÇÃO DE SENHA) */}
                             <div>
                               <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                                <Mail className="w-3.5 h-3.5 text-[#C88E70]" /> Seu E-mail Oficial
-                                <span className="text-[9px] text-[#C88E70] font-normal normal-case">(para conta e recuperar senha)</span>
+                                <Mail className="w-3.5 h-3.5 text-blue-400" /> Seu E-mail Oficial
+                                <span className="text-[9px] text-blue-400 font-normal normal-case">(para conta e recuperar senha)</span>
                               </label>
                               <input 
                                 type="email" 
                                 placeholder="Ex: seuemail@gmail.com"
                                 value={clientEmail} 
                                 onChange={(e) => setClientEmail(e.target.value)}
-                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors"
                               />
                               <p className="text-[10px] text-gray-500 mt-1">
                                 Seu e-mail será usado para cadastrar sua conta VIP e recuperar sua senha caso esqueça.
@@ -547,7 +547,7 @@ export default function BookingModal({
 
                             <div>
                               <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                                <Phone className="w-3.5 h-3.5 text-[#C88E70]" /> WhatsApp com DDD
+                                <Phone className="w-3.5 h-3.5 text-blue-400" /> WhatsApp com DDD
                                 <span className="text-[9px] text-gray-500 font-normal normal-case">(login e confirmação)</span>
                               </label>
                               <input 
@@ -555,21 +555,21 @@ export default function BookingModal({
                                 placeholder="Ex: (75) 99999-9999"
                                 value={clientPhone} 
                                 onChange={(e) => setClientPhone(e.target.value)}
-                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors"
                               />
                             </div>
 
                             {!isLoggedIn && (
                               <div>
                                 <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                                  <Lock className="w-3.5 h-3.5 text-[#C88E70]" /> Senha de Acesso ao Painel
+                                  <Lock className="w-3.5 h-3.5 text-blue-400" /> Senha de Acesso ao Painel
                                 </label>
                                 <input 
                                   type="password" 
                                   placeholder="Crie uma senha de acesso"
                                   value={clientPassword} 
                                   onChange={(e) => setClientPassword(e.target.value)}
-                                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors"
+                                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors"
                                 />
                               </div>
                             )}
@@ -582,7 +582,7 @@ export default function BookingModal({
                         <div>
                           <div className="flex items-center justify-between mb-2">
                             <label className="text-gray-400 text-xs uppercase tracking-wider font-medium flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-[#C88E70]" /> Data do Atendimento
+                              <Calendar className="w-3.5 h-3.5 text-blue-400" /> Data do Atendimento
                             </label>
                             {/* Atalhos Rápidos: Hoje e Amanhã */}
                             <div className="flex items-center gap-1.5">
@@ -591,7 +591,7 @@ export default function BookingModal({
                                 onClick={() => setSelectedDate(getTodayStr())}
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
                                   selectedDate === getTodayStr()
-                                    ? "bg-[#C88E70] text-[#050B14] border-[#C88E70]"
+                                    ? "bg-blue-600 text-white border-blue-500"
                                     : "border-white/10 text-gray-400 hover:text-white hover:border-white/30"
                                 }`}
                               >
@@ -602,7 +602,7 @@ export default function BookingModal({
                                 onClick={() => setSelectedDate(getTomorrowStr())}
                                 className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
                                   selectedDate === getTomorrowStr()
-                                    ? "bg-[#C88E70] text-[#050B14] border-[#C88E70]"
+                                    ? "bg-blue-600 text-white border-blue-500"
                                     : "border-white/10 text-gray-400 hover:text-white hover:border-white/30"
                                 }`}
                               >
@@ -617,14 +617,14 @@ export default function BookingModal({
                               min={getTodayStr()}
                               value={selectedDate}
                               onChange={(e) => setSelectedDate(e.target.value)}
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none transition-colors [&::-webkit-calendar-picker-indicator]:invert"
+                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors [&::-webkit-calendar-picker-indicator]:invert"
                             />
                           </div>
                         </div>
 
                         <div>
                           <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-[#C88E70]" /> Horários de {selectedBarber?.name.split(" ")[0]}
+                            <Clock className="w-3.5 h-3.5 text-blue-400" /> Horários de {selectedBarber?.name.split(" ")[0]}
                           </label>
                           {!selectedDate ? (
                             <p className="text-xs text-gray-500 italic py-6 text-center border border-dashed border-white/10 rounded-xl">
@@ -640,7 +640,7 @@ export default function BookingModal({
                                     key={time}
                                     type="button"
                                     onClick={() => setSelectedTime(time)}
-                                    className={`py-2.5 rounded-lg border text-xs font-mono font-bold transition-all ${selectedTime === time ? 'border-[#C88E70] bg-[#C88E70] text-black shadow-md' : 'border-white/10 text-gray-300 hover:border-white/30 bg-white/[0.02]'}`}
+                                    className={`py-2.5 rounded-lg border text-xs font-mono font-bold transition-all ${selectedTime === time ? 'border-blue-500 bg-blue-600 text-white shadow-md' : 'border-white/10 text-gray-300 hover:border-white/30 bg-white/[0.02]'}`}
                                   >
                                     {time}
                                   </button>
@@ -677,7 +677,7 @@ export default function BookingModal({
                   type="button"
                   disabled={(step === 1 && !selectedService) || (step === 2 && !selectedBarber)}
                   onClick={() => setStep(step + 1)}
-                  className="px-6 py-3 rounded-xl bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-wider hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-lg shadow-[#C88E70]/20"
+                  className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-lg shadow-blue-500/20"
                 >
                   Avançar <ChevronRight className="w-4 h-4" />
                 </button>
@@ -686,7 +686,7 @@ export default function BookingModal({
                   type="button"
                   disabled={isLoading || !clientName || !clientEmail || !clientPhone || !selectedDate || !selectedTime}
                   onClick={handleBooking}
-                  className="px-8 py-3.5 rounded-xl bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-xl shadow-[#C88E70]/25"
+                  className="px-8 py-3.5 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-xl shadow-blue-500/25"
                 >
                   {isLoading ? "Confirmando..." : "Confirmar Agendamento"}
                 </button>
