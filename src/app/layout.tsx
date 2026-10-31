@@ -16,7 +16,7 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   metadataBase: new URL("https://mrbastos.com.br"),
   title: "Mr. Bastos Barbearia | O Padrão de Excelência em Alagoinhas - BA",
-  description: "Tradição, conforto e sofisticação em corte masculino, barba e visagismo. Avenida Dantas Bião s/n, Hiper Gbarbosa - Alagoinhas, BA.",
+  description: "Tradição, conforto e sofisticação em corte masculino, barba e visagismo. Agende seu horário na Mr. Bastos Barbearia no Hiper Gbarbosa - Alagoinhas, BA.",
   keywords: [
     "Barbearia Alagoinhas",
     "Mr Bastos Barbearia",
@@ -27,13 +27,32 @@ export const metadata: Metadata = {
     "Hiper Gbarbosa Alagoinhas",
   ],
   authors: [{ name: "Mr. Bastos Barbearia" }],
+  icons: {
+    icon: "/icon.jpg",
+    apple: "/icon.jpg",
+    shortcut: "/icon.jpg",
+  },
   openGraph: {
     title: "Mr. Bastos Barbearia | O Padrão de Excelência",
-    description: "Tradição, conforto e sofisticação em corte masculino, barba e visagismo em Alagoinhas - BA.",
+    description: "Tradição, conforto e sofisticação em corte masculino, barba e visagismo em Alagoinhas - BA. Agendamentos online e atendimento de primeira.",
     url: "https://mrbastos.com.br",
     siteName: "Mr. Bastos Barbearia",
+    images: [
+      {
+        url: "https://mrbastos.com.br/og-image.jpg",
+        width: 800,
+        height: 800,
+        alt: "Logo Oficial Mr. Bastos Barbearia",
+      },
+    ],
     locale: "pt_BR",
     type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Mr. Bastos Barbearia | O Padrão de Excelência",
+    description: "Tradição, conforto e sofisticação em corte masculino, barba e visagismo em Alagoinhas - BA.",
+    images: ["https://mrbastos.com.br/og-image.jpg"],
   },
   alternates: {
     canonical: "https://mrbastos.com.br",

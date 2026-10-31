@@ -12,3 +12,4 @@ export default function robots(): MetadataRoute.Robots {
     sitemap: 'https://mrbastos.com.br/sitemap.xml',
   };
 }
+
