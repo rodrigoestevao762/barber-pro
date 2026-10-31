@@ -2,10 +2,14 @@
   "name": "Mr. Bastos Barbearia",
   "short_name": "Mr. Bastos",
   "description": "Tradição, conforto e sofisticação em corte masculino, barba e visagismo em Alagoinhas - BA.",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#050B14",
   "theme_color": "#050B14",
+  "categories": ["lifestyle", "business"],
   "icons": [
     {
       "src": "/icon.png",
@@ -20,13 +24,14 @@
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
-

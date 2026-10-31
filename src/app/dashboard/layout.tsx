@@ -68,17 +68,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ];
 
   return (
-    <div className="min-h-screen bg-[#050B14] text-white relative overflow-hidden font-sans selection:bg-[#C88E70] selection:text-black">
+    <div className="min-h-screen bg-[#050B14] text-white relative overflow-hidden font-sans selection:bg-blue-600 selection:text-white">
       
       {/* Background glow effects */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#C88E70]/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#C88E70]/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/5 blur-[120px] rounded-full pointer-events-none" />
 
       {/* Floating Sidebar (Desktop) */}
       <nav className="hidden md:flex fixed left-8 top-1/2 -translate-y-1/2 h-[80vh] w-20 flex-col items-center py-10 bg-white/5 border border-white/10 backdrop-blur-2xl rounded-3xl z-50">
         
         <Link href="/" className="mb-auto group relative">
-          <Scissors className="w-6 h-6 text-[#C88E70] group-hover:rotate-180 transition-transform duration-700" />
+          <Scissors className="w-6 h-6 text-blue-400 group-hover:rotate-180 transition-transform duration-700" />
         </Link>
 
         <div className="flex flex-col gap-8">
@@ -88,10 +88,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               href={item.id}
               className="relative group p-3"
             >
-              <item.icon className={`w-5 h-5 relative z-10 transition-colors duration-300 text-gray-400 group-hover:text-[#C88E70]`} />
+              <item.icon className={`w-5 h-5 relative z-10 transition-colors duration-300 text-gray-400 group-hover:text-blue-400`} />
               
               {/* Tooltip */}
-              <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#050B14] border border-[#C88E70]/30 text-white rounded-lg opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300 pointer-events-none whitespace-nowrap text-xs tracking-wider uppercase font-semibold shadow-xl">
+              <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#050B14] border border-blue-500/30 text-white rounded-lg opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300 pointer-events-none whitespace-nowrap text-xs tracking-wider uppercase font-semibold shadow-xl">
                 {item.label}
               </div>
             </Link>
@@ -110,7 +110,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Mobile Bottom Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full h-20 bg-[#050B14]/95 border-t border-white/10 z-[100] flex justify-around items-center px-4 pb-safe">
         {navItems.map((item) => (
-          <Link key={item.id} href={item.id} className="p-3 text-gray-400 hover:text-[#C88E70] transition-colors">
+          <Link key={item.id} href={item.id} className="p-3 text-gray-400 hover:text-blue-400 transition-colors">
             <item.icon className="w-5 h-5" />
           </Link>
         ))}
@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div>
           <div className="flex items-center gap-2 mb-1">
             {isAdmin ? (
-              <span className="text-[10px] bg-[#C88E70] text-[#050B14] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1">
+              <span className="text-[10px] bg-gradient-to-r from-blue-700 to-blue-600 text-white font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1">
                 <Shield className="w-3 h-3" /> Proprietário (Dono)
               </span>
             ) : (
@@ -138,7 +138,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             animate={{ opacity: 1, y: 0 }}
             className="text-3xl md:text-5xl font-serif text-white tracking-tight"
           >
-            {greeting}, <span className="text-[#C88E70] italic">{(session?.user?.name || 'BARBEIRO').toUpperCase()}</span>
+            {greeting}, <span className="text-blue-400 italic">{(session?.user?.name || 'BARBEIRO').toUpperCase()}</span>
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }}
@@ -161,7 +161,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Bell className="w-5 h-5" />
               {notifications.length > 0 && (
-                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#C88E70] animate-pulse" />
+                <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
               )}
             </button>
 
@@ -171,7 +171,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   initial={{ opacity: 0, scale: 0.95, y: 10 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className="absolute right-0 top-full mt-4 w-80 bg-[#050B14] border border-[#C88E70]/30 rounded-2xl p-4 shadow-2xl z-50 backdrop-blur-xl"
+                  className="absolute right-0 top-full mt-4 w-80 bg-[#050B14] border border-blue-500/30 rounded-2xl p-4 shadow-2xl z-50 backdrop-blur-xl"
                 >
                   <h4 className="text-sm font-serif text-white mb-3 pb-2 border-b border-white/10">Últimos Atendimentos</h4>
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
@@ -192,7 +192,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full">
-            <div className="w-7 h-7 rounded-full bg-[#C88E70]/20 text-[#C88E70] flex items-center justify-center font-serif text-xs font-bold">
+            <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-serif text-xs font-bold">
               {(session?.user?.name || 'M')[0]}
             </div>
             <span className="text-xs font-medium text-gray-300 hidden sm:inline">{session?.user?.name}</span>

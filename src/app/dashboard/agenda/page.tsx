@@ -111,7 +111,7 @@ export default function AgendaPage() {
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             {isAdmin ? (
-              <span className="text-[10px] bg-[#C88E70] text-[#050B14] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+              <span className="text-[10px] bg-gradient-to-r from-blue-700 to-blue-600 text-white font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                 <Shield className="w-3 h-3" /> Agenda Administrativa
               </span>
             ) : (
@@ -138,7 +138,7 @@ export default function AgendaPage() {
             <div className="flex items-center gap-1 bg-white/[0.03] border border-white/10 p-1 rounded-xl">
               <button
                 onClick={() => setSelectedBarberFilter("all")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === "all" ? "bg-[#C88E70] text-[#050B14]" : "text-gray-400 hover:text-white"}`}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === "all" ? "bg-gradient-to-r from-blue-700 to-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
               >
                 Todos
               </button>
@@ -146,7 +146,7 @@ export default function AgendaPage() {
                 <button
                   key={b.id}
                   onClick={() => setSelectedBarberFilter(b.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === b.id ? "bg-[#C88E70] text-[#050B14]" : "text-gray-400 hover:text-white"}`}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${selectedBarberFilter === b.id ? "bg-gradient-to-r from-blue-700 to-blue-600 text-white" : "text-gray-400 hover:text-white"}`}
                 >
                   {b.name.split(" ")[0]}
                 </button>
@@ -159,12 +159,12 @@ export default function AgendaPage() {
             type="date" 
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#C88E70] transition-colors [&::-webkit-calendar-picker-indicator]:invert"
+            className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-xs font-mono focus:outline-none focus:border-blue-500 transition-colors [&::-webkit-calendar-picker-indicator]:invert"
           />
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-[#C88E70] text-[#050B14] hover:bg-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-[#C88E70]/20"
+            className="px-4 py-2 bg-gradient-to-r from-blue-700 to-blue-600 text-white hover:bg-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20"
           >
             <Plus className="w-4 h-4" /> Novo Agendamento
           </button>
@@ -183,7 +183,7 @@ export default function AgendaPage() {
         </div>
 
         {loading ? (
-          <div className="py-16 text-center text-[#C88E70] animate-pulse">Carregando horários...</div>
+          <div className="py-16 text-center text-blue-400 animate-pulse">Carregando horários...</div>
         ) : appointments.length === 0 ? (
           <div className="py-20 text-center text-gray-500 italic">
             Nenhum atendimento agendado para esta data.
@@ -200,12 +200,12 @@ export default function AgendaPage() {
               return (
                 <div 
                   key={apt.id} 
-                  className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-black/20 border border-white/5 rounded-2xl hover:border-[#C88E70]/30 transition-all gap-4"
+                  className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-black/20 border border-white/5 rounded-2xl hover:border-blue-500/30 transition-all gap-4"
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-[#050B14] border border-white/10 flex flex-col items-center justify-center font-mono shrink-0">
                       <span className="text-[10px] text-gray-400 font-light">HORA</span>
-                      <span className="text-sm font-bold text-[#C88E70]">{aptTime}</span>
+                      <span className="text-sm font-bold text-blue-400">{aptTime}</span>
                     </div>
 
                     <div>
@@ -221,7 +221,7 @@ export default function AgendaPage() {
                       <p className="text-xs text-gray-400 mt-0.5">
                         {apt.service?.name} · <strong className="text-white">R$ {cutPrice.toFixed(2)}</strong>
                         {" · "}
-                        <span className="text-[#C88E70]">
+                        <span className="text-blue-400">
                           Comissão: R$ {barberCommission.toFixed(2)} ({isOwnerCut ? "100%" : "45%"})
                         </span>
                       </p>
@@ -233,7 +233,7 @@ export default function AgendaPage() {
                   
                   <div className="flex flex-wrap items-center gap-3 justify-end">
                     <span className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-bold border ${
-                      apt.status === 'CONFIRMED' ? 'border-[#C88E70]/30 text-[#C88E70] bg-[#C88E70]/10' : 
+                      apt.status === 'CONFIRMED' ? 'border-blue-500/30 text-blue-400 bg-blue-600/10' : 
                       apt.status === 'COMPLETED' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' : 
                       apt.status === 'CANCELLED' ? 'border-red-500/30 text-red-400 bg-red-500/10' : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/10'
                     }`}>
@@ -254,7 +254,7 @@ export default function AgendaPage() {
                     )}
                     
                     {apt.status === 'PENDING' && (
-                      <button onClick={() => updateStatus(apt.id, 'CONFIRMED')} className="text-[10px] uppercase font-bold tracking-wider px-3 py-2 rounded-lg bg-white/10 hover:bg-[#C88E70] hover:text-black transition-colors">
+                      <button onClick={() => updateStatus(apt.id, 'CONFIRMED')} className="text-[10px] uppercase font-bold tracking-wider px-3 py-2 rounded-lg bg-white/10 hover:bg-blue-600 hover:text-white transition-colors">
                         Confirmar
                       </button>
                     )}
@@ -285,7 +285,7 @@ export default function AgendaPage() {
               initial={{ scale: 0.95, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[90vh] flex flex-col"
+              className="relative w-full max-w-lg bg-[#050B14] border border-blue-500/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[90vh] flex flex-col"
             >
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10 shrink-0">
                 <div>
@@ -309,7 +309,7 @@ export default function AgendaPage() {
                     placeholder="Ex: João da Silva"
                     value={newClientName}
                     onChange={(e) => setNewClientName(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -323,7 +323,7 @@ export default function AgendaPage() {
                     placeholder="Ex: cliente@email.com"
                     value={newClientEmail}
                     onChange={(e) => setNewClientEmail(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -338,7 +338,7 @@ export default function AgendaPage() {
                     placeholder="Ex: (75) 99999-9999"
                     value={newClientPhone}
                     onChange={(e) => setNewClientPhone(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none"
                   />
                 </div>
 
@@ -351,7 +351,7 @@ export default function AgendaPage() {
                     <select
                       value={newBarberId}
                       onChange={(e) => setNewBarberId(e.target.value)}
-                      className="w-full bg-[#050B14] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"
+                      className="w-full bg-[#050B14] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none"
                     >
                       {BARBERS.map(b => (
                         <option key={b.id} value={b.id}>
@@ -362,7 +362,7 @@ export default function AgendaPage() {
                   ) : (
                     <div className="p-3 bg-white/[0.03] border border-white/10 rounded-xl flex items-center justify-between">
                       <span className="text-white text-sm font-medium">{userName}</span>
-                      <span className="text-[10px] bg-[#C88E70]/20 text-[#C88E70] px-2 py-0.5 rounded-full font-bold">
+                      <span className="text-[10px] bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">
                         Comissão 45%
                       </span>
                     </div>
@@ -377,7 +377,7 @@ export default function AgendaPage() {
                   <select
                     value={newServiceId}
                     onChange={(e) => setNewServiceId(e.target.value)}
-                    className="w-full bg-[#050B14] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"
+                    className="w-full bg-[#050B14] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none"
                   >
                     {OFFICIAL_SERVICES.map(s => (
                       <option key={s.id} value={s.id}>
@@ -397,14 +397,14 @@ export default function AgendaPage() {
                     type="time" 
                     value={newTime}
                     onChange={(e) => setNewTime(e.target.value)}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-[#C88E70] focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 bg-[#C88E70] hover:bg-white text-black font-bold uppercase tracking-widest text-xs rounded-xl mt-4 transition-all shadow-lg shadow-[#C88E70]/20"
+                  className="w-full py-4 bg-blue-600 hover:bg-white text-black font-bold uppercase tracking-widest text-xs rounded-xl mt-4 transition-all shadow-lg shadow-blue-500/20"
                 >
                   {isSubmitting ? "Agendando..." : "Salvar Agendamento"}
                 </button>

@@ -58,10 +58,10 @@ function ResetPasswordForm() {
   };
 
   return (
-    <div className="w-full max-w-md bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-8 z-10 shadow-2xl">
+    <div className="w-full max-w-md bg-[#050B14] border border-blue-500/30 rounded-3xl p-8 z-10 shadow-2xl">
       <div className="text-center mb-8">
         <Link href="/" className="inline-block mb-3">
-          <LogoMrBastos size={72} color="#C88E70" />
+          <LogoMrBastos size={72} color="#3B82F6" />
         </Link>
         <h2 className="text-2xl font-serif text-white tracking-wide">Redefinir Senha</h2>
         <p className="text-gray-400 text-xs mt-1">Crie uma nova senha segura para sua conta</p>
@@ -78,7 +78,7 @@ function ResetPasswordForm() {
           </p>
           <Link
             href="/login"
-            className="w-full py-4 bg-[#C88E70] hover:bg-white text-[#050B14] font-bold uppercase tracking-widest text-xs rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 group mt-6"
+            className="w-full py-4 bg-blue-600 hover:bg-white text-[#050B14] font-bold uppercase tracking-widest text-xs rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 group mt-6"
           >
             Fazer Login Agora
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -107,7 +107,7 @@ function ResetPasswordForm() {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Digite a nova senha"
-                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-white text-sm focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
@@ -126,7 +126,7 @@ function ResetPasswordForm() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Repita a nova senha"
-                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-white text-sm focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
@@ -134,7 +134,7 @@ function ResetPasswordForm() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 bg-[#C88E70] hover:bg-white text-[#050B14] font-bold uppercase tracking-widest text-xs rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-xl shadow-[#C88E70]/20 disabled:opacity-50 mt-6"
+            className="w-full py-4 bg-blue-600 hover:bg-white text-[#050B14] font-bold uppercase tracking-widest text-xs rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 group shadow-xl shadow-blue-500/20 disabled:opacity-50 mt-6"
           >
             {loading ? "Salvando..." : "Salvar Nova Senha"}
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -153,8 +153,8 @@ function ResetPasswordForm() {
 
 export default function RecuperarSenhaPage() {
   return (
-    <div className="min-h-screen bg-[#050B14] flex items-center justify-center p-6 text-white selection:bg-[#C88E70] selection:text-black">
-      <Suspense fallback={<div className="text-[#C88E70] animate-pulse">Carregando...</div>}>
+    <div className="min-h-screen bg-[#050B14] flex items-center justify-center p-6 text-white selection:bg-blue-600 selection:text-white">
+      <Suspense fallback={<div className="text-blue-400 animate-pulse">Carregando...</div>}>
         <ResetPasswordForm />
       </Suspense>
     </div>

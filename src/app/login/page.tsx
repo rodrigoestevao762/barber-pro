@@ -91,12 +91,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050B14] flex flex-col lg:flex-row text-white selection:bg-[#C88E70] selection:text-black">
+    <div className="min-h-screen bg-[#050B14] flex flex-col lg:flex-row text-white selection:bg-blue-600 selection:text-white">
       {/* Coluna da Esquerda: Formulário de Login */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 relative">
         <Link 
           href="/" 
-          className="absolute top-8 left-8 text-gray-500 hover:text-[#C88E70] transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-semibold z-20"
+          className="absolute top-8 left-8 text-gray-500 hover:text-blue-400 transition-colors flex items-center gap-2 text-xs uppercase tracking-widest font-semibold z-20"
         >
           <ChevronLeft className="w-4 h-4" /> Voltar ao Site
         </Link>
@@ -104,7 +104,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md relative z-10 pt-16 lg:pt-0">
           <div className="mb-8 text-center lg:text-left">
             <div className="flex items-center gap-3 justify-center lg:justify-start mb-4">
-              <LogoMrBastos size={42} color="#C88E70" />
+              <LogoMrBastos size={42} color="#3B82F6" />
               <span className="text-xl font-serif tracking-[0.25em] uppercase text-white">Mr. Bastos</span>
             </div>
             <h1 className="text-3xl font-serif text-white tracking-wide uppercase mb-2">Acesso ao Sistema</h1>
@@ -132,7 +132,7 @@ export default function LoginPage() {
                   type="text" 
                   value={identifier} 
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
+                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-blue-500 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
                   placeholder="seuemail@exemplo.com ou telefone (com DDD)" 
                 />
               </div>
@@ -150,7 +150,7 @@ export default function LoginPage() {
                     setRecoverySuccess(false);
                     setIsForgotModalOpen(true);
                   }}
-                  className="text-[10px] text-[#C88E70] hover:underline uppercase tracking-wider font-semibold"
+                  className="text-[10px] text-blue-400 hover:underline uppercase tracking-wider font-semibold"
                 >
                   Esqueci minha senha
                 </button>
@@ -163,7 +163,7 @@ export default function LoginPage() {
                   type="password" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-[#C88E70] rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
+                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-blue-500 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
                   placeholder="Sua senha de acesso" 
                 />
               </div>
@@ -172,7 +172,7 @@ export default function LoginPage() {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 group mt-6 hover:bg-white active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-[#C88E70]/20"
+              className="w-full bg-gradient-to-r from-blue-700 to-blue-600 text-white font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 group mt-6 hover:bg-white active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-blue-500/20"
             >
               {loading ? "Autenticando..." : "Entrar no Painel"}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -180,9 +180,14 @@ export default function LoginPage() {
           </form>
 
           {/* Garantia de Segurança e Privacidade Oficial */}
-          <div className="mt-8 pt-6 border-t border-white/10 flex items-center justify-center gap-2 text-gray-500 text-xs">
-            <Lock className="w-3.5 h-3.5 text-[#C88E70]" />
-            <span>Ambiente Seguro & Criptografado · Mr. Bastos Barbearia</span>
+          <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center justify-center gap-1.5 text-gray-500 text-xs">
+            <div className="flex items-center gap-2">
+              <Lock className="w-3.5 h-3.5 text-blue-400" />
+              <span>Ambiente Seguro & Criptografado · Mr. Bastos Barbearia</span>
+            </div>
+            <Link href="/politica-de-privacidade" className="text-gray-500 hover:text-blue-400 text-[11px] underline underline-offset-4 transition-colors">
+              Política de Privacidade & Proteção de Dados (LGPD)
+            </Link>
           </div>
         </div>
       </div>
@@ -196,7 +201,7 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#050B14] via-transparent to-transparent" />
         
         <div className="absolute bottom-12 left-12 right-12 z-10 max-w-lg">
-          <p className="text-[#C88E70] text-xs uppercase tracking-[0.3em] font-semibold mb-2">
+          <p className="text-blue-400 text-xs uppercase tracking-[0.3em] font-semibold mb-2">
             Gestão Integrada Mr. Bastos
           </p>
           <h2 className="text-3xl font-serif text-white leading-tight mb-3">
@@ -217,7 +222,7 @@ export default function LoginPage() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-md bg-[#050B14] border border-[#C88E70]/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl"
+              className="relative w-full max-w-md bg-[#050B14] border border-blue-500/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl"
             >
               <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/10">
                 <h3 className="text-2xl font-serif text-white">Recuperar Senha</h3>
@@ -238,7 +243,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setIsForgotModalOpen(false)}
-                    className="w-full py-3.5 bg-[#C88E70] text-[#050B14] font-bold text-xs uppercase tracking-wider rounded-xl mt-4"
+                    className="w-full py-3.5 bg-gradient-to-r from-blue-700 to-blue-600 text-white font-bold text-xs uppercase tracking-wider rounded-xl mt-4"
                   >
                     Voltar ao Login
                   </button>
@@ -262,7 +267,7 @@ export default function LoginPage() {
                         value={recoveryEmail}
                         onChange={(e) => setRecoveryEmail(e.target.value)}
                         placeholder="Ex: seuemail@gmail.com"
-                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white text-sm focus:border-[#C88E70] focus:outline-none"
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white text-sm focus:border-blue-500 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -270,7 +275,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={recoveryLoading || !recoveryEmail}
-                    className="w-full py-4 bg-[#C88E70] hover:bg-white text-[#050B14] font-bold uppercase tracking-widest text-xs rounded-xl mt-4 transition-all disabled:opacity-40 shadow-lg shadow-[#C88E70]/20"
+                    className="w-full py-4 bg-blue-600 hover:bg-white text-[#050B14] font-bold uppercase tracking-widest text-xs rounded-xl mt-4 transition-all disabled:opacity-40 shadow-lg shadow-blue-500/20"
                   >
                     {recoveryLoading ? "Enviando link..." : "Enviar Link de Recuperação"}
                   </button>

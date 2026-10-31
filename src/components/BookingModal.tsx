@@ -659,37 +659,48 @@ export default function BookingModal({
 
           {/* Footer com Botões de Navegação */}
           {!isSuccess && (
-            <div className="pt-4 border-t border-white/10 flex justify-between items-center shrink-0">
-              {step > 1 ? (
-                <button
-                  type="button"
-                  onClick={() => setStep(step - 1)}
-                  className="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:text-white text-xs uppercase tracking-wider font-semibold hover:bg-white/5 transition-all"
-                >
-                  Voltar
-                </button>
-              ) : (
-                <div />
-              )}
+            <div className="pt-4 border-t border-white/10 shrink-0">
+              <div className="flex justify-between items-center">
+                {step > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setStep(step - 1)}
+                    className="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:text-white text-xs uppercase tracking-wider font-semibold hover:bg-white/5 transition-all"
+                  >
+                    Voltar
+                  </button>
+                ) : (
+                  <div />
+                )}
 
-              {step < 3 ? (
-                <button
-                  type="button"
-                  disabled={(step === 1 && !selectedService) || (step === 2 && !selectedBarber)}
-                  onClick={() => setStep(step + 1)}
-                  className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-lg shadow-blue-500/20"
-                >
-                  Avançar <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={isLoading || !clientName || !clientEmail || !clientPhone || !selectedDate || !selectedTime}
-                  onClick={handleBooking}
-                  className="px-8 py-3.5 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-xl shadow-blue-500/25"
-                >
-                  {isLoading ? "Confirmando..." : "Confirmar Agendamento"}
-                </button>
+                {step < 3 ? (
+                  <button
+                    type="button"
+                    disabled={(step === 1 && !selectedService) || (step === 2 && !selectedBarber)}
+                    onClick={() => setStep(step + 1)}
+                    className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                  >
+                    Avançar <ChevronRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={isLoading || !clientName || !clientEmail || !clientPhone || !selectedDate || !selectedTime}
+                    onClick={handleBooking}
+                    className="px-8 py-3.5 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-xl shadow-blue-500/25"
+                  >
+                    {isLoading ? "Confirmando..." : "Confirmar Agendamento"}
+                  </button>
+                )}
+              </div>
+
+              {step === 3 && (
+                <p className="text-[10px] text-gray-500 text-center mt-2.5">
+                  Seus dados pessoais estão protegidos conforme nossa{" "}
+                  <a href="/politica-de-privacidade" target="_blank" className="text-blue-400 hover:underline">
+                    Política de Privacidade (LGPD)
+                  </a>.
+                </p>
               )}
             </div>
           )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
-import { Calendar, ChevronRight, ChevronLeft, Menu, X, Scissors, Star, MapPin, Clock } from "lucide-react";
+import { Calendar, ChevronRight, ChevronLeft, Menu, X, Scissors, Star, MapPin, Clock, Smartphone } from "lucide-react";
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import BookingModal from "@/components/BookingModal";
@@ -356,6 +356,29 @@ export default function Home() {
                 </div>
                 <ChevronRight className="w-4 h-4 text-amber-400" />
               </a>
+
+              {/* Baixar Aplicativo no Menu Mobile */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("trigger-pwa-install"));
+                  }
+                }}
+                className="p-4 rounded-2xl bg-blue-600/10 border border-blue-500/30 active:bg-blue-600/20 flex items-center justify-between transition-all text-left w-full"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-8 h-8 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/40">
+                    <Smartphone className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div>
+                    <span className="text-base font-serif text-white block">Baixar Aplicativo</span>
+                    <span className="text-[11px] text-blue-300/80 font-light">Instale no seu iPhone, Android ou PC</span>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-blue-400" />
+              </button>
             </div>
 
             {/* Ações Inferiores do Menu */}
@@ -774,6 +797,23 @@ export default function Home() {
              © {new Date().getFullYear()} O PADRÃO DE EXCELÊNCIA.
            </p>
            <div className="flex flex-wrap items-center gap-6 mt-4 md:mt-0">
+              <button 
+                type="button"
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.dispatchEvent(new CustomEvent("trigger-pwa-install"));
+                  }
+                }}
+                className="text-blue-400 hover:text-white transition-colors text-xs font-semibold flex items-center gap-1.5"
+              >
+                <Smartphone className="w-3.5 h-3.5" /> Baixar Aplicativo
+              </button>
+              <Link
+                href="/politica-de-privacidade"
+                className="text-gray-400 hover:text-blue-400 transition-colors text-xs"
+              >
+                Privacidade & LGPD
+              </Link>
               <a 
                 href="https://g.page/r/CRXf9JwKqxNQEBM/review" 
                 target="_blank" 

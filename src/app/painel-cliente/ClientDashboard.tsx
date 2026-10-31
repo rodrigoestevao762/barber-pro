@@ -124,14 +124,14 @@ export default function ClientDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#02050A] text-white selection:bg-[#C88E70] selection:text-black">
+    <div className="min-h-screen bg-[#02050A] text-white selection:bg-blue-600 selection:text-white">
       {/* ── HEADER DO CLIENTE ── */}
       <header className="border-b border-white/5 bg-[#050B14]/90 sticky top-0 z-40 backdrop-blur-xl">
         <div className="max-w-4xl mx-auto px-6 py-5 flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <LogoMrBastos size={36} color="#C88E70" />
+            <LogoMrBastos size={36} color="#3B82F6" />
             <div>
-              <p className="text-[10px] uppercase tracking-[0.3em] text-[#C88E70] font-semibold">
+              <p className="text-[10px] uppercase tracking-[0.3em] text-blue-400 font-semibold">
                 Painel do Cliente
               </p>
               <h1 className="text-xl font-serif text-white">{greeting}, {clientName}</h1>
@@ -139,8 +139,8 @@ export default function ClientDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-[#C88E70]/15 text-[#C88E70] border border-[#C88E70]/30">
-              <Star className="w-3 h-3 fill-[#C88E70]" /> Cliente VIP
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-blue-600/15 text-blue-400 border border-blue-500/30">
+              <Star className="w-3 h-3 fill-blue-400" /> Cliente VIP
             </span>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
@@ -154,7 +154,7 @@ export default function ClientDashboard() {
 
       <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
         {loading ? (
-          <div className="py-24 text-center text-[#C88E70] animate-pulse font-serif text-lg tracking-widest uppercase">
+          <div className="py-24 text-center text-blue-400 animate-pulse font-serif text-lg tracking-widest uppercase">
             Carregando seus dados...
           </div>
         ) : (
@@ -166,7 +166,7 @@ export default function ClientDashboard() {
               className="bg-white/[0.02] border border-white/10 rounded-3xl p-6 md:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative overflow-hidden"
             >
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-[#C88E70]/15 border border-[#C88E70]/30 flex items-center justify-center text-[#C88E70] font-serif text-2xl font-bold">
+                <div className="w-14 h-14 rounded-2xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center text-blue-400 font-serif text-2xl font-bold">
                   {clientName.charAt(0)}
                 </div>
                 <div>
@@ -187,7 +187,7 @@ export default function ClientDashboard() {
                   setSelectedServiceId(undefined);
                   setIsModalOpen(true);
                 }}
-                className="w-full sm:w-auto bg-[#C88E70] text-[#050B14] hover:bg-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-[#C88E70]/20 shrink-0"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-700 to-blue-600 text-white hover:bg-white px-6 py-3 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all duration-300 shadow-lg shadow-blue-500/20 shrink-0"
               >
                 <Scissors className="w-4 h-4" /> + Novo Agendamento
               </button>
@@ -198,13 +198,13 @@ export default function ClientDashboard() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-r from-[#C88E70]/20 via-white/[0.02] to-transparent border border-[#C88E70]/40 rounded-3xl p-6 md:p-8 relative overflow-hidden"
+                className="bg-gradient-to-r from-blue-600/20 via-white/[0.02] to-transparent border border-blue-500/40 rounded-3xl p-6 md:p-8 relative overflow-hidden"
               >
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-ping" />
-                      <span className="text-xs font-semibold uppercase tracking-widest text-[#C88E70]">
+                      <span className="text-xs font-semibold uppercase tracking-widest text-blue-400">
                         Seu Próximo Horário Agendado
                       </span>
                     </div>
@@ -212,7 +212,7 @@ export default function ClientDashboard() {
                       {upcomingApt.service?.name} · R$ {upcomingApt.service?.price}
                     </h3>
                     <p className="text-sm text-gray-300 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#C88E70]" />
+                      <Clock className="w-4 h-4 text-blue-400" />
                       <strong>
                         {new Date(upcomingApt.date).toLocaleDateString("pt-BR")} às{" "}
                         {new Date(upcomingApt.date).toLocaleTimeString("pt-BR", {
@@ -257,7 +257,7 @@ export default function ClientDashboard() {
 
                 <button
                   onClick={handleRebook}
-                  className="w-full md:w-auto bg-[#C88E70] text-[#050B14] hover:bg-white px-6 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all duration-300 shadow-md shrink-0 hover:scale-[1.02]"
+                  className="w-full md:w-auto bg-gradient-to-r from-blue-700 to-blue-600 text-white hover:bg-white px-6 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all duration-300 shadow-md shrink-0 hover:scale-[1.02]"
                 >
                   <RotateCcw className="w-4 h-4" /> Remarcar Último Corte
                 </button>
@@ -268,17 +268,17 @@ export default function ClientDashboard() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-gradient-to-br from-[#101927] via-[#050B14] to-[#02050A] border-2 border-[#C88E70]/40 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl"
+              className="bg-gradient-to-br from-[#101927] via-[#050B14] to-[#02050A] border-2 border-blue-500/40 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl"
             >
-              <div className="absolute top-0 right-0 w-80 h-80 bg-[#C88E70]/10 blur-3xl rounded-full pointer-events-none" />
+              <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/10 blur-3xl rounded-full pointer-events-none" />
 
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-6 border-b border-white/10 relative z-10">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#C88E70]/20 flex items-center justify-center text-[#C88E70] border border-[#C88E70]/40">
+                  <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center text-blue-400 border border-blue-500/40">
                     <Award className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.3em] text-[#C88E70] font-bold">
+                    <p className="text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold">
                       Benefício Exclusivo
                     </p>
                     <h3 className="text-xl md:text-2xl font-serif text-white">
@@ -313,9 +313,9 @@ export default function ClientDashboard() {
                       key={index}
                       className={`h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${
                         isFilled
-                          ? "bg-[#C88E70] border-[#C88E70] text-[#050B14] shadow-md shadow-[#C88E70]/30 font-bold"
+                          ? "bg-blue-600 border-blue-500 text-[#050B14] shadow-md shadow-blue-500/30 font-bold"
                           : isTenth
-                          ? "bg-[#C88E70]/10 border-dashed border-[#C88E70] text-[#C88E70]"
+                          ? "bg-blue-600/10 border-dashed border-blue-500 text-blue-400"
                           : "bg-white/[0.02] border-white/10 text-gray-600"
                       }`}
                     >
@@ -326,7 +326,7 @@ export default function ClientDashboard() {
                         </>
                       ) : isTenth ? (
                         <>
-                          <Sparkles className="w-4 h-4 mb-0.5 text-[#C88E70] animate-pulse" />
+                          <Sparkles className="w-4 h-4 mb-0.5 text-blue-400 animate-pulse" />
                           <span className="text-[8px] uppercase font-bold tracking-tighter">Grátis</span>
                         </>
                       ) : (
@@ -343,13 +343,13 @@ export default function ClientDashboard() {
                   <span className="text-gray-400">
                     Progresso: <strong className="text-white">{loyalty.currentCuts} de 10 cortes</strong>
                   </span>
-                  <span className="text-[#C88E70] font-semibold">
+                  <span className="text-blue-400 font-semibold">
                     Faltam apenas {10 - loyalty.currentCuts} cortes para o gratuito!
                   </span>
                 </div>
                 <div className="w-full h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/10">
                   <div
-                    className="h-full bg-gradient-to-r from-[#C88E70]/80 to-[#C88E70] rounded-full transition-all duration-1000 shadow-[0_0_15px_#C88E70]"
+                    className="h-full bg-gradient-to-r from-blue-600/80 to-blue-600 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(37,99,235,0.6)]"
                     style={{ width: `${(loyalty.currentCuts / 10) * 100}%` }}
                   />
                 </div>
@@ -382,7 +382,7 @@ export default function ClientDashboard() {
                       className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-white/10 transition-all"
                     >
                       <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-[#C88E70]">
+                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-blue-400">
                           <Scissors className="w-4 h-4" />
                         </div>
                         <div>
@@ -394,7 +394,7 @@ export default function ClientDashboard() {
                       </div>
 
                       <div className="flex items-center justify-between sm:justify-end gap-4">
-                        <span className="text-[#C88E70] font-mono text-sm font-bold">
+                        <span className="text-blue-400 font-mono text-sm font-bold">
                           R$ {apt.service?.price}
                         </span>
                         <div className="text-right">

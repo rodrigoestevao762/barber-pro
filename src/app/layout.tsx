@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./Providers";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -78,12 +80,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         <meta name="google-site-verification" content="-VKaG-kU7v50FaW3bA9SZVnvloirfRaPLWV7Bwjp6MI" />
+        <meta name="theme-color" content="#050B14" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Mr. Bastos" />
         <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icon.png?v=2" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png?v=2" />
       </head>
       <body className="min-h-full flex flex-col bg-[#050B14] text-white font-sans">
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <PwaInstallPrompt />
+          <CookieConsentBanner />
+        </Providers>
       </body>
     </html>
   );
