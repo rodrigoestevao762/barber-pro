@@ -4,8 +4,8 @@ import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { BARBERS, getBarberByEmail } from "@/lib/barbers";
 
-process.env.NEXTAUTH_URL = "https://barber-pro-six.vercel.app";
-process.env.NEXTAUTH_URL_INTERNAL = "https://barber-pro-six.vercel.app";
+process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL || "https://mrbastos.com.br";
+process.env.NEXTAUTH_URL_INTERNAL = process.env.NEXTAUTH_URL_INTERNAL || "https://mrbastos.com.br";
 delete process.env.VERCEL_URL;
 
 // Contas oficiais dos barbeiros e gestor com senhas provisórias configuradas

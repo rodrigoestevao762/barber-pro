@@ -14,8 +14,30 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "Mr. Bastos Barbearia | O Padrão de Excelência",
-  description: "Tradição, conforto e sofisticação em corte e barba. Avenida Dantas Bião s/n, Hiper Gbarbosa - Alagoinhas, BA.",
+  metadataBase: new URL("https://mrbastos.com.br"),
+  title: "Mr. Bastos Barbearia | O Padrão de Excelência em Alagoinhas - BA",
+  description: "Tradição, conforto e sofisticação em corte masculino, barba e visagismo. Avenida Dantas Bião s/n, Hiper Gbarbosa - Alagoinhas, BA.",
+  keywords: [
+    "Barbearia Alagoinhas",
+    "Mr Bastos Barbearia",
+    "Corte masculino Alagoinhas",
+    "Barbeiro Alagoinhas",
+    "Degradê Alagoinhas",
+    "Barboterapia Alagoinhas",
+    "Hiper Gbarbosa Alagoinhas",
+  ],
+  authors: [{ name: "Mr. Bastos Barbearia" }],
+  openGraph: {
+    title: "Mr. Bastos Barbearia | O Padrão de Excelência",
+    description: "Tradição, conforto e sofisticação em corte masculino, barba e visagismo em Alagoinhas - BA.",
+    url: "https://mrbastos.com.br",
+    siteName: "Mr. Bastos Barbearia",
+    locale: "pt_BR",
+    type: "website",
+  },
+  alternates: {
+    canonical: "https://mrbastos.com.br",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -30,4 +52,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
-
