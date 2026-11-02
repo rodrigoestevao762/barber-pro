@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { BARBERS } from "@/lib/barbers";
 import { getAppointmentsForDate } from "@/lib/appointments-store";
+import { getBrazilNow, formatAptTimeToHHMM } from "@/lib/timezone";
 
 const WORK_HOURS = [
   "09:00",
@@ -26,8 +27,24 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Data não informada" }, { status: 400 });
     }
 
-    const startOfDay = new Date(`${dateParam}T00:00:00Z`);
-    const endOfDay = new Date(`${dateParam}T23:59:59Z`);
+    const brazilNow = getBrazilNow();
+
+    // Se a data solicitada for no passado (antes de hoje no fuso do Brasil), não há horários livres
+    if (dateParam < brazilNow.date) {
+      return NextResponse.json({ availableTimes: [] });
+    }
+
+    // Intervalo do dia no fuso horário do Brasil (UTC-3)
+    const startOfDay = new Date(`${dateParam}T00:00:00-03:00`);
+    const endOfDay = new Date(`${dateParam}T23:59:59-03:00`);
+
+    // Filtra para remover horários que já passaram se a data for hoje
+    const filterOutPastTimes = (times: string[]) => {
+      if (dateParam === brazilNow.date) {
+        return times.filter((time) => time > brazilNow.time);
+      }
+      return times;
+    };
 
     try {
       // Busca agendamentos do banco
@@ -41,20 +58,20 @@ export async function GET(req: Request) {
 
       if (bookedAppointments && bookedAppointments.length > 0) {
         if (barberId && barberId !== "qualquer") {
-          const bookedTimes = bookedAppointments.map((apt) =>
-            apt.date.toISOString().substring(11, 16)
+          const bookedTimes = bookedAppointments.map((apt) => formatAptTimeToHHMM(apt.date));
+          const availableTimes = filterOutPastTimes(
+            WORK_HOURS.filter((time) => !bookedTimes.includes(time))
           );
-          const availableTimes = WORK_HOURS.filter((time) => !bookedTimes.includes(time));
           return NextResponse.json({ availableTimes });
         } else {
           const timesCount: Record<string, number> = {};
           bookedAppointments.forEach((apt) => {
-            const t = apt.date.toISOString().substring(11, 16);
+            const t = formatAptTimeToHHMM(apt.date);
             timesCount[t] = (timesCount[t] || 0) + 1;
           });
           const totalBarbers = BARBERS.length;
-          const availableTimes = WORK_HOURS.filter(
-            (time) => (timesCount[time] || 0) < totalBarbers
+          const availableTimes = filterOutPastTimes(
+            WORK_HOURS.filter((time) => (timesCount[time] || 0) < totalBarbers)
           );
           return NextResponse.json({ availableTimes });
         }
@@ -63,8 +80,10 @@ export async function GET(req: Request) {
         const storedApts = getAppointmentsForDate(dateParam, barberId);
         const bookedTimes = storedApts
           .filter((apt) => apt.status !== "CANCELLED")
-          .map((apt) => apt.date.substring(11, 16));
-        const availableTimes = WORK_HOURS.filter((time) => !bookedTimes.includes(time));
+          .map((apt) => formatAptTimeToHHMM(apt.date));
+        const availableTimes = filterOutPastTimes(
+          WORK_HOURS.filter((time) => !bookedTimes.includes(time))
+        );
         return NextResponse.json({ availableTimes });
       }
     } catch (dbErr) {
@@ -72,8 +91,10 @@ export async function GET(req: Request) {
       const storedApts = getAppointmentsForDate(dateParam, barberId);
       const bookedTimes = storedApts
         .filter((apt) => apt.status !== "CANCELLED")
-        .map((apt) => apt.date.substring(11, 16));
-      const availableTimes = WORK_HOURS.filter((time) => !bookedTimes.includes(time));
+        .map((apt) => formatAptTimeToHHMM(apt.date));
+      const availableTimes = filterOutPastTimes(
+        WORK_HOURS.filter((time) => !bookedTimes.includes(time))
+      );
       return NextResponse.json({ availableTimes });
     }
   } catch (error) {

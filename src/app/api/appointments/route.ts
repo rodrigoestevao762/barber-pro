@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { BARBERS, getBarberById } from '@/lib/barbers';
 import { OFFICIAL_SERVICES } from '@/lib/services';
 import { addStoredAppointment } from '@/lib/appointments-store';
+import { getBrazilNow, getBrazilDateAndTimeString, parseBrazilDateTime } from '@/lib/timezone';
 
 export async function POST(req: Request) {
   try {
@@ -34,6 +35,25 @@ export async function POST(req: Request) {
     const matchedService = OFFICIAL_SERVICES.find(
       (s) => s.id === serviceId || s.name.toLowerCase() === String(serviceId).toLowerCase()
     ) || OFFICIAL_SERVICES[0];
+
+    // Validação estrita contra agendamentos no passado (fuso horário do Brasil)
+    const appointmentDate = parseBrazilDateTime(date);
+
+    if (!isWalkIn) {
+      const brazilNow = getBrazilNow();
+      const requestedBrazil = getBrazilDateAndTimeString(appointmentDate);
+
+      const isPast =
+        requestedBrazil.date < brazilNow.date ||
+        (requestedBrazil.date === brazilNow.date && requestedBrazil.time <= brazilNow.time);
+
+      if (isPast) {
+        return NextResponse.json(
+          { error: "Não é possível agendar um horário que já passou. Por favor, escolha um horário futuro." },
+          { status: 400 }
+        );
+      }
+    }
 
     try {
       // 3. Garante que o Barbeiro existe na tabela Barber do banco de dados
@@ -174,7 +194,7 @@ export async function POST(req: Request) {
       // 6. Grava o agendamento no banco de dados
       const appointment = await prisma.appointment.create({
         data: {
-          date: new Date(date),
+          date: appointmentDate,
           serviceId: finalServiceId,
           userId: client.id,
           barberId: assignedBarber.id,
@@ -190,7 +210,7 @@ export async function POST(req: Request) {
       // 7. Sincroniza também no store em memória para feedback instantâneo
       addStoredAppointment({
         id: appointment.id,
-        date: new Date(date).toISOString(),
+        date: appointmentDate.toISOString(),
         barberId: assignedBarber.id,
         service: {
           id: matchedService.id,
@@ -226,7 +246,7 @@ export async function POST(req: Request) {
 
       // Fallback em memória para contingência de rede
       const stored = addStoredAppointment({
-        date: new Date(date).toISOString(),
+        date: appointmentDate.toISOString(),
         barberId: assignedBarber.id,
         service: {
           id: matchedService.id,

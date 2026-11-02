@@ -109,12 +109,39 @@ export default function BookingModal({
   // Busca horários disponíveis quando a data OU o barbeiro mudar
   useEffect(() => {
     if (selectedDate && selectedBarber) {
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+      const nowTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
       fetch(`/api/appointments/available?date=${selectedDate}&barberId=${selectedBarber.id}`)
         .then((res) => res.json())
-        .then((data) => setAvailableTimes(data.availableTimes || []))
+        .then((data) => {
+          if (Array.isArray(data.availableTimes)) {
+            let times = data.availableTimes;
+            if (selectedDate === todayStr) {
+              times = times.filter((t: string) => t > nowTimeStr);
+            }
+            setAvailableTimes(times);
+            setSelectedTime((prev) => (times.includes(prev) ? prev : ""));
+          } else {
+            setAvailableTimes([]);
+            setSelectedTime("");
+          }
+        })
         .catch(() => {
-          setAvailableTimes(["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"]);
+          const defaultHours = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
+          if (selectedDate === todayStr) {
+            setAvailableTimes(defaultHours.filter((t) => t > nowTimeStr));
+          } else if (selectedDate > todayStr) {
+            setAvailableTimes(defaultHours);
+          } else {
+            setAvailableTimes([]);
+          }
+          setSelectedTime("");
         });
+    } else {
+      setAvailableTimes([]);
+      setSelectedTime("");
     }
   }, [selectedDate, selectedBarber]);
 
@@ -136,6 +163,16 @@ export default function BookingModal({
 
     if (!selectedDate || !selectedTime) {
       setErrorMsg("Por favor, selecione a data e o horário desejado.");
+      return;
+    }
+
+    // Validação estrita de horário passado
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const nowTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+    if (selectedDate < todayStr || (selectedDate === todayStr && selectedTime <= nowTimeStr)) {
+      setErrorMsg("Este horário já passou. Por favor, escolha um horário futuro.");
       return;
     }
 

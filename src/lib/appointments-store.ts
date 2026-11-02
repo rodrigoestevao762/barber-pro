@@ -1,5 +1,6 @@
 import { BARBERS } from "@/lib/barbers";
 import { OFFICIAL_SERVICES } from "@/lib/services";
+import { getBrazilDateAndTimeString } from "@/lib/timezone";
 
 export interface StoredAppointment {
   id: string;
@@ -70,7 +71,7 @@ export function getAllStoredAppointments(): StoredAppointment[] {
 export function getAppointmentsForDate(dateStr: string, barberId?: string | null): StoredAppointment[] {
   const all = global.__mrbastos_appointments || [];
   return all.filter((apt) => {
-    const aptDay = apt.date.substring(0, 10);
+    const { date: aptDay } = getBrazilDateAndTimeString(apt.date);
     const matchesDate = aptDay === dateStr;
     const matchesBarber = !barberId || barberId === "all" || apt.barberId === barberId ||
       (barberId === "barbeiro-nando" && apt.barberId === "barbeiro-lucas") ||
