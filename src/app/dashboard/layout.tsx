@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { getDisplayTime } from "@/lib/timezone";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -134,7 +135,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
 
       {/* Top Header */}
-      <header className="px-6 pt-8 md:pl-36 md:pr-12 md:pt-10 flex flex-col md:flex-row md:justify-between items-start md:items-end gap-6 md:gap-0 relative z-10">
+      <header className="px-6 pt-8 md:pl-36 md:pr-12 md:pt-10 flex flex-col md:flex-row md:justify-between items-start md:items-end gap-6 md:gap-0 relative z-40">
         <div>
           <div className="flex items-center gap-2 mb-1">
             {isAdmin ? (
@@ -189,26 +190,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <AnimatePresence>
               {isNotifOpen && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className="absolute right-0 top-full mt-4 w-80 bg-[#050B14] border border-blue-500/30 rounded-2xl p-4 shadow-2xl z-50 backdrop-blur-xl"
-                >
-                  <h4 className="text-sm font-serif text-white mb-3 pb-2 border-b border-white/10">Últimos Atendimentos</h4>
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {notifications.length === 0 ? (
-                      <p className="text-xs text-gray-500">Sem notificações no momento.</p>
-                    ) : (
-                      notifications.map((n) => (
-                        <div key={n.id} className="text-xs p-2 rounded-lg bg-white/[0.02] border border-white/5">
-                          <p className="text-white font-medium">{n.user?.name || "Cliente"}</p>
-                          <p className="text-gray-400 text-[10px]">{n.service?.name} · {new Date(n.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
+                <>
+                  {/* Backdrop invisível para fechar ao clicar em qualquer lugar fora */}
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setIsNotifOpen(false)} 
+                  />
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                    className="absolute right-0 top-full mt-3 w-80 max-w-[calc(100vw-2rem)] bg-[#050B14] border border-blue-500/40 rounded-2xl p-4 shadow-2xl shadow-black/95 z-50 backdrop-blur-2xl ring-1 ring-white/10"
+                  >
+                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
+                      <h4 className="text-sm font-serif text-white">Últimos Atendimentos</h4>
+                      <span className="text-[10px] text-blue-400 font-mono font-medium">Recentes</span>
+                    </div>
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      {notifications.length === 0 ? (
+                        <p className="text-xs text-gray-500 text-center py-4">Sem notificações no momento.</p>
+                      ) : (
+                        notifications.map((n) => (
+                          <div key={n.id} className="text-xs p-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-blue-500/30 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <p className="text-white font-medium">{n.user?.name || "Cliente"}</p>
+                              <span className="text-[10px] text-blue-400 font-mono font-bold">
+                                {getDisplayTime(n.date)}
+                              </span>
+                            </div>
+                            <p className="text-gray-400 text-[11px] mt-0.5">
+                              {n.service?.name} {n.service?.price ? `· R$ ${Number(n.service.price).toFixed(2)}` : ""}
+                            </p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </motion.div>
+                </>
               )}
             </AnimatePresence>
           </div>
@@ -223,7 +241,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </header>
 
       {/* Main Content Viewport */}
-      <main className="px-6 py-8 md:pl-36 md:pr-12 md:py-10 relative z-20 max-w-[1600px]">
+      <main className="px-6 py-8 md:pl-36 md:pr-12 md:py-10 relative z-10 max-w-[1600px]">
         {children}
       </main>
 
