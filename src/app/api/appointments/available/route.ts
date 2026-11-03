@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { BARBERS } from "@/lib/barbers";
+import { BARBERS, getBarberById } from "@/lib/barbers";
 import { getAppointmentsForDate } from "@/lib/appointments-store";
 import { getBrazilNow, formatAptTimeToHHMM } from "@/lib/timezone";
+import { checkDayStatus } from "@/lib/holidays";
+import { isBarberAvailable } from "@/lib/barber-availability";
 
 const WORK_HOURS = [
+  "08:00",
   "09:00",
   "10:00",
   "11:00",
+  "12:00",
   "13:00",
   "14:00",
   "15:00",
@@ -15,6 +19,7 @@ const WORK_HOURS = [
   "17:00",
   "18:00",
   "19:00",
+  "20:00",
 ];
 
 export async function GET(req: Request) {
@@ -27,9 +32,32 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Data não informada" }, { status: 400 });
     }
 
+    // 1. Verificação de Domingos e Feriados (Alagoinhas - BA + Nacionais)
+    const dayStatus = checkDayStatus(dateParam);
+    if (dayStatus.isClosed) {
+      return NextResponse.json({
+        availableTimes: [],
+        isClosed: true,
+        isSunday: dayStatus.isSunday,
+        isHoliday: dayStatus.isHoliday,
+        reason: dayStatus.reason,
+      });
+    }
+
+    // 2. Se o barbeiro específico estiver em folga/escala inativa (ex: Dono 4x4)
+    if (barberId && barberId !== "all" && barberId !== "qualquer") {
+      if (!isBarberAvailable(barberId)) {
+        return NextResponse.json({
+          availableTimes: [],
+          isBarberOff: true,
+          reason: "Este profissional não está disponível para agendamentos hoje.",
+        });
+      }
+    }
+
     const brazilNow = getBrazilNow();
 
-    // Se a data solicitada for no passado (antes de hoje no fuso do Brasil), não há horários livres
+    // 3. Se a data solicitada for no passado (antes de hoje no fuso do Brasil), não há horários livres
     if (dateParam < brazilNow.date) {
       return NextResponse.json({ availableTimes: [] });
     }
@@ -51,13 +79,13 @@ export async function GET(req: Request) {
       const bookedAppointments = await prisma.appointment.findMany({
         where: {
           date: { gte: startOfDay, lte: endOfDay },
-          status: { not: "CANCELLED" },
-          ...(barberId && barberId !== "qualquer" ? { barberId } : {}),
+          status: { notIn: ["CANCELLED"] },
+          ...(barberId && barberId !== "qualquer" && barberId !== "all" ? { barberId } : {}),
         },
       });
 
       if (bookedAppointments && bookedAppointments.length > 0) {
-        if (barberId && barberId !== "qualquer") {
+        if (barberId && barberId !== "qualquer" && barberId !== "all") {
           const bookedTimes = bookedAppointments.map((apt) => formatAptTimeToHHMM(apt.date));
           const availableTimes = filterOutPastTimes(
             WORK_HOURS.filter((time) => !bookedTimes.includes(time))
@@ -87,7 +115,7 @@ export async function GET(req: Request) {
         return NextResponse.json({ availableTimes });
       }
     } catch (dbErr) {
-      // Fallback em memória para teste offline
+      // Fallback em memória para contingência de rede
       const storedApts = getAppointmentsForDate(dateParam, barberId);
       const bookedTimes = storedApts
         .filter((apt) => apt.status !== "CANCELLED")

@@ -4,13 +4,15 @@ import { getBrazilDateAndTimeString } from "@/lib/timezone";
 
 export interface StoredAppointment {
   id: string;
-  date: string; // ISO string
-  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+  date: string; // ISO string ou com offset -03:00
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "RESCHEDULE_REQUESTED" | "CANCEL_REQUESTED";
+  requestedDate?: string;
   barberId: string;
   barber: { id: string; name: string; phone?: string; role?: string };
   service: { id: string; name: string; price: number; duration: number };
   user: { id: string; name: string; phone?: string; email?: string };
   durationSpent?: number;
+  createdAt?: string;
 }
 
 export interface StoredClosing {
@@ -40,7 +42,7 @@ export function getLocalDateString(d: Date = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-// Inicializa armazenamento limpo para uso oficial real (sem agendamentos de teste)
+// Inicializa armazenamento limpo para uso oficial real
 function createInitialAppointments(): StoredAppointment[] {
   return [];
 }
@@ -66,6 +68,11 @@ if (!global.__mrbastos_expenses) {
 
 export function getAllStoredAppointments(): StoredAppointment[] {
   return global.__mrbastos_appointments || [];
+}
+
+export function getStoredAppointmentById(id: string): StoredAppointment | undefined {
+  const all = global.__mrbastos_appointments || [];
+  return all.find((a) => a.id === id);
 }
 
 export function getAppointmentsForDate(dateStr: string, barberId?: string | null): StoredAppointment[] {
@@ -101,8 +108,9 @@ export function addStoredAppointment(aptData: Partial<StoredAppointment>): Store
 
   const newApt: StoredAppointment = {
     id: aptData.id || `apt-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-    date: aptData.date || `${getLocalDateString()}T10:00:00.000Z`,
+    date: aptData.date || `${getLocalDateString()}T10:00:00-03:00`,
     status: aptData.status || "CONFIRMED",
+    requestedDate: aptData.requestedDate,
     barberId: barber.id,
     barber: { id: barber.id, name: barber.name, phone: barber.phone, role: barber.role },
     service: { id: service.id, name: service.name, price: service.price, duration: service.duration },
@@ -112,23 +120,40 @@ export function addStoredAppointment(aptData: Partial<StoredAppointment>): Store
       phone: "(75) 98888-0000",
     },
     durationSpent: aptData.durationSpent,
+    createdAt: aptData.createdAt || new Date().toISOString(),
   };
 
   global.__mrbastos_appointments.unshift(newApt);
   return newApt;
 }
 
-export function updateStoredAppointmentStatus(id: string, newStatus: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED"): boolean {
+export function updateStoredAppointment(id: string, updates: Partial<StoredAppointment>): boolean {
   if (!global.__mrbastos_appointments) return false;
   const apt = global.__mrbastos_appointments.find((a) => a.id === id);
   if (apt) {
-    apt.status = newStatus;
-    if (newStatus === "COMPLETED" && !apt.durationSpent) {
-      apt.durationSpent = apt.service.duration;
+    Object.assign(apt, updates);
+    if (updates.barberId) {
+      const barber = BARBERS.find((b) => b.id === updates.barberId);
+      if (barber) {
+        apt.barber = { id: barber.id, name: barber.name, phone: barber.phone, role: barber.role };
+      }
+    }
+    if (updates.service?.id) {
+      const service = OFFICIAL_SERVICES.find((s) => s.id === updates.service?.id);
+      if (service) {
+        apt.service = { id: service.id, name: service.name, price: service.price, duration: service.duration };
+      }
     }
     return true;
   }
   return false;
+}
+
+export function updateStoredAppointmentStatus(
+  id: string,
+  newStatus: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED" | "RESCHEDULE_REQUESTED" | "CANCEL_REQUESTED"
+): boolean {
+  return updateStoredAppointment(id, { status: newStatus });
 }
 
 export function getStoredClosingsForDate(dateStr: string): StoredClosing[] {

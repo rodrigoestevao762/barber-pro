@@ -1,13 +1,20 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Scissors, Calendar, Clock, RotateCcw, User, LogOut, Award, Star, CheckCircle, Sparkles, MessageCircle, MapPin, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  Scissors, Calendar, Clock, RotateCcw, User, LogOut, Award, Star, 
+  CheckCircle, Sparkles, MessageCircle, MapPin, ChevronRight, Home, 
+  AlertTriangle, AlertCircle, X, Check, Edit2
+} from "lucide-react";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import BookingModal from "@/components/BookingModal";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { LogoMrBastos } from "@/components/LogoMrBastos";
 import { BARBERS, getBarberById } from "@/lib/barbers";
+import { getDisplayTime } from "@/lib/timezone";
+import { checkDayStatus } from "@/lib/holidays";
 
 export default function ClientDashboard() {
   const { data: session, status } = useSession();
@@ -19,6 +26,18 @@ export default function ClientDashboard() {
   const [loyalty, setLoyalty] = useState({ currentCuts: 0, targetCuts: 10, freeCutsWon: 0 });
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState("Olá");
+
+  // Estados de Reagendamento
+  const [rescheduleApt, setRescheduleApt] = useState<any | null>(null);
+  const [newRescheduleDate, setNewRescheduleDate] = useState("");
+  const [newRescheduleTime, setNewRescheduleTime] = useState("");
+  const [rescheduleAvailableTimes, setRescheduleAvailableTimes] = useState<string[]>([]);
+  const [isSubmittingReschedule, setIsSubmittingReschedule] = useState(false);
+  const [rescheduleFeedback, setRescheduleFeedback] = useState<{ type: "success" | "error"; msg: string; whatsappUrl?: string } | null>(null);
+
+  // Estados de Cancelamento
+  const [cancellingAptId, setCancellingAptId] = useState<string | null>(null);
+  const [cancelFeedback, setCancelFeedback] = useState<{ type: "success" | "error"; msg: string; whatsappUrl?: string } | null>(null);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -58,32 +77,36 @@ export default function ClientDashboard() {
     }
   }, [session]);
 
+  const loadDashboardData = () => {
+    fetch("/api/dashboard")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.isClient) {
+          if (data.client) {
+            setClientData({
+              name: data.client.name || "",
+              email: data.client.email || "",
+              phone: data.client.phone || "",
+            });
+          }
+          if (data.appointments) {
+            const sorted = data.appointments.sort(
+              (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
+            );
+            setAppointments(sorted);
+          }
+          if (data.loyaltyCard) {
+            setLoyalty(data.loyaltyCard);
+          }
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  };
+
   useEffect(() => {
     if (status === "authenticated") {
-      fetch("/api/dashboard")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.isClient) {
-            if (data.client) {
-              setClientData({
-                name: data.client.name || "",
-                email: data.client.email || "",
-                phone: data.client.phone || "",
-              });
-            }
-            if (data.appointments) {
-              const sorted = data.appointments.sort(
-                (a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()
-              );
-              setAppointments(sorted);
-            }
-            if (data.loyaltyCard) {
-              setLoyalty(data.loyaltyCard);
-            }
-          }
-          setLoading(false);
-        })
-        .catch(() => setLoading(false));
+      loadDashboardData();
     } else if (status === "unauthenticated") {
       setLoading(false);
     }
@@ -94,9 +117,9 @@ export default function ClientDashboard() {
   const clientEmail = clientData.email || session?.user?.email || "";
   const vipDigits = clientPhone ? clientPhone.replace(/\D/g, "").slice(-4) : "VIP";
 
-  // Próximo agendamento futuro
+  // Próximo agendamento futuro ativo
   const upcomingApt = appointments.find(
-    (apt) => new Date(apt.date) >= new Date() && apt.status !== "CANCELLED"
+    (apt) => new Date(apt.date) >= new Date() && apt.status !== "CANCELLED" && apt.status !== "COMPLETED"
   );
 
   // Último agendamento concluído ou passado
@@ -123,8 +146,166 @@ export default function ClientDashboard() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
+  // Carrega horários disponíveis para o modal de reagendamento
+  useEffect(() => {
+    if (rescheduleApt && newRescheduleDate) {
+      const dayStatus = checkDayStatus(newRescheduleDate);
+      if (dayStatus.isClosed) {
+        setRescheduleAvailableTimes([]);
+        setNewRescheduleTime("");
+        return;
+      }
+
+      const barberId = rescheduleApt.barberId || rescheduleApt.barber?.id || "barbeiro-dono";
+      fetch(`/api/appointments/available?date=${newRescheduleDate}&barberId=${barberId}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (Array.isArray(data.availableTimes)) {
+            setRescheduleAvailableTimes(data.availableTimes);
+          } else {
+            setRescheduleAvailableTimes([]);
+          }
+        })
+        .catch(() => setRescheduleAvailableTimes([]));
+    }
+  }, [rescheduleApt, newRescheduleDate]);
+
+  // Ação de Cancelamento pelo Cliente (Regra dos 30 minutos)
+  const handleClientCancel = async (apt: any) => {
+    if (!confirm("Deseja realmente cancelar este agendamento?\n\n• Dentro de 30 minutos: o cancelamento é imediato e libera a vaga.\n• Após 30 minutos: será enviada uma solicitação para o barbeiro aprovar.")) {
+      return;
+    }
+
+    setCancellingAptId(apt.id);
+    try {
+      const res = await fetch("/api/appointments/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: apt.id }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        const barberName = apt.barber?.name || "Mr. Bastos";
+        const barberPhone = apt.barber?.phone || BARBERS[0].phone;
+        const aptDateStr = new Date(apt.date).toLocaleDateString("pt-BR");
+        const aptTimeStr = getDisplayTime(apt.date);
+
+        if (data.directCancelled) {
+          const msg = `Olá, ${barberName}! Sou o ${clientName}. Cancelei meu agendamento de ${apt.service?.name || "serviço"} marcado para ${aptDateStr} às ${aptTimeStr} dentro do prazo de 30 min. O horário foi liberado no sistema!`;
+          const whatsappUrl = `https://wa.me/${barberPhone}?text=${encodeURIComponent(msg)}`;
+          setCancelFeedback({
+            type: "success",
+            msg: "Agendamento cancelado com sucesso dentro dos 30 minutos! O horário foi liberado.",
+            whatsappUrl,
+          });
+        } else {
+          const msg = `Olá, ${barberName}! Sou o ${clientName}. Solicitei o cancelamento do meu agendamento de ${apt.service?.name || "serviço"} do dia ${aptDateStr} às ${aptTimeStr} no sistema. Poderia aprovar por favor?`;
+          const whatsappUrl = `https://wa.me/${barberPhone}?text=${encodeURIComponent(msg)}`;
+          setCancelFeedback({
+            type: "success",
+            msg: "Como passaram 30 minutos do agendamento, sua solicitação de cancelamento foi enviada para o barbeiro aprovar.",
+            whatsappUrl,
+          });
+        }
+        loadDashboardData();
+      } else {
+        setCancelFeedback({
+          type: "error",
+          msg: data.error || "Erro ao processar o cancelamento.",
+        });
+      }
+    } catch (_) {
+      setCancelFeedback({
+        type: "error",
+        msg: "Falha de conexão ao cancelar agendamento.",
+      });
+    } finally {
+      setCancellingAptId(null);
+    }
+  };
+
+  // Submissão do Reagendamento pelo Cliente
+  const handleSubmitReschedule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rescheduleApt || !newRescheduleDate || !newRescheduleTime) return;
+
+    const dayStatus = checkDayStatus(newRescheduleDate);
+    if (dayStatus.isClosed) {
+      setRescheduleFeedback({
+        type: "error",
+        msg: dayStatus.reason || "Barbearia fechada neste dia (domingo ou feriado).",
+      });
+      return;
+    }
+
+    setIsSubmittingReschedule(true);
+    setRescheduleFeedback(null);
+
+    try {
+      const res = await fetch("/api/appointments/reschedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: rescheduleApt.id,
+          requestedDate: newRescheduleDate,
+          requestedTime: newRescheduleTime,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        const barberName = rescheduleApt.barber?.name || "Mr. Bastos";
+        const barberPhone = rescheduleApt.barber?.phone || BARBERS[0].phone;
+        const newDateDisplay = `${newRescheduleDate.split("-").reverse().join("/")} às ${newRescheduleTime}`;
+
+        const msg = `Olá, ${barberName}! Sou o ${clientName}. Solicitei no sistema o reagendamento do meu atendimento de ${rescheduleApt.service?.name || "serviço"} para o dia ${newDateDisplay}. Poderia aprovar no seu painel por favor?`;
+        const whatsappUrl = `https://wa.me/${barberPhone}?text=${encodeURIComponent(msg)}`;
+
+        setRescheduleFeedback({
+          type: "success",
+          msg: "Solicitação enviada com sucesso! O barbeiro foi notificado para aprovar no painel.",
+          whatsappUrl,
+        });
+        loadDashboardData();
+      } else {
+        setRescheduleFeedback({
+          type: "error",
+          msg: data.error || "Erro ao solicitar reagendamento.",
+        });
+      }
+    } catch (_) {
+      setRescheduleFeedback({
+        type: "error",
+        msg: "Falha de conexão ao solicitar reagendamento.",
+      });
+    } finally {
+      setIsSubmittingReschedule(false);
+    }
+  };
+
+  const getStatusBadge = (aptStatus: string) => {
+    switch (aptStatus) {
+      case "COMPLETED":
+        return <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Concluído</span>;
+      case "CANCELLED":
+        return <span className="text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Cancelado</span>;
+      case "RESCHEDULE_REQUESTED":
+        return <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse">Reagendamento Pendente</span>;
+      case "CANCEL_REQUESTED":
+        return <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider animate-pulse">Cancelamento Solicitado</span>;
+      default:
+        return <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">Confirmado</span>;
+    }
+  };
+
+  const getMinDateStr = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
   return (
-    <div className="min-h-screen bg-[#02050A] text-white selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#02050A] text-white selection:bg-blue-600 selection:text-white pb-16">
       {/* ── HEADER DO CLIENTE ── */}
       <header className="border-b border-white/5 bg-[#050B14]/90 sticky top-0 z-40 backdrop-blur-xl">
         <div className="max-w-4xl mx-auto px-6 py-5 flex justify-between items-center">
@@ -138,19 +319,65 @@ export default function ClientDashboard() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] uppercase tracking-wider font-semibold bg-blue-600/15 text-blue-400 border border-blue-500/30">
               <Star className="w-3 h-3 fill-blue-400" /> Cliente VIP
             </span>
+
+            {/* BOTÃO VOLTAR AO SITE (SEM FAZER LOGOUT) */}
+            <Link
+              href="/"
+              className="text-gray-300 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10"
+              title="Voltar para a página inicial do site sem encerrar sua sessão"
+            >
+              <Home className="w-4 h-4 text-blue-400" />
+              <span className="hidden xs:inline">Voltar ao Site</span>
+            </Link>
+
+            {/* BOTÃO SAIR (LOGOUT) */}
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-gray-400 hover:text-white transition-colors flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider p-2 rounded-lg hover:bg-white/5"
+              className="text-gray-400 hover:text-red-400 transition-colors flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider p-2 rounded-lg hover:bg-white/5"
+              title="Encerrar sessão"
             >
-              <LogOut className="w-4 h-4" /> Sair
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Sair</span>
             </button>
           </div>
         </div>
       </header>
+
+      {/* FEEDBACK DE CANCELAMENTO */}
+      {cancelFeedback && (
+        <div className="max-w-4xl mx-auto px-6 pt-6">
+          <div className={`p-4 rounded-2xl border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+            cancelFeedback.type === "success" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-200" : "bg-red-500/15 border-red-500/30 text-red-200"
+          }`}>
+            <div className="flex items-center gap-3">
+              {cancelFeedback.type === "success" ? <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" /> : <AlertCircle className="w-5 h-5 text-red-400 shrink-0" />}
+              <p className="text-xs font-medium">{cancelFeedback.msg}</p>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {cancelFeedback.whatsappUrl && (
+                <a
+                  href={cancelFeedback.whatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="bg-[#25D366] text-white px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 hover:bg-[#128C7E] transition-all"
+                >
+                  <MessageCircle className="w-3.5 h-3.5" /> Notificar no WhatsApp
+                </a>
+              )}
+              <button
+                onClick={() => setCancelFeedback(null)}
+                className="text-gray-400 hover:text-white p-1 rounded-lg"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
         {loading ? (
@@ -203,10 +430,11 @@ export default function ClientDashboard() {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-ping" />
+                      <div className="w-2.5 h-2.5 rounded-full bg-blue-400 animate-ping" />
                       <span className="text-xs font-semibold uppercase tracking-widest text-blue-400">
                         Seu Próximo Horário Agendado
                       </span>
+                      {getStatusBadge(upcomingApt.status)}
                     </div>
                     <h3 className="text-3xl font-serif text-white mb-2">
                       {upcomingApt.service?.name} · R$ {upcomingApt.service?.price}
@@ -214,11 +442,7 @@ export default function ClientDashboard() {
                     <p className="text-sm text-gray-300 flex items-center gap-2">
                       <Clock className="w-4 h-4 text-blue-400" />
                       <strong>
-                        {new Date(upcomingApt.date).toLocaleDateString("pt-BR")} às{" "}
-                        {new Date(upcomingApt.date).toLocaleTimeString("pt-BR", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                        {new Date(upcomingApt.date).toLocaleDateString("pt-BR")} às {getDisplayTime(upcomingApt.date)}
                       </strong>
                     </p>
                     <p className="text-xs text-gray-400 mt-2">
@@ -226,12 +450,34 @@ export default function ClientDashboard() {
                     </p>
                   </div>
 
-                  <button
-                    onClick={() => handleContactBarber(upcomingApt.barber?.phone, upcomingApt.barber?.name)}
-                    className="w-full md:w-auto bg-[#25D366] text-white px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-all"
-                  >
-                    <MessageCircle className="w-4 h-4" /> Falar com o Barbeiro
-                  </button>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto">
+                    <button
+                      onClick={() => handleContactBarber(upcomingApt.barber?.phone, upcomingApt.barber?.name)}
+                      className="bg-[#25D366] text-white px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#128C7E] transition-all"
+                    >
+                      <MessageCircle className="w-4 h-4" /> WhatsApp
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setRescheduleApt(upcomingApt);
+                        setNewRescheduleDate("");
+                        setNewRescheduleTime("");
+                        setRescheduleFeedback(null);
+                      }}
+                      className="bg-white/10 hover:bg-white/20 text-white px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all border border-white/10"
+                    >
+                      <Edit2 className="w-4 h-4 text-blue-400" /> Reagendar
+                    </button>
+
+                    <button
+                      onClick={() => handleClientCancel(upcomingApt)}
+                      disabled={cancellingAptId === upcomingApt.id}
+                      className="bg-red-500/15 hover:bg-red-500/25 text-red-300 border border-red-500/30 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                    >
+                      <X className="w-4 h-4" /> Cancelar
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -264,7 +510,7 @@ export default function ClientDashboard() {
               </motion.div>
             )}
 
-            {/* ── A OUTRA COISA ÓTIMA: CARTÃO FIDELIDADE DIGITAL VIP MR. BASTOS ── */}
+            {/* ── CARTÃO FIDELIDADE DIGITAL VIP MR. BASTOS ── */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -313,7 +559,7 @@ export default function ClientDashboard() {
                       key={index}
                       className={`h-14 rounded-xl border flex flex-col items-center justify-center transition-all ${
                         isFilled
-                          ? "bg-blue-600 border-blue-500 text-[#050B14] shadow-md shadow-blue-500/30 font-bold"
+                          ? "bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-500/30 font-bold"
                           : isTenth
                           ? "bg-blue-600/10 border-dashed border-blue-500 text-blue-400"
                           : "bg-white/[0.02] border-white/10 text-gray-600"
@@ -362,7 +608,7 @@ export default function ClientDashboard() {
                 <div>
                   <h3 className="text-xl font-serif text-white">Registro de Serviços (Histórico)</h3>
                   <p className="text-xs text-gray-400 font-light mt-0.5">
-                    Todos os seus cortes, barbas e atendimentos registrados.
+                    Todos os seus agendamentos e atendimentos registrados.
                   </p>
                 </div>
                 <span className="text-xs font-mono text-gray-500">
@@ -376,38 +622,68 @@ export default function ClientDashboard() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {appointments.map((apt: any) => (
-                    <div
-                      key={apt.id}
-                      className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-white/10 transition-all"
-                    >
-                      <div className="flex items-center gap-3.5">
-                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-blue-400">
-                          <Scissors className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <h4 className="text-base font-serif text-white">{apt.service?.name}</h4>
-                          <p className="text-xs text-gray-400">
-                            Atendido por: <strong className="text-gray-300">{apt.barber?.name || "Mr. Bastos (Dono)"}</strong>
-                          </p>
-                        </div>
-                      </div>
+                  {appointments.map((apt: any) => {
+                    const isUpcoming = new Date(apt.date) >= new Date() && apt.status !== "CANCELLED" && apt.status !== "COMPLETED";
 
-                      <div className="flex items-center justify-between sm:justify-end gap-4">
-                        <span className="text-blue-400 font-mono text-sm font-bold">
-                          R$ {apt.service?.price}
-                        </span>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-300">
-                            {new Date(apt.date).toLocaleDateString("pt-BR")}
-                          </p>
-                          <p className="text-[10px] text-gray-500">
-                            {new Date(apt.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                          </p>
+                    return (
+                      <div
+                        key={apt.id}
+                        className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/10 transition-all"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-blue-400 shrink-0">
+                            <Scissors className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-base font-serif text-white">{apt.service?.name}</h4>
+                              {getStatusBadge(apt.status)}
+                            </div>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Barbeiro: <strong className="text-gray-300">{apt.barber?.name || "Mr. Bastos (Dono)"}</strong>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center justify-between md:justify-end gap-3 sm:gap-4 border-t md:border-t-0 pt-3 md:pt-0 border-white/5">
+                          <div className="text-left md:text-right">
+                            <p className="text-blue-400 font-mono text-sm font-bold">
+                              R$ {apt.service?.price}
+                            </p>
+                            <p className="text-xs text-gray-300">
+                              {new Date(apt.date).toLocaleDateString("pt-BR")} às {getDisplayTime(apt.date)}
+                            </p>
+                          </div>
+
+                          {isUpcoming && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setRescheduleApt(apt);
+                                  setNewRescheduleDate("");
+                                  setNewRescheduleTime("");
+                                  setRescheduleFeedback(null);
+                                }}
+                                className="px-3 py-1.5 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-gray-200 border border-white/10 flex items-center gap-1.5 transition-all"
+                                title="Reagendar este horário"
+                              >
+                                <Edit2 className="w-3.5 h-3.5 text-blue-400" /> Reagendar
+                              </button>
+
+                              <button
+                                onClick={() => handleClientCancel(apt)}
+                                disabled={cancellingAptId === apt.id}
+                                className="px-3 py-1.5 rounded-lg text-xs bg-red-500/10 hover:bg-red-500/20 text-red-300 border border-red-500/20 flex items-center gap-1.5 transition-all disabled:opacity-50"
+                                title="Cancelar agendamento"
+                              >
+                                <X className="w-3.5 h-3.5" /> Cancelar
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -415,21 +691,157 @@ export default function ClientDashboard() {
         )}
       </main>
 
+      {/* ── MODAL DE REAGENDAMENTO DO CLIENTE ── */}
+      <AnimatePresence>
+        {rescheduleApt && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setRescheduleApt(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#050B14] border border-blue-500/30 rounded-3xl p-6 sm:p-8 z-10 shadow-2xl max-h-[90vh] overflow-y-auto text-white"
+            >
+              <div className="flex justify-between items-center pb-4 border-b border-white/10">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-blue-400 font-bold">
+                    Solicitar Reagendamento
+                  </p>
+                  <h3 className="text-xl font-serif text-white mt-0.5">
+                    {rescheduleApt.service?.name}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setRescheduleApt(null)}
+                  className="p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-white/10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="my-4 p-3.5 rounded-2xl bg-white/[0.03] border border-white/10 text-xs space-y-1">
+                <p className="text-gray-400">
+                  Horário atual: <strong className="text-white">{new Date(rescheduleApt.date).toLocaleDateString("pt-BR")} às {getDisplayTime(rescheduleApt.date)}</strong>
+                </p>
+                <p className="text-gray-400">
+                  Barbeiro: <strong className="text-white">{rescheduleApt.barber?.name || "Mr. Bastos"}</strong>
+                </p>
+                <p className="text-[11px] text-blue-400/90 pt-1">
+                  💡 A solicitação será enviada para o painel do barbeiro e você poderá notificá-lo pelo WhatsApp.
+                </p>
+              </div>
+
+              {rescheduleFeedback && (
+                <div className={`p-4 rounded-xl border mb-4 text-xs space-y-2 ${
+                  rescheduleFeedback.type === "success" ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-200" : "bg-red-500/15 border-red-500/30 text-red-200"
+                }`}>
+                  <p className="font-semibold">{rescheduleFeedback.msg}</p>
+                  {rescheduleFeedback.whatsappUrl && (
+                    <a
+                      href={rescheduleFeedback.whatsappUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 bg-[#25D366] text-white px-3 py-2 rounded-lg font-bold text-xs uppercase tracking-wider hover:bg-[#128C7E] transition-all"
+                    >
+                      <MessageCircle className="w-4 h-4" /> Notificar Barbeiro no WhatsApp
+                    </a>
+                  )}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmitReschedule} className="space-y-4">
+                <div>
+                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-blue-400" /> Nova Data
+                  </label>
+                  <input
+                    type="date"
+                    min={getMinDateStr()}
+                    value={newRescheduleDate}
+                    onChange={(e) => setNewRescheduleDate(e.target.value)}
+                    required
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors [&::-webkit-calendar-picker-indicator]:invert"
+                  />
+                  {newRescheduleDate && checkDayStatus(newRescheduleDate).isClosed && (
+                    <p className="text-amber-400 text-xs mt-1.5 flex items-center gap-1">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                      {checkDayStatus(newRescheduleDate).reason}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-blue-400" /> Novo Horário
+                  </label>
+                  {!newRescheduleDate ? (
+                    <p className="text-xs text-gray-500 italic py-4 text-center border border-dashed border-white/10 rounded-xl">
+                      Selecione uma nova data acima para carregar os horários livres.
+                    </p>
+                  ) : checkDayStatus(newRescheduleDate).isClosed ? (
+                    <p className="text-xs text-amber-400 italic py-4 text-center border border-dashed border-amber-500/20 rounded-xl bg-amber-500/5">
+                      Barbearia fechada nesta data. Por favor, selecione outro dia.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto pr-1">
+                      {rescheduleAvailableTimes.length === 0 ? (
+                        <p className="text-xs text-gray-500 col-span-3 py-4 text-center">
+                          Nenhum horário disponível para esta data.
+                        </p>
+                      ) : (
+                        rescheduleAvailableTimes.map((time) => (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setNewRescheduleTime(time)}
+                            className={`py-2 rounded-lg border text-xs font-mono font-bold transition-all ${
+                              newRescheduleTime === time
+                                ? "border-blue-500 bg-blue-600 text-white shadow-md"
+                                : "border-white/10 text-gray-300 hover:border-white/30 bg-white/[0.02]"
+                            }`}
+                          >
+                            {time}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRescheduleApt(null)}
+                    className="px-4 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:text-white text-xs uppercase tracking-wider font-semibold hover:bg-white/5 transition-all"
+                  >
+                    Fechar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={Boolean(isSubmittingReschedule || !newRescheduleDate || !newRescheduleTime || (newRescheduleDate ? checkDayStatus(newRescheduleDate).isClosed : false))}
+                    className="px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-white hover:text-black transition-all disabled:opacity-40 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                  >
+                    {isSubmittingReschedule ? "Enviando..." : "Confirmar Solicitação"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <BookingModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
-          fetch("/api/dashboard")
-            .then((res) => res.json())
-            .then((data) => {
-              if (data?.isClient && data.appointments) {
-                setAppointments(data.appointments);
-              }
-              if (data?.isClient && data.loyaltyCard) {
-                setLoyalty(data.loyaltyCard);
-              }
-            })
-            .catch(() => {});
+          loadDashboardData();
         }}
         initialServiceId={selectedServiceId}
         initialUserData={clientData}

@@ -5,6 +5,8 @@ import { BARBERS, getBarberById } from '@/lib/barbers';
 import { OFFICIAL_SERVICES } from '@/lib/services';
 import { addStoredAppointment } from '@/lib/appointments-store';
 import { getBrazilNow, getBrazilDateAndTimeString, parseBrazilDateTime } from '@/lib/timezone';
+import { checkDayStatus } from '@/lib/holidays';
+import { isBarberAvailable } from '@/lib/barber-availability';
 
 export async function POST(req: Request) {
   try {
@@ -40,6 +42,20 @@ export async function POST(req: Request) {
     const appointmentDate = parseBrazilDateTime(date);
 
     if (!isWalkIn) {
+      // 2.1 Validação de Domingo e Feriado (Alagoinhas - BA + Nacionais)
+      const dayCheck = checkDayStatus(date);
+      if (dayCheck.isClosed) {
+        return NextResponse.json({ error: dayCheck.reason }, { status: 400 });
+      }
+
+      // 2.2 Validação de Escala Flexível do Barbeiro
+      if (!isBarberAvailable(assignedBarber.id)) {
+        return NextResponse.json(
+          { error: "Este profissional não está disponível para agendamentos hoje (escala flexível)." },
+          { status: 400 }
+        );
+      }
+
       const brazilNow = getBrazilNow();
       const requestedBrazil = getBrazilDateAndTimeString(appointmentDate);
 

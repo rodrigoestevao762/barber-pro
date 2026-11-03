@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell, User as UserIcon, Wallet, Archive, Shield } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell, User as UserIcon, Wallet, Archive, Shield, Home } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
@@ -81,7 +81,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <Scissors className="w-6 h-6 text-blue-400 group-hover:rotate-180 transition-transform duration-700" />
         </Link>
 
-        <div className="flex flex-col gap-8">
+        <div className="flex flex-col gap-6">
+          <Link 
+            href="/" 
+            className="p-3 text-gray-400 hover:text-blue-400 transition-colors group relative"
+            title="Voltar ao Site (sem fazer logout)"
+          >
+            <Home className="w-5 h-5" />
+            <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#050B14] border border-blue-500/30 text-white rounded-lg opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300 pointer-events-none whitespace-nowrap text-xs tracking-wider uppercase font-semibold shadow-xl">
+              Voltar ao Site
+            </div>
+          </Link>
+
           {navItems.map((item) => (
             <Link
               key={item.id}
@@ -109,12 +120,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Mobile Bottom Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full h-20 bg-[#050B14]/95 border-t border-white/10 z-[100] flex justify-around items-center px-4 pb-safe">
+        <Link href="/" className="p-3 text-gray-400 hover:text-blue-400 transition-colors" title="Voltar ao Site">
+          <Home className="w-5 h-5" />
+        </Link>
         {navItems.map((item) => (
           <Link key={item.id} href={item.id} className="p-3 text-gray-400 hover:text-blue-400 transition-colors">
             <item.icon className="w-5 h-5" />
           </Link>
         ))}
-        <button onClick={() => signOut({ callbackUrl: '/' })} className="p-3 text-gray-500 hover:text-red-400 transition-colors">
+        <button onClick={() => signOut({ callbackUrl: '/' })} className="p-3 text-gray-500 hover:text-red-400 transition-colors" title="Encerrar Sessão">
           <LogOut className="w-5 h-5" />
         </button>
       </nav>
@@ -153,7 +167,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* User Badge & Notifications */}
-        <div className="flex items-center gap-4 relative">
+        <div className="flex items-center gap-3 relative">
+          <Link
+            href="/"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/5 hover:bg-blue-600 hover:text-white border border-white/10 text-xs font-semibold text-gray-300 transition-all shadow-sm"
+            title="Sair do painel e voltar ao site sem fazer logout"
+          >
+            <Home className="w-4 h-4 text-blue-400" />
+            <span className="hidden sm:inline">Voltar ao Site</span>
+          </Link>
           <div className="relative">
             <button 
               onClick={() => setIsNotifOpen(!isNotifOpen)} 

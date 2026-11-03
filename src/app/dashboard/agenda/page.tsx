@@ -1,11 +1,17 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Calendar, Clock, CheckCircle, User, Clock3, Plus, X, Phone, MessageCircle, Scissors, Shield, ChevronRight, Filter } from 'lucide-react';
+import { 
+  Calendar, Clock, CheckCircle, User, Plus, X, Phone, MessageCircle, 
+  Scissors, Shield, ChevronRight, Edit3, AlertCircle, Check, RotateCcw, 
+  Power, CheckCircle2, ArrowRight
+} from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { BARBERS } from '@/lib/barbers';
+import { BARBERS, BarberData } from '@/lib/barbers';
 import { OFFICIAL_SERVICES, ServiceItem } from '@/lib/services';
+import { getDisplayTime, parseBrazilDateTime } from '@/lib/timezone';
+import { checkDayStatus } from '@/lib/holidays';
 
 export default function AgendaPage() {
   const { data: session } = useSession();
@@ -27,7 +33,11 @@ export default function AgendaPage() {
   });
   const [selectedBarberFilter, setSelectedBarberFilter] = useState<string>("all");
 
-  // Modal Novo Agendamento
+  // Disponibilidade do Dono (Escala Flexível / 4x4)
+  const [isOwnerAvailable, setIsOwnerAvailable] = useState(true);
+  const [isTogglingOwner, setIsTogglingOwner] = useState(false);
+
+  // Modal Novo Agendamento (Balcão / Manual)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
@@ -36,6 +46,50 @@ export default function AgendaPage() {
   const [newBarberId, setNewBarberId] = useState(userBarberId || "barbeiro-dono");
   const [newTime, setNewTime] = useState("10:00");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [createErrorMsg, setCreateErrorMsg] = useState("");
+
+  // Modal Alterar / Editar Agendamento
+  const [editingApt, setEditingApt] = useState<any | null>(null);
+  const [editDate, setEditDate] = useState("");
+  const [editTime, setEditTime] = useState("");
+  const [editBarberId, setEditBarberId] = useState("");
+  const [editServiceId, setEditServiceId] = useState("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editSuccessMsg, setEditSuccessMsg] = useState("");
+  const [editErrorMsg, setEditErrorMsg] = useState("");
+
+  // Carrega status de disponibilidade dos barbeiros
+  useEffect(() => {
+    fetch('/api/barbers?all=true')
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data?.barbers || []);
+        const owner = list.find((b: any) => b.id === "barbeiro-dono");
+        if (owner) {
+          setIsOwnerAvailable(owner.isAvailable !== false);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const toggleOwnerAvailability = async () => {
+    setIsTogglingOwner(true);
+    const newStatus = !isOwnerAvailable;
+    try {
+      const res = await fetch('/api/barbers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ barberId: "barbeiro-dono", isAvailable: newStatus })
+      });
+      if (res.ok) {
+        setIsOwnerAvailable(newStatus);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsTogglingOwner(false);
+    }
+  };
 
   const fetchAgenda = async () => {
     setLoading(true);
@@ -68,15 +122,176 @@ export default function AgendaPage() {
     } catch (e) {}
   };
 
+  const handleOwnerCancel = async (apt: any) => {
+    if (!confirm(`Deseja realmente cancelar o atendimento de ${apt.user?.name || "Cliente"}? Isso liberará o horário imediatamente.`)) {
+      return;
+    }
+    await updateStatus(apt.id, 'CANCELLED');
+    
+    // Abre WhatsApp opcional para informar o cliente do cancelamento
+    if (apt.user?.phone) {
+      const barberName = BARBERS.find(b => b.id === apt.barberId)?.name || "Mr. Bastos";
+      const dateFormatted = selectedDate.split("-").reverse().join("/");
+      const timeFormatted = getDisplayTime(apt.date);
+      const msg = `Olá, ${apt.user.name}! Informamos que seu agendamento no Mr. Bastos Barbearia para o dia ${dateFormatted} às ${timeFormatted} foi cancelado. Se desejar, você pode escolher um novo horário diretamente no nosso site a qualquer momento!`;
+      window.open(`https://wa.me/55${apt.user.phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+  };
+
+  // Abrir Modal de Edição
+  const openEditModal = (apt: any) => {
+    setEditingApt(apt);
+    const dayStr = apt.date ? apt.date.substring(0, 10) : selectedDate;
+    setEditDate(dayStr);
+    setEditTime(getDisplayTime(apt.date));
+    setEditBarberId(apt.barberId || "barbeiro-dono");
+    setEditServiceId(apt.service?.id || OFFICIAL_SERVICES[0].id);
+    setEditSuccessMsg("");
+    setEditErrorMsg("");
+  };
+
+  // Salvar Edição do Agendamento pelo Dono/Barbeiro
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingApt) return;
+
+    // Valida dia de fechamento
+    const dayCheck = checkDayStatus(editDate);
+    if (dayCheck.isClosed) {
+      setEditErrorMsg(dayCheck.reason);
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setEditErrorMsg("");
+
+    try {
+      const res = await fetch('/api/dashboard', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingApt.id,
+          date: editDate,
+          time: editTime,
+          barberId: editBarberId,
+          serviceId: editServiceId,
+          status: 'CONFIRMED',
+        })
+      });
+
+      if (res.ok) {
+        setEditSuccessMsg("Horário alterado com sucesso! O novo horário já está registrado.");
+        fetchAgenda();
+        setTimeout(() => {
+          setEditingApt(null);
+        }, 1200);
+      } else {
+        const data = await res.json();
+        setEditErrorMsg(data.error || "Erro ao salvar alterações.");
+      }
+    } catch (err: any) {
+      setEditErrorMsg("Erro de comunicação ao salvar.");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
+  // Aprovação / Recusa de Reagendamento solicitado pelo cliente
+  const handleApproveReschedule = async (apt: any) => {
+    try {
+      const res = await fetch('/api/dashboard', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: apt.id, action: "APPROVE_RESCHEDULE" })
+      });
+      if (res.ok) {
+        fetchAgenda();
+        if (apt.user?.phone) {
+          const barberName = BARBERS.find(b => b.id === apt.barberId)?.name || "Mr. Bastos";
+          const newTimeDisplay = apt.requestedDate ? getDisplayTime(apt.requestedDate) : "";
+          const newDateDisplay = apt.requestedDate ? apt.requestedDate.substring(0, 10).split("-").reverse().join("/") : "";
+          const msg = `Olá, ${apt.user.name}! Seu pedido de reagendamento no Mr. Bastos Barbearia para o dia ${newDateDisplay} às ${newTimeDisplay} foi APROVADO com sucesso! Te esperamos no horário marcado.`;
+          window.open(`https://wa.me/55${apt.user.phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRejectReschedule = async (apt: any) => {
+    try {
+      const res = await fetch('/api/dashboard', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: apt.id, action: "REJECT_RESCHEDULE" })
+      });
+      if (res.ok) {
+        fetchAgenda();
+        if (apt.user?.phone) {
+          const barberName = BARBERS.find(b => b.id === apt.barberId)?.name || "Mr. Bastos";
+          const msg = `Olá, ${apt.user.name}! Infelizmente não foi possível aprovar o reagendamento solicitado para aquele horário. Seu agendamento original permanece ativo. Entre em contato para alinharmos outro horário!`;
+          window.open(`https://wa.me/55${apt.user.phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Aprovação / Recusa de Cancelamento solicitado pelo cliente (+30 min)
+  const handleApproveCancel = async (apt: any) => {
+    try {
+      const res = await fetch('/api/dashboard', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: apt.id, action: "APPROVE_CANCEL" })
+      });
+      if (res.ok) {
+        fetchAgenda();
+        if (apt.user?.phone) {
+          const msg = `Olá, ${apt.user.name}! Confirmamos a aprovação do seu cancelamento no Mr. Bastos Barbearia. O horário foi liberado. Quando desejar agendar um novo atendimento, estaremos à disposição!`;
+          window.open(`https://wa.me/55${apt.user.phone.replace(/\D/g, "")}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRejectCancel = async (apt: any) => {
+    try {
+      const res = await fetch('/api/dashboard', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: apt.id, action: "REJECT_CANCEL" })
+      });
+      if (res.ok) fetchAgenda();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // Criar agendamento manual (Balcão)
   const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault();
+    setCreateErrorMsg("");
+
+    // Validação de Domingo e Feriado
+    const dayCheck = checkDayStatus(selectedDate);
+    if (dayCheck.isClosed) {
+      setCreateErrorMsg(dayCheck.reason);
+      return;
+    }
+
     setIsSubmitting(true);
 
     const targetBarber = isAdmin ? newBarberId : (userBarberId || "barbeiro-nando");
-    const fullDate = `${selectedDate}T${newTime}:00Z`;
+    // Offset seguro de Brasília (-03:00) para evitar distorção de 3 horas
+    const fullDate = `${selectedDate}T${newTime}:00-03:00`;
 
     try {
-      await fetch('/api/appointments', {
+      const res = await fetch('/api/appointments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -90,19 +305,30 @@ export default function AgendaPage() {
         }),
       });
 
-      setIsModalOpen(false);
-      setNewClientName("");
-      setNewClientEmail("");
-      setNewClientPhone("");
-      fetchAgenda();
+      if (res.ok) {
+        setIsModalOpen(false);
+        setNewClientName("");
+        setNewClientEmail("");
+        setNewClientPhone("");
+        fetchAgenda();
+      } else {
+        const data = await res.json();
+        setCreateErrorMsg(data.error || "Erro ao agendar.");
+      }
     } catch (e) {
-      console.error(e);
+      setCreateErrorMsg("Erro de conexão ao criar agendamento.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const selectedBarberObj = BARBERS.find(b => b.id === (isAdmin ? selectedBarberFilter : userBarberId));
+  const currentDayStatus = checkDayStatus(selectedDate);
+
+  // Solicitações pendentes de clientes
+  const pendingRequests = appointments.filter(
+    (a) => a.status === "RESCHEDULE_REQUESTED" || a.status === "CANCEL_REQUESTED"
+  );
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
@@ -163,13 +389,181 @@ export default function AgendaPage() {
           />
 
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-gradient-to-r from-blue-700 to-blue-600 text-white hover:bg-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20"
+            onClick={() => {
+              setCreateErrorMsg("");
+              setIsModalOpen(true);
+            }}
+            className="px-4 py-2 bg-gradient-to-r from-blue-700 to-blue-600 text-white hover:bg-white hover:text-black rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-lg shadow-blue-500/20"
           >
             <Plus className="w-4 h-4" /> Novo Agendamento
           </button>
         </div>
       </div>
+
+      {/* ── CARD ESPECIAL: CONTROLE DE ESCALA FLEXÍVEL / 4X4 DO DONO (MR. BASTOS) ── */}
+      {isAdmin && (
+        <div className="bg-gradient-to-r from-blue-600/10 via-white/[0.02] to-transparent border border-blue-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center border transition-all ${
+              isOwnerAvailable ? "bg-blue-600/20 border-blue-500/50 text-blue-400" : "bg-white/5 border-white/10 text-gray-500"
+            }`}>
+              <Power className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase tracking-wider font-mono px-2 py-0.5 rounded font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                  Escala 4x4 / Flexível
+                </span>
+                <span className={`w-2 h-2 rounded-full ${isOwnerAvailable ? "bg-emerald-400 animate-pulse" : "bg-gray-500"}`} />
+              </div>
+              <h4 className="text-sm font-semibold text-white mt-0.5">
+                Disponibilidade de Mr. Bastos (Dono) para Agendamentos
+              </h4>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {isOwnerAvailable
+                  ? "Ativo no site: Clientes podem selecionar Mr. Bastos na lista pública de barbeiros."
+                  : "Em folga / Oculto: Seu nome está oculto no site. Apenas os outros barbeiros recebem agendamentos."}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={toggleOwnerAvailability}
+            disabled={isTogglingOwner}
+            className={`px-4 py-2.5 rounded-xl font-bold uppercase tracking-wider text-xs flex items-center gap-2 transition-all shrink-0 ${
+              isOwnerAvailable 
+                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500 hover:text-black" 
+                : "bg-white/5 text-gray-400 border border-white/10 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            {isTogglingOwner ? (
+              "Atualizando..."
+            ) : isOwnerAvailable ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Trabalhando Hoje (Ativo)</span>
+              </>
+            ) : (
+              <>
+                <Power className="w-4 h-4 text-gray-400" />
+                <span>Em Folga (Oculto no Site)</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
+      {/* ── ALERTA DE DOMINGO OU FERIADO SELECIONADO ── */}
+      {currentDayStatus.isClosed && (
+        <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-3">
+          <span className="text-2xl">{currentDayStatus.isSunday ? "🚫" : "🏛️"}</span>
+          <div>
+            <h4 className="text-sm font-bold text-red-200 uppercase tracking-wider">
+              {currentDayStatus.isSunday ? "Barbearia Fechada aos Domingos" : "Barbearia Fechada no Feriado"}
+            </h4>
+            <p className="text-xs text-red-300 mt-0.5">{currentDayStatus.reason}</p>
+            <p className="text-[11px] text-gray-400 mt-1">
+              Clientes que acessarem o site nesta data verão o aviso oficial de fechamento.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ── SEÇÃO DE SOLICITAÇÕES PENDENTES DE CLIENTES (REAGENDAMENTOS & CANCELAMENTOS) ── */}
+      {pendingRequests.length > 0 && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-3xl p-5 md:p-6 space-y-4">
+          <div className="flex items-center gap-2 text-amber-300">
+            <AlertCircle className="w-5 h-5" />
+            <h3 className="font-serif text-lg font-bold">
+              Solicitações de Clientes Pendentes de Aprovação ({pendingRequests.length})
+            </h3>
+          </div>
+
+          <div className="grid gap-3">
+            {pendingRequests.map((apt) => {
+              const isReschedule = apt.status === "RESCHEDULE_REQUESTED";
+              const currentTime = getDisplayTime(apt.date);
+              const requestedTime = apt.requestedDate ? getDisplayTime(apt.requestedDate) : "";
+              const requestedDate = apt.requestedDate ? apt.requestedDate.substring(0, 10).split("-").reverse().join("/") : "";
+              const barberName = BARBERS.find(b => b.id === apt.barberId)?.name.split(" ")[0] || "Barbeiro";
+
+              return (
+                <div 
+                  key={apt.id}
+                  className="p-4 bg-[#050B14] border border-amber-500/30 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4"
+                >
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                        isReschedule ? "bg-blue-600/20 text-blue-400 border border-blue-500/30" : "bg-red-500/20 text-red-400 border border-red-500/30"
+                      }`}>
+                        {isReschedule ? "🔄 Solicitação de Reagendamento" : "⚠️ Solicitação de Cancelamento"}
+                      </span>
+                      <span className="text-xs text-gray-400">Barbeiro: <strong>{barberName}</strong></span>
+                    </div>
+
+                    <h4 className="text-white font-medium text-base">
+                      {apt.user?.name || "Cliente"} · <span className="text-gray-400 text-sm">{apt.service?.name}</span>
+                    </h4>
+
+                    {isReschedule ? (
+                      <div className="text-xs text-gray-300 mt-1 flex flex-wrap items-center gap-2">
+                        <span>Horário Atual: <strong className="text-gray-400">{currentTime}</strong></span>
+                        <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
+                        <span className="text-amber-300 font-bold">
+                          Deseja mudar para: {requestedDate} às {requestedTime}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 mt-1">
+                        O cliente solicitou cancelar o horário de <strong>{currentTime}</strong> após o prazo inicial de 30 minutos.
+                      </p>
+                    )}
+
+                    <p className="text-[11px] text-gray-500 font-mono mt-1">
+                      WhatsApp: {apt.user?.phone || "Não informado"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isReschedule ? (
+                      <>
+                        <button
+                          onClick={() => handleApproveReschedule(apt)}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500 hover:text-black font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
+                        >
+                          <Check className="w-4 h-4" /> Aprovar Reagendamento
+                        </button>
+                        <button
+                          onClick={() => handleRejectReschedule(apt)}
+                          className="px-3 py-2 rounded-xl bg-white/5 text-gray-400 hover:bg-red-500/20 hover:text-red-300 font-semibold text-xs transition-colors"
+                        >
+                          Recusar
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleApproveCancel(apt)}
+                          className="px-3.5 py-2 rounded-xl bg-red-500/20 text-red-300 border border-red-500/30 hover:bg-red-500 hover:text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5"
+                        >
+                          <Check className="w-4 h-4" /> Aceitar Cancelamento
+                        </button>
+                        <button
+                          onClick={() => handleRejectCancel(apt)}
+                          className="px-3 py-2 rounded-xl bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white font-semibold text-xs transition-colors"
+                        >
+                          Manter Agendamento
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── LISTA DE HORÁRIOS ── */}
       <div className="bg-white/5 border border-white/10 rounded-3xl p-6 md:p-8 backdrop-blur-md">
@@ -192,7 +586,8 @@ export default function AgendaPage() {
           <div className="grid gap-3">
             {appointments.map((apt) => {
               const barberInfo = BARBERS.find(b => b.id === apt.barberId) || BARBERS[0];
-              const aptTime = new Date(apt.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+              // Usando getDisplayTime para garantir hora idêntica ao fuso de Brasília sem atraso de 3 horas
+              const aptTime = getDisplayTime(apt.date);
               const isOwnerCut = barberInfo.role === "ADMIN";
               const cutPrice = Number(apt.service?.price || 0);
               const barberCommission = isOwnerCut ? cutPrice : cutPrice * 0.45;
@@ -200,7 +595,13 @@ export default function AgendaPage() {
               return (
                 <div 
                   key={apt.id} 
-                  className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-black/20 border border-white/5 rounded-2xl hover:border-blue-500/30 transition-all gap-4"
+                  className={`flex flex-col md:flex-row md:items-center justify-between p-5 bg-black/20 border rounded-2xl transition-all gap-4 ${
+                    apt.status === 'CANCELLED' 
+                      ? 'border-red-500/20 opacity-60' 
+                      : apt.status === 'RESCHEDULE_REQUESTED'
+                      ? 'border-amber-500/40 bg-amber-500/[0.03]'
+                      : 'border-white/5 hover:border-blue-500/30'
+                  }`}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-[#050B14] border border-white/10 flex flex-col items-center justify-center font-mono shrink-0">
@@ -231,13 +632,21 @@ export default function AgendaPage() {
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap items-center gap-3 justify-end">
+                  <div className="flex flex-wrap items-center gap-2.5 justify-end">
                     <span className={`text-[10px] uppercase tracking-widest px-3 py-1 rounded-full font-bold border ${
                       apt.status === 'CONFIRMED' ? 'border-blue-500/30 text-blue-400 bg-blue-600/10' : 
                       apt.status === 'COMPLETED' ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/10' : 
-                      apt.status === 'CANCELLED' ? 'border-red-500/30 text-red-400 bg-red-500/10' : 'border-yellow-500/30 text-yellow-400 bg-yellow-500/10'
+                      apt.status === 'CANCELLED' ? 'border-red-500/30 text-red-400 bg-red-500/10' : 
+                      apt.status === 'RESCHEDULE_REQUESTED' ? 'border-amber-500/30 text-amber-400 bg-amber-500/10' :
+                      apt.status === 'CANCEL_REQUESTED' ? 'border-rose-500/30 text-rose-400 bg-rose-500/10' :
+                      'border-yellow-500/30 text-yellow-400 bg-yellow-500/10'
                     }`}>
-                      {apt.status === 'CONFIRMED' ? 'Confirmado' : apt.status === 'COMPLETED' ? 'Concluído' : apt.status === 'CANCELLED' ? 'Cancelado' : 'Pendente'}
+                      {apt.status === 'CONFIRMED' ? 'Confirmado' : 
+                       apt.status === 'COMPLETED' ? 'Concluído' : 
+                       apt.status === 'CANCELLED' ? 'Cancelado (Livre)' : 
+                       apt.status === 'RESCHEDULE_REQUESTED' ? 'Reagendamento Pendente' :
+                       apt.status === 'CANCEL_REQUESTED' ? 'Cancelamento Pendente' :
+                       'Pendente'}
                     </span>
 
                     {/* Botão de contato no WhatsApp do cliente */}
@@ -252,19 +661,38 @@ export default function AgendaPage() {
                         <MessageCircle className="w-4 h-4" />
                       </a>
                     )}
+
+                    {/* BOTÃO ALTERAR HORÁRIO / REAGENDAR PELO DONO */}
+                    {apt.status !== 'CANCELLED' && (
+                      <button
+                        onClick={() => openEditModal(apt)}
+                        className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-blue-600 hover:text-white border border-white/10 text-gray-300 text-xs font-medium transition-all flex items-center gap-1"
+                        title="Alterar data, horário ou barbeiro deste agendamento"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Alterar</span>
+                      </button>
+                    )}
                     
                     {apt.status === 'PENDING' && (
                       <button onClick={() => updateStatus(apt.id, 'CONFIRMED')} className="text-[10px] uppercase font-bold tracking-wider px-3 py-2 rounded-lg bg-white/10 hover:bg-blue-600 hover:text-white transition-colors">
                         Confirmar
                       </button>
                     )}
+                    
                     {apt.status !== 'COMPLETED' && apt.status !== 'CANCELLED' && (
                       <button onClick={() => updateStatus(apt.id, 'COMPLETED')} className="text-[10px] uppercase font-bold tracking-wider px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500 hover:text-black transition-all">
                         Finalizar
                       </button>
                     )}
+
+                    {/* CANCELAMENTO PELO DONO (LIBERA O HORÁRIO IMEDIATAMENTE) */}
                     {apt.status !== 'CANCELLED' && apt.status !== 'COMPLETED' && (
-                      <button onClick={() => updateStatus(apt.id, 'CANCELLED')} className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors" title="Cancelar horário">
+                      <button 
+                        onClick={() => handleOwnerCancel(apt)} 
+                        className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors" 
+                        title="Cancelar atendimento e liberar este horário na agenda"
+                      >
                         <X className="w-4 h-4" />
                       </button>
                     )}
@@ -276,7 +704,133 @@ export default function AgendaPage() {
         )}
       </div>
 
-      {/* ── MODAL: NOVO AGENDAMENTO COM TODAS AS 9 OPÇÕES DE SERVIÇOS ── */}
+      {/* ── MODAL: ALTERAR / EDITAR AGENDAMENTO (DONO & EQUIPE) ── */}
+      <AnimatePresence>
+        {editingApt && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-[#050B14]/85 backdrop-blur-md" onClick={() => setEditingApt(null)} />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-md bg-[#050B14] border border-blue-500/40 rounded-3xl p-6 z-10 shadow-2xl space-y-5"
+            >
+              <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                <div>
+                  <h3 className="text-xl font-serif text-white flex items-center gap-2">
+                    <Edit3 className="w-4 h-4 text-blue-400" /> Alterar Agendamento
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Cliente: <strong className="text-white">{editingApt.user?.name}</strong>
+                  </p>
+                </div>
+                <button onClick={() => setEditingApt(null)} className="text-gray-400 hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {editSuccessMsg && (
+                <div className="p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  <span>{editSuccessMsg}</span>
+                </div>
+              )}
+
+              {editErrorMsg && (
+                <div className="p-3 bg-red-500/15 border border-red-500/30 rounded-xl text-red-300 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{editErrorMsg}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSaveEdit} className="space-y-4">
+                {/* Data */}
+                <div>
+                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1 font-medium">
+                    Data do Atendimento
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
+                  />
+                </div>
+
+                {/* Horário */}
+                <div>
+                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1 font-medium">
+                    Novo Horário
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={editTime}
+                    onChange={(e) => setEditTime(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
+                  />
+                </div>
+
+                {/* Barbeiro Responsável */}
+                <div>
+                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1 font-medium">
+                    Barbeiro
+                  </label>
+                  <select
+                    value={editBarberId}
+                    onChange={(e) => setEditBarberId(e.target.value)}
+                    className="w-full bg-[#050B14] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    {BARBERS.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name} ({b.role === "ADMIN" ? "Dono - 100%" : "45%"})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Serviço */}
+                <div>
+                  <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1 font-medium">
+                    Serviço
+                  </label>
+                  <select
+                    value={editServiceId}
+                    onChange={(e) => setEditServiceId(e.target.value)}
+                    className="w-full bg-[#050B14] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    {OFFICIAL_SERVICES.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} - R$ {s.price}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="pt-2 flex items-center gap-2">
+                  <button
+                    type="submit"
+                    disabled={isSavingEdit}
+                    className="flex-1 py-3 bg-blue-600 hover:bg-white hover:text-black text-white font-bold uppercase tracking-wider text-xs rounded-xl transition-all shadow-lg shadow-blue-500/20"
+                  >
+                    {isSavingEdit ? "Salvando..." : "Salvar Alteração"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingApt(null)}
+                    className="px-4 py-3 bg-white/5 hover:bg-white/10 text-gray-400 text-xs font-semibold rounded-xl"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL: NOVO AGENDAMENTO MANUAL / BALCÃO ── */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
@@ -296,6 +850,13 @@ export default function AgendaPage() {
                   <X className="w-5 h-5" />
                 </button>
               </div>
+
+              {createErrorMsg && (
+                <div className="mb-4 p-3 bg-red-500/15 border border-red-500/30 rounded-xl text-red-300 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{createErrorMsg}</span>
+                </div>
+              )}
 
               <form onSubmit={handleCreateAppointment} className="space-y-4 overflow-y-auto pr-1 flex-1">
                 {/* Nome do Cliente */}
@@ -369,7 +930,7 @@ export default function AgendaPage() {
                   )}
                 </div>
 
-                {/* Serviço Selecionado (TODAS AS 9 OPÇÕES OFICIAIS) */}
+                {/* Serviço Selecionado */}
                 <div>
                   <label className="block text-gray-400 text-xs uppercase tracking-wider mb-1 font-medium">
                     Serviço ou Combo Desejado
@@ -404,7 +965,7 @@ export default function AgendaPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full py-4 bg-blue-600 hover:bg-white text-black font-bold uppercase tracking-widest text-xs rounded-xl mt-4 transition-all shadow-lg shadow-blue-500/20"
+                  className="w-full py-4 bg-blue-600 hover:bg-white hover:text-black text-white font-bold uppercase tracking-widest text-xs rounded-xl mt-4 transition-all shadow-lg shadow-blue-500/20"
                 >
                   {isSubmitting ? "Agendando..." : "Salvar Agendamento"}
                 </button>

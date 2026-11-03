@@ -3,10 +3,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { useSession, signIn } from "next-auth/react";
-import { X, Calendar, Clock, ChevronRight, CheckCircle2, User, Scissors, Star, Mail, Phone, Lock, Shield, Sparkles, Check, Edit3 } from "lucide-react";
+import { X, Calendar, Clock, ChevronRight, CheckCircle2, User, Scissors, Star, Mail, Phone, Lock, Shield, Sparkles, Check, Edit3, AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { BARBERS, BarberData } from "@/lib/barbers";
 import { OFFICIAL_SERVICES, ServiceItem } from "@/lib/services";
+import { checkDayStatus } from "@/lib/holidays";
 
 export default function BookingModal({ 
   isOpen, 
@@ -26,10 +27,12 @@ export default function BookingModal({
   const [step, setStep] = useState(1); // 1: Serviço, 2: Barbeiro, 3: Data/Hora e Dados do Cliente
   const [services, setServices] = useState<ServiceItem[]>(OFFICIAL_SERVICES);
   const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+  const [barbersList, setBarbersList] = useState<BarberData[]>(BARBERS);
   const [selectedBarber, setSelectedBarber] = useState<BarberData>(BARBERS[0]); // Padrão Mr. Bastos
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [dayClosedInfo, setDayClosedInfo] = useState<{ isClosed: boolean; reason: string | null } | null>(null);
   
   // Dados do Cliente
   const [clientName, setClientName] = useState("");
@@ -81,6 +84,21 @@ export default function BookingModal({
     if (isOpen) {
       setServices(OFFICIAL_SERVICES);
       
+      // Busca lista de barbeiros ativos (respeitando a escala flexível 4x4 do dono)
+      fetch("/api/barbers")
+        .then((res) => res.json())
+        .then((data) => {
+          const list: BarberData[] = Array.isArray(data) ? data : (data?.barbers || []);
+          if (list.length > 0) {
+            setBarbersList(list);
+            setSelectedBarber((prev) => {
+              const found = list.find((b) => b.id === prev?.id);
+              return found || list[0];
+            });
+          }
+        })
+        .catch(() => {});
+
       if (initialServiceId) {
         const s = OFFICIAL_SERVICES.find(
           (d) => d.id === initialServiceId || d.name.toLowerCase() === initialServiceId.toLowerCase()
@@ -97,10 +115,10 @@ export default function BookingModal({
         setSelectedService(null);
       }
 
-      setSelectedBarber(BARBERS[0]);
       setSelectedDate("");
       setSelectedTime("");
       setAvailableTimes([]);
+      setDayClosedInfo(null);
       setIsSuccess(false);
       setErrorMsg("");
     }
@@ -109,6 +127,16 @@ export default function BookingModal({
   // Busca horários disponíveis quando a data OU o barbeiro mudar
   useEffect(() => {
     if (selectedDate && selectedBarber) {
+      // 1. Verifica se a data selecionada é domingo ou feriado (Nacional ou Alagoinhas - BA)
+      const dayCheck = checkDayStatus(selectedDate);
+      if (dayCheck.isClosed) {
+        setDayClosedInfo(dayCheck);
+        setAvailableTimes([]);
+        setSelectedTime("");
+        return;
+      }
+      setDayClosedInfo(null);
+
       const now = new Date();
       const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
       const nowTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
@@ -116,6 +144,12 @@ export default function BookingModal({
       fetch(`/api/appointments/available?date=${selectedDate}&barberId=${selectedBarber.id}`)
         .then((res) => res.json())
         .then((data) => {
+          if (data.isClosed) {
+            setDayClosedInfo({ isClosed: true, reason: data.reason });
+            setAvailableTimes([]);
+            setSelectedTime("");
+            return;
+          }
           if (Array.isArray(data.availableTimes)) {
             let times = data.availableTimes;
             if (selectedDate === todayStr) {
@@ -142,6 +176,7 @@ export default function BookingModal({
     } else {
       setAvailableTimes([]);
       setSelectedTime("");
+      setDayClosedInfo(null);
     }
   }, [selectedDate, selectedBarber]);
 
@@ -166,6 +201,13 @@ export default function BookingModal({
       return;
     }
 
+    // Validação estrita de feriados e domingos
+    const dayCheck = checkDayStatus(selectedDate);
+    if (dayCheck.isClosed) {
+      setErrorMsg(dayCheck.reason || "A barbearia está fechada neste dia (domingo ou feriado). Escolha outra data.");
+      return;
+    }
+
     // Validação estrita de horário passado
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -180,7 +222,7 @@ export default function BookingModal({
     setErrorMsg("");
 
     setConfirmedBarber(selectedBarber);
-    const fullDate = `${selectedDate}T${selectedTime}:00Z`;
+    const fullDate = `${selectedDate}T${selectedTime}:00-03:00`;
 
     try {
       const res = await fetch("/api/appointments", {
@@ -409,7 +451,7 @@ export default function BookingModal({
                     </p>
 
                     <div className="space-y-3">
-                      {BARBERS.map((barber) => {
+                      {barbersList.map((barber) => {
                         const isSelected = selectedBarber?.id === barber.id;
                         const isOwner = barber.role === "ADMIN";
 
@@ -667,6 +709,19 @@ export default function BookingModal({
                             <p className="text-xs text-gray-500 italic py-6 text-center border border-dashed border-white/10 rounded-xl">
                               Selecione uma data acima para consultar a agenda de {selectedBarber?.name.split(" ")[0]}.
                             </p>
+                          ) : dayClosedInfo?.isClosed ? (
+                            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-2">
+                              <div className="flex items-center gap-2 font-bold text-amber-300">
+                                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                                <span>Barbearia Fechada</span>
+                              </div>
+                              <p className="leading-relaxed">
+                                {dayClosedInfo.reason || "Não abrimos aos domingos e feriados."}
+                              </p>
+                              <p className="text-[11px] text-amber-400/80">
+                                Por favor, selecione outro dia de segunda a sábado (exceto feriados) para agendar seu corte.
+                              </p>
+                            </div>
                           ) : (
                             <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
                               {availableTimes.length === 0 ? (

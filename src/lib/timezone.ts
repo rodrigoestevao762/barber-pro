@@ -41,13 +41,31 @@ export function getBrazilDateAndTimeString(d: Date | string): { date: string; ti
 }
 
 export function formatAptTimeToHHMM(d: Date | string): string {
-  const dateObj = typeof d === "string" ? new Date(d) : d;
+  return getDisplayTime(d);
+}
+
+/**
+ * Retorna o horário formatado seguro em "HH:MM",
+ * tratando tanto strings com 'Z' salvas incorretamente quanto datas UTC sem distorção.
+ */
+export function getDisplayTime(dateInput: string | Date): string {
+  if (typeof dateInput === "string") {
+    const tIndex = dateInput.indexOf("T");
+    if (tIndex !== -1 && dateInput.length >= tIndex + 6) {
+      const timePart = dateInput.substring(tIndex + 1, tIndex + 6);
+      // Se a string termina com Z e não possui milissegundos (.000Z), foi salva diretamente com o horário digitado
+      if (dateInput.endsWith("Z") && !dateInput.includes(".")) {
+        return timePart;
+      }
+    }
+  }
+  const d = typeof dateInput === "string" ? new Date(dateInput) : dateInput;
   return new Intl.DateTimeFormat("pt-BR", {
     timeZone: "America/Sao_Paulo",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).format(dateObj);
+  }).format(d);
 }
 
 /**

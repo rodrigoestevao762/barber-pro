@@ -7,8 +7,11 @@ import {
   getAppointmentsForDate, 
   getAllStoredAppointments, 
   updateStoredAppointmentStatus, 
+  updateStoredAppointment,
+  getStoredAppointmentById,
   getLocalDateString 
 } from '@/lib/appointments-store';
+import { parseBrazilDateTime } from '@/lib/timezone';
 
 export async function GET(req: Request) {
   try {
@@ -261,24 +264,80 @@ export async function GET(req: Request) {
   }
 }
 
-// Atualizar status do agendamento (Confirmar / Concluir / Cancelar)
+// Atualizar agendamento (Confirmar / Concluir / Cancelar / Editar Horário / Aprovar Reagendamento)
 export async function PATCH(req: Request) {
   try {
-    const { id, status } = await req.json();
-    
+    const body = await req.json();
+    const { id, status, date, time, barberId, serviceId, action, requestedDate } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: "ID não informado" }, { status: 400 });
+    }
+
+    const updateData: any = {};
+    const storeUpdates: any = {};
+
+    if (action === "APPROVE_RESCHEDULE") {
+      const apt = getStoredAppointmentById(id);
+      const targetDate = requestedDate || apt?.requestedDate;
+      if (targetDate) {
+        updateData.date = new Date(targetDate);
+        updateData.status = "CONFIRMED";
+        storeUpdates.date = targetDate;
+        storeUpdates.status = "CONFIRMED";
+        storeUpdates.requestedDate = undefined;
+      }
+    } else if (action === "REJECT_RESCHEDULE") {
+      updateData.status = "CONFIRMED";
+      storeUpdates.status = "CONFIRMED";
+      storeUpdates.requestedDate = undefined;
+    } else if (action === "APPROVE_CANCEL") {
+      updateData.status = "CANCELLED";
+      storeUpdates.status = "CANCELLED";
+    } else if (action === "REJECT_CANCEL") {
+      updateData.status = "CONFIRMED";
+      storeUpdates.status = "CONFIRMED";
+    } else {
+      if (status) {
+        updateData.status = status;
+        storeUpdates.status = status;
+      }
+      if (requestedDate) {
+        storeUpdates.requestedDate = requestedDate;
+      }
+      if (date && time) {
+        const parsed = parseBrazilDateTime(date, time);
+        updateData.date = parsed;
+        storeUpdates.date = parsed.toISOString();
+      } else if (date) {
+        const parsed = parseBrazilDateTime(date);
+        updateData.date = parsed;
+        storeUpdates.date = parsed.toISOString();
+      }
+      if (barberId) {
+        updateData.barberId = barberId;
+        storeUpdates.barberId = barberId;
+      }
+      if (serviceId) {
+        updateData.serviceId = serviceId;
+        storeUpdates.service = { id: serviceId };
+      }
+    }
+
     // Atualiza no store em memória
-    updateStoredAppointmentStatus(id, status);
+    updateStoredAppointment(id, storeUpdates);
 
     try {
       const updated = await prisma.appointment.update({
         where: { id },
-        data: { status },
+        data: updateData,
+        include: { service: true, user: true, barber: true },
       });
-      return NextResponse.json({ success: true, updated });
+      return NextResponse.json({ success: true, updated, storeUpdates });
     } catch (dbErr) {
-      return NextResponse.json({ success: true, id, status });
+      return NextResponse.json({ success: true, id, updates: storeUpdates });
     }
   } catch (error) {
-    return NextResponse.json({ error: "Erro ao atualizar" }, { status: 500 });
+    return NextResponse.json({ error: "Erro ao atualizar agendamento" }, { status: 500 });
   }
 }
