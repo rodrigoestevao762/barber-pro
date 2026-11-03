@@ -213,7 +213,7 @@ export default function DashboardPage() {
         body: JSON.stringify({ 
           serviceId: serviceToUse.id, 
           barberId: targetBarber, 
-          date: `${selectedDate}T${timeStr}Z`, 
+          date: `${selectedDate}T${timeStr}-03:00`, 
           isWalkIn: true,
           status: "COMPLETED",
           clientName: walkInClientName.trim() || "Cliente Balcão",
@@ -755,96 +755,101 @@ export default function DashboardPage() {
               return (
                 <div 
                   key={apt.id}
-                  className="p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/15 transition-all"
+                  className="p-4 md:p-5 rounded-2xl bg-white/[0.03] border border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-white/15 transition-all overflow-hidden"
                 >
                   {/* Horário, Cliente e Serviço */}
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-[#050B14] border border-white/10 flex flex-col items-center justify-center font-mono shrink-0">
-                      <span className="text-xs text-gray-400 font-light">HORA</span>
-                      <span className="text-sm font-bold text-blue-400">{aptTime}</span>
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#050B14] border border-white/10 flex flex-col items-center justify-center font-mono shrink-0">
+                      <span className="text-[10px] sm:text-xs text-gray-400 font-light">HORA</span>
+                      <span className="text-xs sm:text-sm font-bold text-blue-400">{aptTime}</span>
                     </div>
 
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-base font-serif text-white">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm sm:text-base font-serif text-white truncate">
                           {apt.user?.name || "Cliente"}
                         </h4>
                         {/* Tag do Barbeiro Responsável */}
                         {isAdmin && selectedBarberFilter === "all" && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-white/5 border border-white/10 text-gray-300">
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-white/5 border border-white/10 text-gray-300 shrink-0">
                             ✂️ {barberInfo.name.split(" ")[0]}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-gray-400 mt-0.5">
-                        {apt.service?.name} · <strong className="text-white">R$ {cutPrice.toFixed(2)}</strong>
-                        {" · "}
+                      <p className="text-xs text-gray-400 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span>{apt.service?.name} · <strong className="text-white">R$ {cutPrice.toFixed(2)}</strong></span>
                         <span className="text-blue-400">
                           Comissão: R$ {barberCutShare.toFixed(2)} ({isOwnerCut ? "100%" : "45%"})
                         </span>
-                        {" · "}
+                      </p>
+                      <p className="text-[11px] text-gray-500 font-mono mt-0.5 truncate">
                         WhatsApp: {apt.user?.phone || "Não informado"}
                       </p>
                     </div>
                   </div>
 
-                  {/* Status e Ações */}
-                  <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      apt.status === "COMPLETED" 
-                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" 
-                        : apt.status === "CONFIRMED"
-                        ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                        : apt.status === "CANCELLED"
-                        ? "bg-red-500/15 text-red-400 border border-red-500/30"
-                        : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
-                    }`}>
-                      {apt.status === "COMPLETED" ? "Concluído" : apt.status === "CONFIRMED" ? "Confirmado" : apt.status === "CANCELLED" ? "Cancelado" : "Pendente"}
-                    </span>
+                  {/* Status e Ações - Totalmente responsivo para celular sem estourar a tela */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between md:justify-end gap-2.5 sm:gap-3 w-full md:w-auto border-t md:border-t-0 pt-2.5 md:pt-0 border-white/5">
+                    {/* Linha 1 no celular: Status + WhatsApp */}
+                    <div className="flex items-center justify-between sm:justify-start gap-2">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0 ${
+                        apt.status === "COMPLETED" 
+                          ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" 
+                          : apt.status === "CONFIRMED"
+                          ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
+                          : apt.status === "CANCELLED"
+                          ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                          : "bg-yellow-500/15 text-yellow-400 border border-yellow-500/30"
+                      }`}>
+                        {apt.status === "COMPLETED" ? "Concluído" : apt.status === "CONFIRMED" ? "Confirmado" : apt.status === "CANCELLED" ? "Cancelado" : "Pendente"}
+                      </span>
 
-                    {/* Botão de contato no WhatsApp do cliente */}
-                    {apt.user?.phone && (
-                      <a
-                        href={`https://wa.me/55${apt.user.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${apt.user.name}! Sou o ${barberInfo.name} da Mr. Bastos Barbearia. Confirmando seu horário para hoje às ${aptTime}!`)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all"
-                        title="Enviar mensagem no WhatsApp do cliente"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </a>
-                    )}
+                      {/* Botão de contato no WhatsApp do cliente */}
+                      {apt.user?.phone && (
+                        <a
+                          href={`https://wa.me/55${apt.user.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${apt.user.name}! Sou o ${barberInfo.name} da Mr. Bastos Barbearia. Confirmando seu horário para hoje às ${aptTime}!`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 sm:p-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all shrink-0"
+                          title="Enviar mensagem no WhatsApp do cliente"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </a>
+                      )}
+                    </div>
 
-                    {/* Botões de Ação para os Barbeiros e Dono */}
-                    {apt.status !== "COMPLETED" && apt.status !== "CANCELLED" && (
-                      <button 
-                        onClick={() => updateStatus(apt.id, "COMPLETED")}
-                        className="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 hover:text-black text-emerald-300 text-xs font-semibold transition-all shadow-sm"
-                      >
-                        Concluir Corte
-                      </button>
-                    )}
+                    {/* Linha 2 no celular: Botões de Ação para os Barbeiros e Dono */}
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-end">
+                      {apt.status !== "COMPLETED" && apt.status !== "CANCELLED" && (
+                        <button 
+                          onClick={() => updateStatus(apt.id, "COMPLETED")}
+                          className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 hover:text-black text-emerald-300 text-xs font-semibold transition-all shadow-sm shrink-0"
+                        >
+                          Concluir<span className="hidden sm:inline"> Corte</span>
+                        </button>
+                      )}
 
-                    {apt.status === "PENDING" && (
-                      <button 
-                        onClick={() => updateStatus(apt.id, "CONFIRMED")}
-                        className="px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500 hover:text-white text-blue-300 text-xs font-semibold transition-all"
-                      >
-                        Confirmar
-                      </button>
-                    )}
+                      {apt.status === "PENDING" && (
+                        <button 
+                          onClick={() => updateStatus(apt.id, "CONFIRMED")}
+                          className="px-2.5 sm:px-3 py-1.5 rounded-lg bg-blue-500/20 hover:bg-blue-500 hover:text-white text-blue-300 text-xs font-semibold transition-all shrink-0"
+                        >
+                          Confirmar
+                        </button>
+                      )}
 
-                    {/* Botão Cancelar com Destaque e Redirecionamento WhatsApp */}
-                    {apt.status !== "CANCELLED" && (
-                      <button 
-                        onClick={() => openCancelModal(apt)}
-                        className="px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500 hover:text-white border border-red-500/30 text-red-300 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
-                        title="Cancelar atendimento por imprevisto e avisar cliente no WhatsApp"
-                      >
-                        <X className="w-3.5 h-3.5" />
-                        <span>Cancelar</span>
-                      </button>
-                    )}
+                      {/* Botão Cancelar com Destaque e Redirecionamento WhatsApp */}
+                      {apt.status !== "CANCELLED" && (
+                        <button 
+                          onClick={() => openCancelModal(apt)}
+                          className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500 hover:text-white border border-red-500/30 text-red-300 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1 shadow-sm shrink-0"
+                          title="Cancelar atendimento por imprevisto e avisar cliente no WhatsApp"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Cancelar</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );

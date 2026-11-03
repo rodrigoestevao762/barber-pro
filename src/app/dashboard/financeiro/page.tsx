@@ -190,7 +190,7 @@ export default function FinanceiroPage() {
         body: JSON.stringify({
           serviceId: chosenService.id,
           barberId: targetBarberId,
-          date: `${selectedDate}T${timeStr}Z`,
+          date: `${selectedDate}T${timeStr}-03:00`,
           isWalkIn: true,
           status: "COMPLETED",
           clientName: "Cliente Balcão",

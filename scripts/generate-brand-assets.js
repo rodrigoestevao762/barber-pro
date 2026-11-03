@@ -130,3 +130,4 @@ async function generateAllBrandAssets() {
 }
 
 generateAllBrandAssets().catch(console.error);
+
