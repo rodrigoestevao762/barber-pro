@@ -2,11 +2,12 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock, CreditCard, Banknote, Sparkles, Calendar } from "lucide-react";
+import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock, CreditCard, Banknote, Sparkles, Calendar, Power, CheckCircle2, MessageCircle, AlertCircle, Edit3, Send } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { BARBERS, BarberData } from "@/lib/barbers";
 import { OFFICIAL_SERVICES, ServiceItem } from "@/lib/services";
+import { getDisplayTime } from "@/lib/timezone";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -64,6 +65,107 @@ export default function DashboardPage() {
     return `${year}-${month}-${day}`;
   });
   const [selectedBarberFilter, setSelectedBarberFilter] = useState<string>("all");
+
+  // Disponibilidade do Dono (Escala Flexível / 4x4)
+  const [isOwnerAvailable, setIsOwnerAvailable] = useState(true);
+  const [isTogglingOwner, setIsTogglingOwner] = useState(false);
+
+  // Modal de Cancelamento por Imprevisto com WhatsApp
+  const [cancellingApt, setCancellingApt] = useState<any | null>(null);
+  const [cancelReasonPreset, setCancelReasonPreset] = useState<"imprevisto" | "ajuste" | "cliente">("imprevisto");
+  const [customCancelMsg, setCustomCancelMsg] = useState("");
+  const [isProcessingCancel, setIsProcessingCancel] = useState(false);
+  const [cancelSuccessWhatsappUrl, setCancelSuccessWhatsappUrl] = useState<string | null>(null);
+
+  // Carrega status da escala 4x4 do dono
+  useEffect(() => {
+    fetch('/api/barbers?all=true')
+      .then((res) => res.json())
+      .then((data) => {
+        const list = Array.isArray(data) ? data : (data?.barbers || []);
+        const owner = list.find((b: any) => b.id === "barbeiro-dono");
+        if (owner) {
+          setIsOwnerAvailable(owner.isAvailable !== false);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const toggleOwnerAvailability = async () => {
+    setIsTogglingOwner(true);
+    const newStatus = !isOwnerAvailable;
+    try {
+      const res = await fetch('/api/barbers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ barberId: "barbeiro-dono", isAvailable: newStatus })
+      });
+      if (res.ok) {
+        setIsOwnerAvailable(newStatus);
+        setToastMessage(newStatus 
+          ? "Mr. Bastos está ATIVO no site! Clientes podem agendar com ele."
+          : "Mr. Bastos está em FOLGA da escala 4x4 (ocultado do agendamento online).");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsTogglingOwner(false);
+    }
+  };
+
+  const getCancelMessage = (apt: any, preset: "imprevisto" | "ajuste" | "cliente") => {
+    const barberName = BARBERS.find(b => b.id === apt.barberId)?.name.split(" ")[0] || "Mr. Bastos";
+    const aptTime = getDisplayTime(apt.date);
+    const aptDate = apt.date ? apt.date.substring(0, 10).split("-").reverse().join("/") : "";
+    const clientName = apt.user?.name || "Cliente";
+
+    if (preset === "imprevisto") {
+      return `Olá, ${clientName}! Sou o ${barberName} da Mr. Bastos Barbearia. Tive um imprevisto urgente hoje e precisei cancelar o seu horário das ${aptTime} (${aptDate}). Peço sinceras desculpas pelo ocorrido! Poderíamos reagendar para um outro horário ou dia que fique bom para você?`;
+    } else if (preset === "ajuste") {
+      return `Olá, ${clientName}! Informamos que seu horário das ${aptTime} (${aptDate}) na Mr. Bastos Barbearia precisou ser cancelado para ajuste da nossa escala de atendimento. O horário já está liberado caso queira remarcar pelo site ou por aqui!`;
+    } else {
+      return `Olá, ${clientName}! Confirmamos o cancelamento do seu agendamento no Mr. Bastos Barbearia para o dia ${aptDate} às ${aptTime}. Estamos à disposição para quando desejar agendar um novo atendimento!`;
+    }
+  };
+
+  const openCancelModal = (apt: any) => {
+    setCancellingApt(apt);
+    setCancelReasonPreset("imprevisto");
+    setCustomCancelMsg(getCancelMessage(apt, "imprevisto"));
+    setCancelSuccessWhatsappUrl(null);
+  };
+
+  const handleChangeCancelPreset = (preset: "imprevisto" | "ajuste" | "cliente") => {
+    setCancelReasonPreset(preset);
+    if (cancellingApt) {
+      setCustomCancelMsg(getCancelMessage(cancellingApt, preset));
+    }
+  };
+
+  const handleConfirmCancelWithWhatsApp = async (openWhatsApp: boolean = true) => {
+    if (!cancellingApt) return;
+    setIsProcessingCancel(true);
+    try {
+      await updateStatus(cancellingApt.id, "CANCELLED");
+      setToastMessage(`Agendamento de ${cancellingApt.user?.name || "Cliente"} cancelado. Horário liberado na agenda!`);
+      
+      const phoneDigits = (cancellingApt.user?.phone || "").replace(/\D/g, "");
+      if (phoneDigits && openWhatsApp) {
+        const cleanPhone = phoneDigits.startsWith("55") ? phoneDigits : `55${phoneDigits}`;
+        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(customCancelMsg)}`;
+        setCancelSuccessWhatsappUrl(whatsappUrl);
+        try {
+          window.open(whatsappUrl, "_blank");
+        } catch (_) {}
+      } else {
+        setCancellingApt(null);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsProcessingCancel(false);
+    }
+  };
 
   const fetchDashboard = async () => {
     try {
@@ -254,6 +356,68 @@ export default function DashboardPage() {
           </button>
         </div>
       </div>
+
+      {/* ── CARD DE DISPONIBILIDADE DO DONO (ESCALA FLEXÍVEL / 4X4) ── */}
+      {isAdmin && (
+        <div className="p-5 md:p-6 bg-[#050B14] border border-blue-500/30 rounded-3xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-start gap-3.5">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${
+              isOwnerAvailable 
+                ? "bg-blue-600/20 text-blue-400 border-blue-500/40 shadow-lg shadow-blue-500/20" 
+                : "bg-white/5 text-gray-500 border-white/10"
+            }`}>
+              <Power className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-blue-400">
+                  Escala 4x4 / Flexível
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  isOwnerAvailable 
+                    ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" 
+                    : "bg-red-500/20 text-red-300 border border-red-500/30"
+                }`}>
+                  {isOwnerAvailable ? "Disponível no Site" : "Oculto dos Clientes"}
+                </span>
+              </div>
+              <h3 className="text-lg font-serif text-white mt-0.5">
+                Disponibilidade de Mr. Bastos (Dono) para Agendamentos
+              </h3>
+              <p className="text-xs text-gray-400 mt-1 max-w-xl leading-relaxed">
+                {isOwnerAvailable 
+                  ? "Ativo no site: Clientes podem selecionar Mr. Bastos na lista pública de barbeiros." 
+                  : "Folga da escala 4x4: Mr. Bastos foi ocultado da lista pública de agendamento online."}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleOwnerAvailability}
+            disabled={isTogglingOwner}
+            className={`px-5 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all duration-300 flex items-center justify-center gap-2 shrink-0 ${
+              isOwnerAvailable
+                ? "bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-lg shadow-blue-500/25 hover:brightness-110"
+                : "bg-white/10 hover:bg-white/15 text-gray-300 border border-white/10"
+            }`}
+          >
+            {isTogglingOwner ? (
+              <span>Atualizando...</span>
+            ) : isOwnerAvailable ? (
+              <>
+                <CheckCircle2 className="w-4 h-4 text-white" />
+                <span>Trabalhando Hoje (Ativo)</span>
+              </>
+            ) : (
+              <>
+                <Power className="w-4 h-4 text-gray-400" />
+                <span>Folga / Desativado (Ativar)</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* ── BENTO GRID DE CARDS PRINCIPAIS (COMISSÕES & FATURAMENTO) ── */}
       {isAdmin && selectedBarberFilter === "all" ? (
@@ -583,7 +747,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             {dashboardData.appointments?.map((apt: any) => {
               const barberInfo = BARBERS.find(b => b.id === apt.barberId) || BARBERS[0];
-              const aptTime = new Date(apt.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+              const aptTime = getDisplayTime(apt.date);
               const isOwnerCut = barberInfo.role === "ADMIN";
               const cutPrice = Number(apt.service?.price || 0);
               const barberCutShare = isOwnerCut ? cutPrice : cutPrice * 0.45;
@@ -638,6 +802,19 @@ export default function DashboardPage() {
                       {apt.status === "COMPLETED" ? "Concluído" : apt.status === "CONFIRMED" ? "Confirmado" : apt.status === "CANCELLED" ? "Cancelado" : "Pendente"}
                     </span>
 
+                    {/* Botão de contato no WhatsApp do cliente */}
+                    {apt.user?.phone && (
+                      <a
+                        href={`https://wa.me/55${apt.user.phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${apt.user.name}! Sou o ${barberInfo.name} da Mr. Bastos Barbearia. Confirmando seu horário para hoje às ${aptTime}!`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-black transition-all"
+                        title="Enviar mensagem no WhatsApp do cliente"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                      </a>
+                    )}
+
                     {/* Botões de Ação para os Barbeiros e Dono */}
                     {apt.status !== "COMPLETED" && apt.status !== "CANCELLED" && (
                       <button 
@@ -657,13 +834,15 @@ export default function DashboardPage() {
                       </button>
                     )}
 
+                    {/* Botão Cancelar com Destaque e Redirecionamento WhatsApp */}
                     {apt.status !== "CANCELLED" && (
                       <button 
-                        onClick={() => updateStatus(apt.id, "CANCELLED")}
-                        className="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors"
-                        title="Cancelar agendamento"
+                        onClick={() => openCancelModal(apt)}
+                        className="px-3 py-1.5 rounded-xl bg-red-500/15 hover:bg-red-500 hover:text-white border border-red-500/30 text-red-300 text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+                        title="Cancelar atendimento por imprevisto e avisar cliente no WhatsApp"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5" />
+                        <span>Cancelar</span>
                       </button>
                     )}
                   </div>
@@ -891,6 +1070,167 @@ export default function DashboardPage() {
         </AnimatePresence>,
         document.body
       )}
+
+      {/* ── MODAL DE CANCELAMENTO POR IMPREVISTO COM REDIRECIONAMENTO WHATSAPP ── */}
+      <AnimatePresence>
+        {cancellingApt && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setCancellingApt(null)}
+              className="absolute inset-0 bg-[#02050A]/90 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#050B14] border border-red-500/40 rounded-3xl p-6 sm:p-8 z-10 shadow-2xl text-white space-y-5"
+            >
+              <div className="flex justify-between items-center pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2.5 text-red-400">
+                  <div className="w-9 h-9 rounded-xl bg-red-500/20 flex items-center justify-center border border-red-500/40">
+                    <X className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-serif font-bold text-white">Cancelar Atendimento</h3>
+                    <p className="text-[11px] text-gray-400">Liberar horário na agenda e notificar cliente</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setCancellingApt(null)}
+                  className="p-1.5 rounded-full text-gray-400 hover:text-white hover:bg-white/10"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Informações do Agendamento */}
+              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-1.5 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Cliente:</span>
+                  <strong className="text-white">{cancellingApt.user?.name || "Cliente"}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Serviço:</span>
+                  <span className="text-gray-200">{cancellingApt.service?.name} (R$ {cancellingApt.service?.price})</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Horário Marcado:</span>
+                  <strong className="text-blue-400 font-mono">{getDisplayTime(cancellingApt.date)}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">WhatsApp:</span>
+                  <span className="text-gray-200 font-mono">{cancellingApt.user?.phone || "Não informado"}</span>
+                </div>
+              </div>
+
+              {/* Seletor de Motivo / Mensagem */}
+              <div className="space-y-2">
+                <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold">
+                  Motivo do Cancelamento:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleChangeCancelPreset("imprevisto")}
+                    className={`p-2.5 rounded-xl text-xs font-semibold border transition-all text-center ${
+                      cancelReasonPreset === "imprevisto"
+                        ? "border-red-500 bg-red-500/20 text-red-200 shadow-md"
+                        : "border-white/10 text-gray-400 hover:border-white/20"
+                    }`}
+                  >
+                    🚨 Imprevisto
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChangeCancelPreset("ajuste")}
+                    className={`p-2.5 rounded-xl text-xs font-semibold border transition-all text-center ${
+                      cancelReasonPreset === "ajuste"
+                        ? "border-blue-500 bg-blue-500/20 text-blue-200 shadow-md"
+                        : "border-white/10 text-gray-400 hover:border-white/20"
+                    }`}
+                  >
+                    ⚖️ Ajuste Agenda
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleChangeCancelPreset("cliente")}
+                    className={`p-2.5 rounded-xl text-xs font-semibold border transition-all text-center ${
+                      cancelReasonPreset === "cliente"
+                        ? "border-emerald-500 bg-emerald-500/20 text-emerald-200 shadow-md"
+                        : "border-white/10 text-gray-400 hover:border-white/20"
+                    }`}
+                  >
+                    👤 A Pedido
+                  </button>
+                </div>
+              </div>
+
+              {/* Mensagem a ser enviada no WhatsApp */}
+              <div className="space-y-1.5">
+                <label className="block text-xs uppercase tracking-wider text-gray-400 font-semibold flex items-center justify-between">
+                  <span>Mensagem para o WhatsApp do Cliente:</span>
+                  <span className="text-[10px] text-emerald-400 font-normal">Editável</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={customCancelMsg}
+                  onChange={(e) => setCustomCancelMsg(e.target.value)}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl p-3 text-white text-xs leading-relaxed focus:border-blue-500 focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Link de Sucesso do WhatsApp (caso popup tenha sido bloqueado) */}
+              {cancelSuccessWhatsappUrl && (
+                <div className="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center justify-between gap-3">
+                  <span>Horário liberado no sistema!</span>
+                  <a
+                    href={cancelSuccessWhatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-[#25D366] text-white px-3 py-1.5 rounded-lg font-bold flex items-center gap-1.5 hover:bg-[#128C7E] transition-all shrink-0"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5" /> Abrir WhatsApp Agora
+                  </a>
+                </div>
+              )}
+
+              {/* Ações */}
+              <div className="pt-3 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setCancellingApt(null)}
+                  className="px-4 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:text-white text-xs uppercase tracking-wider font-semibold hover:bg-white/5 transition-all text-center"
+                >
+                  Voltar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleConfirmCancelWithWhatsApp(false)}
+                  disabled={isProcessingCancel}
+                  className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-gray-300 text-xs font-semibold uppercase tracking-wider transition-all disabled:opacity-50 text-center"
+                >
+                  Apenas Liberar Horário
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleConfirmCancelWithWhatsApp(true)}
+                  disabled={isProcessingCancel}
+                  className="px-5 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#25D366]/25 flex items-center justify-center gap-2 disabled:opacity-50 text-center"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>{isProcessingCancel ? "Cancelando..." : "Cancelar & Abrir WhatsApp"}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
