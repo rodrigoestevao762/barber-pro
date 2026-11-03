@@ -6,6 +6,7 @@ import { MapPin, Clock, ChevronRight, Play, Pause, Volume2, VolumeX, Star, Exter
 import { LogoMrBastos } from "@/components/LogoMrBastos";
 
 const GOOGLE_REVIEW_URL = "https://g.page/r/CRXf9JwKqxNQEBM/review";
+const GOOGLE_MAPS_URL = "https://www.google.com/maps/place/Mr.+Bastos+Barbearia/@-12.1389992,-38.4158771,17z/data=!4m6!3m5!1s0x716bdf7b3e01493:0x5013ab0a9cf4df15!8m2!3d-12.1390859!4d-38.4132289!16s%2Fg%2F11rschcdpj?entry=ttu&g_ep=EgoyMDI2MTAyOC4wIKXMDSoASAFQAw%3D%3D";
 
 const GALLERY_PHOTOS = [
   {
@@ -358,10 +359,10 @@ export default function NossaAreaSection() {
                   <span className="text-blue-400 text-xs font-medium tracking-wide">Alagoinhas – BA</span>
                 </p>
                 <a
-                  href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião"
+                  href={GOOGLE_MAPS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-center gap-2 text-blue-400 text-xs uppercase tracking-[0.2em] font-semibold group"
+                  className="mt-3 inline-flex items-center gap-2 text-blue-400 text-xs uppercase tracking-[0.2em] font-semibold group hover:text-white transition-colors"
                 >
                   Ver no mapa
                   <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />

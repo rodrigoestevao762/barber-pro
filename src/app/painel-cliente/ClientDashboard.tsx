@@ -446,7 +446,16 @@ export default function ClientDashboard() {
                       </strong>
                     </p>
                     <p className="text-xs text-gray-400 mt-2">
-                      Barbeiro responsável: <strong className="text-white">{upcomingApt.barber?.name || "Mr. Bastos (Dono)"}</strong> · Local: Hiper Gbarbosa, Alagoinhas BA
+                      Barbeiro responsável: <strong className="text-white">{upcomingApt.barber?.name || "Mr. Bastos (Dono)"}</strong> ·{" "}
+                      <a
+                        href="https://www.google.com/maps/place/Mr.+Bastos+Barbearia/@-12.1389992,-38.4158771,17z/data=!4m6!3m5!1s0x716bdf7b3e01493:0x5013ab0a9cf4df15!8m2!3d-12.1390859!4d-38.4132289!16s%2Fg%2F11rschcdpj?entry=ttu&g_ep=EgoyMDI2MTAyOC4wIKXMDSoASAFQAw%3D%3D"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-white underline transition-colors"
+                        title="Abrir localização da barbearia no Google Maps"
+                      >
+                        Local: Hiper Gbarbosa, Alagoinhas BA (Ver no Mapa)
+                      </a>
                     </p>
                   </div>
 

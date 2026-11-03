@@ -838,7 +838,7 @@ export default function Home() {
               >
                 WhatsApp (75) 9867-9820
               </a>
-              <a href="https://maps.google.com/?q=Hiper+Gbarbosa+Alagoinhas+BA+Av+Dantas+Bião" target="_blank" rel="noopener noreferrer" title="Alagoinhas - BA" className="text-gray-500 hover:text-blue-400 transition-colors"><MapPin className="w-4 h-4" /></a>
+              <a href="https://www.google.com/maps/place/Mr.+Bastos+Barbearia/@-12.1389992,-38.4158771,17z/data=!4m6!3m5!1s0x716bdf7b3e01493:0x5013ab0a9cf4df15!8m2!3d-12.1390859!4d-38.4132289!16s%2Fg%2F11rschcdpj?entry=ttu&g_ep=EgoyMDI2MTAyOC4wIKXMDSoASAFQAw%3D%3D" target="_blank" rel="noopener noreferrer" title="Mr. Bastos Barbearia no Google Maps (Alagoinhas - BA)" className="text-gray-500 hover:text-blue-400 transition-colors"><MapPin className="w-4 h-4" /></a>
            </div>
         </motion.footer>
       </section>
