@@ -31,15 +31,15 @@ export const metadata: Metadata = {
   authors: [{ name: "Mr. Bastos Barbearia" }],
   icons: {
     icon: [
-      { url: "/icon.png?v=2", sizes: "32x32", type: "image/png" },
-      { url: "/icon-192.png?v=2", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png?v=2", sizes: "512x512", type: "image/png" },
-      { url: "/favicon.ico?v=2", sizes: "any" },
+      { url: "/icon.png?v=3", sizes: "192x192", type: "image/png" },
+      { url: "/icon-192.png?v=3", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png?v=3", sizes: "512x512", type: "image/png" },
+      { url: "/favicon.ico?v=3", sizes: "any" },
     ],
     apple: [
-      { url: "/apple-icon.png?v=2", sizes: "180x180", type: "image/png" },
+      { url: "/apple-icon.png?v=3", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/favicon.ico?v=2",
+    shortcut: "/favicon.ico?v=3",
   },
   manifest: "/manifest.json",
   verification: {
@@ -52,9 +52,9 @@ export const metadata: Metadata = {
     siteName: "Mr. Bastos Barbearia",
     images: [
       {
-        url: "https://mrbastos.com.br/og-image.jpg",
-        width: 800,
-        height: 800,
+        url: "https://mrbastos.com.br/og-image.png?v=3",
+        width: 1200,
+        height: 630,
         alt: "Logo Oficial Mr. Bastos Barbearia",
       },
     ],
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Mr. Bastos Barbearia | O Padrão de Excelência",
     description: "Tradição, conforto e sofisticação em corte masculino, barba e visagismo em Alagoinhas - BA.",
-    images: ["https://mrbastos.com.br/og-image.jpg"],
+    images: ["https://mrbastos.com.br/og-image.png?v=3"],
   },
   alternates: {
     canonical: "https://mrbastos.com.br",
