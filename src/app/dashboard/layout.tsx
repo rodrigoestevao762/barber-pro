@@ -140,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="flex items-center gap-2 mb-1">
             {isAdmin ? (
               <span className="text-[10px] bg-gradient-to-r from-blue-700 to-blue-600 text-white font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                <Shield className="w-3 h-3" /> Proprietário (Dono)
+                <Shield className="w-3 h-3" /> {session?.user?.name?.toLowerCase().includes("jully") || session?.user?.email?.toLowerCase().includes("jully") ? "Administradora (Gestão)" : "Proprietário (Dono)"}
               </span>
             ) : (
               <span className="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1">

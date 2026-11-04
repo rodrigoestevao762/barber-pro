@@ -19,7 +19,18 @@ const PROVISIONAL_USERS = [
     name: "Mr. Bastos (Dono)",
     role: "ADMIN",
     barberId: "barbeiro-dono",
-    passwords: ["123", "admin123", "@Familia435"],
+    passwords: ["123", "admin123", "@Familia435", "@Familia435#"],
+  },
+  {
+    id: "admin-jully",
+    email: "jully_esp@hotmail.com",
+    aliases: ["jully@mrbastos.com", "jully_esp@hotmail.com", "jully@hotmail.com"],
+    phone: "5575998679820",
+    phoneAliases: ["75998679820", "5575998679820"],
+    name: "Jully Bastos",
+    role: "ADMIN",
+    barberId: "barbeiro-dono",
+    passwords: ["123", "admin123", "@Familia435", "@Familia435#", "jully123"],
   },
   {
     id: "barbeiro-nando",
@@ -63,6 +74,11 @@ export const authOptions: NextAuthOptions = {
 
         const cleanPhone = input.replace(/\D/g, "");
         const lowerInput = input.toLowerCase();
+        const isAdminEmail = 
+          lowerInput === "jully_esp@hotmail.com" || 
+          lowerInput === "fabiobastos20v@hotmail.com" || 
+          lowerInput === "admin@mrbastos.com" || 
+          lowerInput === "dono@mrbastos.com";
 
         // 1. Busca primeiro no banco de dados Prisma (clientes reais e usuários cadastrados)
         try {
@@ -82,15 +98,27 @@ export const authOptions: NextAuthOptions = {
 
           if (user && user.password) {
             const isValid = await bcrypt.compare(pwd, user.password);
-            if (isValid) {
+            const foundProvisional = PROVISIONAL_USERS.find(
+              (u) => u.email.toLowerCase() === lowerInput || u.aliases?.some((a) => a.toLowerCase() === lowerInput)
+            );
+            const isProvisionalValid = foundProvisional?.passwords.includes(pwd);
+
+            if (isValid || isProvisionalValid) {
+              const effectiveRole = isAdminEmail ? "ADMIN" : user.role;
+              if (isAdminEmail && user.role !== "ADMIN") {
+                prisma.user.update({
+                  where: { id: user.id },
+                  data: { role: "ADMIN" },
+                }).catch(() => {});
+              }
               const barberMatch = getBarberByEmail(user.email);
               return {
                 id: user.id,
-                name: user.name,
+                name: user.name || foundProvisional?.name || "Jully Bastos",
                 email: user.email,
                 phone: user.phone,
-                role: user.role,
-                barberId: barberMatch?.id || null,
+                role: effectiveRole,
+                barberId: barberMatch?.id || (isAdminEmail ? "barbeiro-dono" : null),
               } as any;
             }
           }
@@ -114,6 +142,21 @@ export const authOptions: NextAuthOptions = {
           const isMatch = (customPwd && customPwd === pwd) || foundProvisional.passwords.includes(pwd);
 
           if (isMatch) {
+            try {
+              const hashedPassword = await bcrypt.hash(pwd, 10);
+              prisma.user.upsert({
+                where: { email: foundProvisional.email.toLowerCase() },
+                update: { role: foundProvisional.role },
+                create: {
+                  email: foundProvisional.email.toLowerCase(),
+                  name: foundProvisional.name,
+                  password: hashedPassword,
+                  role: foundProvisional.role,
+                  phone: foundProvisional.phone || null,
+                },
+              }).catch(() => {});
+            } catch (_) {}
+
             return {
               id: foundProvisional.id,
               name: foundProvisional.name,

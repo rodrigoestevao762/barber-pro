@@ -61,7 +61,13 @@ export function getBarberById(id?: string | null): BarberData | undefined {
 export function getBarberByEmail(email?: string | null): BarberData | undefined {
   if (!email) return undefined;
   const lower = email.toLowerCase().trim();
-  if (lower === "fabiobastos20v@hotmail.com" || lower === "dono@mrbastos.com" || lower === "admin@mrbastos.com") {
+  if (
+    lower === "fabiobastos20v@hotmail.com" || 
+    lower === "dono@mrbastos.com" || 
+    lower === "admin@mrbastos.com" ||
+    lower === "jully_esp@hotmail.com" ||
+    lower === "jully@mrbastos.com"
+  ) {
     return BARBERS[0];
   }
   if (lower === "nandomrbastos@gmail.com" || lower === "nando@mrbastos.com" || lower === "lucas@mrbastos.com") {
