@@ -213,16 +213,18 @@ export async function GET(req: Request) {
       allDayAppointments = getAppointmentsForDate(dateParam, null);
     }
 
-    // Resumo de produção e comissões por barbeiro para a data (45% para funcionários, 100% para o Dono)
+    // Resumo de produção e comissões por barbeiro para a data (45% para todos os barbeiros, 55% para Casa / Administração - Jully)
     const breakdown = BARBERS.map((barber) => {
       const bApts = allDayAppointments.filter((apt) => apt.barberId === barber.id);
       const bCompleted = bApts.filter((apt) => apt.status === "COMPLETED");
       const bRevenue = bCompleted.reduce((acc, apt) => acc + (apt.service?.price || 0), 0);
       const isOwner = barber.role === "ADMIN";
       
-      const commissionRate = isOwner ? 1.0 : 0.45;
-      const commission = isOwner ? bRevenue : bRevenue * 0.45;
-      const houseShare = isOwner ? 0 : bRevenue * 0.55;
+      // Regra oficial: Todos os barbeiros recebem 45% (inclusive o Dono Mr. Bastos)
+      // Os 55% de toda a produção vão para a Conta da Administração (Jully) para cobrir os custos mensais
+      const commissionRate = 0.45;
+      const commission = bRevenue * 0.45;
+      const houseShare = bRevenue * 0.55;
 
       return {
         id: barber.id,
@@ -242,12 +244,11 @@ export async function GET(req: Request) {
 
     // Métricas Globais da Barbearia para a Data
     const totalGrossShop = breakdown.reduce((acc, b) => acc + b.revenue, 0);
-    const employeeBarbers = breakdown.filter((b) => b.role === "BARBER");
-    const totalEmployeeCommissions = employeeBarbers.reduce((acc, b) => acc + b.commission, 0);
-    const ownerBarber = breakdown.find((b) => b.role === "ADMIN");
-    const ownerPersonalRevenue = ownerBarber?.revenue || 0;
-    const totalHouseEmployeeShare = employeeBarbers.reduce((acc, b) => acc + b.houseShare, 0);
-    const houseNetProfit = ownerPersonalRevenue + totalHouseEmployeeShare;
+    // 45% de comissões para todos os barbeiros (Mr. Bastos, Nando e Saul)
+    const totalCommissionsAllBarbers = breakdown.reduce((acc, b) => acc + b.commission, 0);
+    // 55% retido pela Casa / Conta da Administração (Jully) para cobrir custos mensais da barbearia
+    const houseNetProfit = breakdown.reduce((acc, b) => acc + b.houseShare, 0);
+    const totalHouseRevenue = houseNetProfit;
 
     // Lista filtrada de agendamentos conforme o barbeiro selecionado
     const appointmentsList = effectiveBarberFilter
@@ -267,7 +268,7 @@ export async function GET(req: Request) {
         currentHouseShare = currentBarberData.houseShare;
       }
     } else {
-      currentCommission = totalEmployeeCommissions;
+      currentCommission = totalCommissionsAllBarbers;
       currentHouseShare = houseNetProfit;
     }
 
@@ -282,7 +283,9 @@ export async function GET(req: Request) {
       revenue: effectiveBarberFilter ? filteredGross : totalGrossShop,
       totalGrossShop,
       houseNetProfit,
-      totalEmployeeCommissions,
+      totalHouseRevenue,
+      totalEmployeeCommissions: totalCommissionsAllBarbers,
+      totalCommissions: totalCommissionsAllBarbers,
       myCommission: currentCommission,
       houseShare: currentHouseShare,
       

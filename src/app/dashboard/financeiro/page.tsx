@@ -99,7 +99,7 @@ export default function FinanceiroPage() {
         totalEarned: 0,
         personalExpenses: 0,
         isClosed: false,
-        commissionRate: b.role === "ADMIN" ? 1.0 : 0.45,
+        commissionRate: 0.45,
       }));
 
       // Sincroniza com agendamentos da API para a data selecionada
@@ -313,26 +313,22 @@ export default function FinanceiroPage() {
     </div>
   );
 
-  // --- MATEMÁTICA FINANCEIRA OFICIAL (45% PARA BARBEIROS, 100% PARA O DONO) ---
+  // --- MATEMÁTICA FINANCEIRA OFICIAL (45% PARA BARBEIROS INCLUSIVE DONO · 55% CASA / CONTA ADMINISTRAÇÃO JULLY) ---
   const faturamentoBruto = barbers.reduce((acc, curr) => acc + curr.totalEarned, 0);
   const despesasFixas = expenses.filter(e => e.type === "FIXO").reduce((acc, curr) => acc + curr.amount, 0);
 
-  // Comissões dos funcionários (45%)
-  const comissoesFuncionarios = barbers
-    .filter(b => b.role === "BARBER")
-    .reduce((acc, b) => acc + (b.totalEarned * 0.45), 0);
+  // Comissões dos barbeiros (45% para todos, inclusive o Dono)
+  const totalComissoesBarbeiros = barbers.reduce((acc, b) => acc + (b.totalEarned * 0.45), 0);
 
-  // Faturamento próprio do Dono (100%)
+  // Faturamento/Comissão do Dono (45%)
   const donoBarber = barbers.find(b => b.role === "ADMIN");
-  const faturamentoProprioDono = donoBarber ? donoBarber.totalEarned : 0;
+  const comissaoDono = donoBarber ? donoBarber.totalEarned * 0.45 : 0;
 
-  // Repasse dos funcionários retido pela barbearia (55%)
-  const repasseRetidoEquipe = barbers
-    .filter(b => b.role === "BARBER")
-    .reduce((acc, b) => acc + (b.totalEarned * 0.55), 0);
+  // Receita retida pela Casa / Conta Administração - Jully (55% de todos os cortes para cobrir custos mensais)
+  const receitaRetidaCasa = barbers.reduce((acc, b) => acc + (b.totalEarned * 0.55), 0);
 
-  // Lucro bruto retido pela casa = Dono (100%) + 55% dos funcionários
-  const lucroBrutoCasa = faturamentoProprioDono + repasseRetidoEquipe;
+  // Lucro bruto retido pela casa = 55% de toda a produção
+  const lucroBrutoCasa = receitaRetidaCasa;
   
   // Lucro líquido da barbearia após abater despesas fixas
   const lucroLiquidoCasa = lucroBrutoCasa - despesasFixas;
@@ -354,7 +350,7 @@ export default function FinanceiroPage() {
                   <Scissors className="w-3 h-3" /> Caixa Individual do Barbeiro · Comissão 45%
                 </span>
               )}
-              <span className="text-xs text-gray-400">45% Funcionários · 100% Dono</span>
+              <span className="text-xs text-gray-400">45% Barbeiros (inclusive Dono) · 55% Casa / Gestão (Jully)</span>
             </div>
 
             <h2 className="text-3xl md:text-4xl font-serif text-white tracking-tight">
@@ -449,27 +445,27 @@ export default function FinanceiroPage() {
                  <p className="text-blue-400 text-[10px] tracking-widest uppercase mb-4 flex items-center gap-2 font-semibold">
                     <Scissors className="w-4 h-4" /> Comissões a Pagar (45%)
                  </p>
-                 <h2 className="text-3xl font-serif text-blue-400 mb-1">R$ {comissoesFuncionarios.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                 <p className="text-xs text-gray-400">Total devido aos barbeiros funcionários.</p>
+                 <h2 className="text-3xl font-serif text-blue-400 mb-1">R$ {totalComissoesBarbeiros.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
+                 <p className="text-xs text-gray-400">Total devido aos barbeiros (inclusive Dono).</p>
               </div>
 
-              {/* Repasse da Equipe à Barbearia (55%) */}
+              {/* Conta Administração - Jully (55%) */}
               <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
                  <p className="text-gray-400 text-[10px] tracking-widest uppercase mb-4 flex items-center gap-2">
-                    <Award className="w-4 h-4" /> Repasse Equipe (55%)
+                    <Award className="w-4 h-4" /> Conta Administração (55%)
                  </p>
-                 <h2 className="text-3xl font-serif text-white mb-1">R$ {repasseRetidoEquipe.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                 <p className="text-xs text-gray-500">Fatia retida pela estrutura da barbearia.</p>
+                 <h2 className="text-3xl font-serif text-white mb-1">R$ {receitaRetidaCasa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
+                 <p className="text-xs text-gray-500">Destinado a Jully para cobrir custos mensais da barbearia.</p>
               </div>
 
               {/* Lucro Líquido da Barbearia */}
               <div className="bg-emerald-500/[0.08] border border-emerald-500/30 rounded-2xl p-6 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-2xl" />
                 <p className="text-emerald-400 font-bold text-[10px] tracking-widest uppercase mb-4 flex items-center gap-2 relative z-10">
-                   <Wallet className="w-4 h-4" /> Saldo Líquido Barbearia
+                   <Wallet className="w-4 h-4" /> Saldo Líquido da Casa
                 </p>
                 <h2 className="text-3xl font-serif text-emerald-400 mb-1 relative z-10">R$ {lucroLiquidoCasa.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</h2>
-                <p className="text-xs text-emerald-400/70 relative z-10">Dono 100% + 55% equipe - custos fixos.</p>
+                <p className="text-xs text-emerald-400/70 relative z-10">55% retido menos custos fixos e despesas.</p>
               </div>
             </div>
 
@@ -514,9 +510,9 @@ export default function FinanceiroPage() {
                 {barbers.map(barber => {
                   const isOwner = barber.role === "ADMIN";
                   const gross = barber.totalEarned;
-                  const commissionDue = isOwner ? gross : gross * 0.45;
+                  const commissionDue = gross * 0.45;
                   const liquidoAPagar = Math.max(0, commissionDue - barber.personalExpenses);
-                  const houseRetained = isOwner ? 0 : gross * 0.55;
+                  const houseRetained = gross * 0.55;
 
                   return (
                     <div key={`summary-${barber.id}`} className="bg-black/40 border border-white/5 rounded-2xl p-5 hover:border-white/20 transition-all flex flex-col justify-between">
@@ -525,7 +521,7 @@ export default function FinanceiroPage() {
                           <div>
                             <h4 className="text-white font-bold">{barber.name}</h4>
                             <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full inline-block mt-1 ${isOwner ? "bg-blue-600 text-white" : "bg-blue-500/20 text-blue-400"}`}>
-                              {isOwner ? "Proprietário (100%)" : "Comissão 45%"}
+                              {isOwner ? "Proprietário · 45%" : "Comissão 45%"}
                             </span>
                           </div>
                           <button 
@@ -542,15 +538,13 @@ export default function FinanceiroPage() {
                             <span className="text-white font-mono">R$ {gross.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                           </div>
                           <div className="flex justify-between text-xs text-blue-400">
-                            <span>Comissão Calculada ({isOwner ? "100%" : "45%"}):</span>
+                            <span>Comissão Calculada (45%):</span>
                             <span className="font-mono font-bold">+ R$ {commissionDue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                           </div>
-                          {!isOwner && (
-                            <div className="flex justify-between text-xs text-emerald-400">
-                              <span>Repasse Casa (55%):</span>
-                              <span className="font-mono">+ R$ {houseRetained.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                            </div>
-                          )}
+                          <div className="flex justify-between text-xs text-emerald-400">
+                            <span>Casa / Gestão (55%):</span>
+                            <span className="font-mono">+ R$ {houseRetained.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                          </div>
                           <div className="flex justify-between text-xs text-red-400">
                             <span>Vales/Descontos:</span>
                             <span className="font-mono">- R$ {barber.personalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
@@ -587,9 +581,9 @@ export default function FinanceiroPage() {
 
               const isOwner = barber.role === "ADMIN";
               const gross = barber.totalEarned;
-              const commissionDue = isOwner ? gross : gross * 0.45;
+              const commissionDue = gross * 0.45;
               const aReceberLivre = Math.max(0, commissionDue - barber.personalExpenses);
-              const repasseBarbearia = isOwner ? 0 : gross * 0.55;
+              const repasseBarbearia = gross * 0.55;
 
               return (
                 <>
@@ -598,12 +592,12 @@ export default function FinanceiroPage() {
                       <div className="flex items-center gap-3 mb-2">
                         <h2 className="text-3xl font-serif text-white">{barber.name}</h2>
                         <span className={`text-[10px] px-3 py-1 rounded-full uppercase tracking-wider font-bold ${isOwner ? "bg-blue-600 text-white" : "bg-blue-500/20 text-blue-400 border border-blue-500/30"}`}>
-                          {isOwner ? "DONO · 100%" : "COMISSÃO OFICIAL 45%"}
+                          {isOwner ? "DONO · COMISSÃO 45%" : "COMISSÃO OFICIAL 45%"}
                         </span>
                       </div>
                       <p className="text-gray-400 text-sm">
                         {isOwner 
-                          ? "Caixa de faturamento pessoal do proprietário da barbearia."
+                          ? "Caixa do proprietário com comissão de 45% e 55% destinado à conta de administração (Jully) para cobrir custos mensais."
                           : "Caixa do barbeiro com cálculo de comissão de 45% e abatimento automático de vales."}
                       </p>
                     </div>
@@ -641,7 +635,7 @@ export default function FinanceiroPage() {
 
                     <div className="bg-blue-600/10 border border-blue-500/30 p-6 rounded-2xl">
                       <p className="text-[10px] text-blue-400 uppercase tracking-widest mb-1 font-semibold">
-                        Comissão ({isOwner ? "100%" : "45%"})
+                        Comissão (45%)
                       </p>
                       <p className="text-2xl font-serif text-blue-400">+ R$ {commissionDue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                     </div>
@@ -670,7 +664,7 @@ export default function FinanceiroPage() {
                       </div>
                     )}
                     <p className="text-blue-400 text-xs uppercase tracking-[0.25em] font-bold mb-3 relative z-0">
-                      {isOwner ? "Faturamento Líquido do Dono Hoje" : "Saldo Líquido a Pagar ao Barbeiro Hoje (45% - Vales)"}
+                      {isOwner ? "Comissão Líquida do Dono Hoje (45% - Vales)" : "Saldo Líquido a Pagar ao Barbeiro Hoje (45% - Vales)"}
                     </p>
                     <h1 className="text-5xl md:text-6xl font-serif text-white mb-6 relative z-0">
                       R$ {aReceberLivre.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -765,8 +759,7 @@ export default function FinanceiroPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                     {OFFICIAL_SERVICES.map(svc => {
                       const isSelected = svc.id === selectedServiceId;
-                      const currentRole = isAdmin ? (selectedBarber?.role || "ADMIN") : "BARBER";
-                      const rate = currentRole === "ADMIN" ? 1.0 : 0.45;
+                      const rate = 0.45;
                       const commissionValue = svc.price * rate;
 
                       return (
@@ -796,7 +789,7 @@ export default function FinanceiroPage() {
                                 )}
                               </div>
                               <p className="text-[10px] text-gray-500">
-                                {currentRole === "ADMIN" ? "100% Dono" : `Comissão: R$ ${commissionValue.toFixed(2)}`}
+                                Comissão (45%): R$ {commissionValue.toFixed(2)}
                               </p>
                             </div>
                           </div>
@@ -839,10 +832,9 @@ export default function FinanceiroPage() {
                 {/* 3. Resumo Financeiro */}
                 {(() => {
                   const activeSvc = OFFICIAL_SERVICES.find(s => s.id === selectedServiceId) || OFFICIAL_SERVICES[0];
-                  const currentRole = isAdmin ? (selectedBarber?.role || "ADMIN") : "BARBER";
-                  const rate = currentRole === "ADMIN" ? 1.0 : 0.45;
+                  const rate = 0.45;
                   const commVal = activeSvc.price * rate;
-                  const houseVal = activeSvc.price * (1 - rate);
+                  const houseVal = activeSvc.price * 0.55;
 
                   return (
                     <div className="p-4 rounded-2xl bg-blue-600/10 border border-blue-500/30 space-y-1.5 text-xs">
@@ -851,15 +843,13 @@ export default function FinanceiroPage() {
                         <strong className="text-white font-mono text-sm">R$ {activeSvc.price.toFixed(2)}</strong>
                       </div>
                       <div className="flex justify-between items-center text-blue-400">
-                        <span>Comissão a creditar ({currentRole === "ADMIN" ? "100%" : "45%"}):</span>
+                        <span>Comissão a creditar (45%):</span>
                         <strong className="text-blue-400 font-mono text-sm">R$ {commVal.toFixed(2)}</strong>
                       </div>
-                      {currentRole !== "ADMIN" && (
-                        <div className="flex justify-between items-center text-gray-500 text-[11px] pt-1 border-t border-white/10">
-                          <span>Repasse Barbearia (55%):</span>
-                          <span className="font-mono">R$ {houseVal.toFixed(2)}</span>
-                        </div>
-                      )}
+                      <div className="flex justify-between items-center text-emerald-400 text-[11px] pt-1 border-t border-white/10">
+                        <span>Casa / Administração - Jully (55%):</span>
+                        <span className="font-mono font-bold">R$ {houseVal.toFixed(2)}</span>
+                      </div>
                     </div>
                   );
                 })()}

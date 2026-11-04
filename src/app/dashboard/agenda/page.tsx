@@ -648,9 +648,8 @@ export default function AgendaPage() {
               const barberInfo = BARBERS.find(b => b.id === apt.barberId) || BARBERS[0];
               // Usando getDisplayTime para garantir hora idêntica ao fuso de Brasília sem atraso de 3 horas
               const aptTime = getDisplayTime(apt.date);
-              const isOwnerCut = barberInfo.role === "ADMIN";
               const cutPrice = Number(apt.service?.price || 0);
-              const barberCommission = isOwnerCut ? cutPrice : cutPrice * 0.45;
+              const barberCommission = cutPrice * 0.45;
 
               return (
                 <div 
@@ -682,7 +681,7 @@ export default function AgendaPage() {
                       <p className="text-xs text-gray-400 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                         <span>{apt.service?.name} · <strong className="text-white">R$ {cutPrice.toFixed(2)}</strong></span>
                         <span className="text-blue-400">
-                          Comissão: R$ {barberCommission.toFixed(2)} ({isOwnerCut ? "100%" : "45%"})
+                          Comissão: R$ {barberCommission.toFixed(2)} (45%)
                         </span>
                       </p>
                       <p className="text-[11px] text-gray-500 font-mono mt-0.5 truncate">
@@ -851,7 +850,7 @@ export default function AgendaPage() {
                   >
                     {BARBERS.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.name} ({b.role === "ADMIN" ? "Dono - 100%" : "45%"})
+                        {b.name} (45%)
                       </option>
                     ))}
                   </select>
@@ -983,7 +982,7 @@ export default function AgendaPage() {
                     >
                       {BARBERS.map(b => (
                         <option key={b.id} value={b.id}>
-                          {b.name} ({b.role === "ADMIN" ? "100%" : "45%"})
+                          {b.name} (45%)
                         </option>
                       ))}
                     </select>

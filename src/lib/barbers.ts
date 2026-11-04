@@ -8,7 +8,7 @@ export interface BarberData {
   specialty: string;
   avatar: string;
   bio: string;
-  commissionRate: number; // 0.45 para barbeiros funcionários (45%), 1.0 para o Dono (100%)
+  commissionRate: number; // 0.45 para todos os barbeiros (45%); 55% vai para Casa / Administração (Jully) para cobrir custos mensais
 }
 
 export const BARBERS: BarberData[] = [
@@ -22,7 +22,7 @@ export const BARBERS: BarberData[] = [
     specialty: "Cortes Clássicos, Barboterapia & Visagismo",
     avatar: "/nossa-area/area-01.jpg",
     bio: "Mestre barbeiro e proprietário da Mr. Bastos Barbearia. Tradição e excelência em Alagoinhas.",
-    commissionRate: 1.0, // Dono recebe 100% de seus cortes + 55% da equipe
+    commissionRate: 0.45, // Dono recebe 45% de seus cortes; 55% vai para a Casa / Administração (Jully) para custos mensais
   },
   {
     id: "barbeiro-nando",

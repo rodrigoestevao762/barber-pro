@@ -93,10 +93,9 @@ export default function FechamentoPage() {
   const isClosed = data.closings && data.closings.length > 0;
   const lastClosing = isClosed ? data.closings[0] : null;
 
-  // Separação de comissões de funcionários (45%) e produção do Dono (100%)
-  const employeeRevenues = data.barberRevenues.filter(b => !b.name.toLowerCase().includes("dono"));
-  const totalEmployeeCommissions = employeeRevenues.reduce((acc, b) => acc + b.commission, 0);
-  const houseNetRetained = data.totalRevenue - totalEmployeeCommissions;
+  // Separação de comissões de todos os barbeiros (45%) e fatia da Casa / Administração - Jully (55%)
+  const totalCommissionsAllBarbers = data.barberRevenues.reduce((acc, b) => acc + b.commission, 0);
+  const houseNetRetained = data.totalRevenue * 0.55;
 
   return (
     <div className="max-w-4xl pb-12">
@@ -104,11 +103,11 @@ export default function FechamentoPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="text-[10px] bg-gradient-to-r from-blue-700 to-blue-600 text-white font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full flex items-center gap-1">
-              <Shield className="w-3 h-3" /> Exclusivo do Dono
+              <Shield className="w-3 h-3" /> Gestão & Administração
             </span>
           </div>
           <h2 className="text-3xl font-serif text-white">Fechamento de Caixa</h2>
-          <p className="text-xs text-gray-400 mt-1">Conferência final do dia com repasse de 45% aos barbeiros e 100% ao Dono.</p>
+          <p className="text-xs text-gray-400 mt-1">Conferência final do dia com repasse de 45% aos barbeiros e 55% para a Administração (Jully) cobrir os custos mensais.</p>
         </div>
         <div className="flex items-center gap-3">
           <label className="text-xs text-gray-400 uppercase tracking-widest">Data:</label>
@@ -161,7 +160,7 @@ export default function FechamentoPage() {
           <p className="text-xs text-gray-500">Soma de todos os cortes realizados no dia.</p>
         </motion.div>
 
-        {/* Comissões dos Funcionários a Pagar (45%) */}
+        {/* Comissões dos Barbeiros a Pagar (45%) */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -174,16 +173,16 @@ export default function FechamentoPage() {
               <Scissors className="w-6 h-6 text-blue-400" />
             </div>
             <div>
-              <p className="text-blue-400 text-xs uppercase tracking-widest font-semibold">Repasse Equipe (45%)</p>
+              <p className="text-blue-400 text-xs uppercase tracking-widest font-semibold">Repasse Barbeiros (45%)</p>
               <h3 className="text-2xl font-bold text-blue-400 mt-1">
-                R$ {totalEmployeeCommissions.toFixed(2)}
+                R$ {totalCommissionsAllBarbers.toFixed(2)}
               </h3>
             </div>
           </div>
-          <p className="text-xs text-gray-400">Total a pagar para Nando e Saul (45%).</p>
+          <p className="text-xs text-gray-400">Total a pagar a todos os barbeiros (inclusive Dono a 45%).</p>
         </motion.div>
 
-        {/* Saldo Retido pela Casa */}
+        {/* Saldo Retido pela Casa / Conta Administração (Jully) */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -196,13 +195,13 @@ export default function FechamentoPage() {
               <Wallet className="w-6 h-6 text-emerald-400" />
             </div>
             <div>
-              <p className="text-emerald-400 text-xs uppercase tracking-widest font-semibold">Retido pela Casa</p>
+              <p className="text-emerald-400 text-xs uppercase tracking-widest font-semibold">Caixa Casa / Administração (55%)</p>
               <h3 className="text-2xl font-bold text-emerald-400 mt-1">
                 R$ {houseNetRetained.toFixed(2)}
               </h3>
             </div>
           </div>
-          <p className="text-xs text-emerald-400/70">Dono 100% + 55% dos funcionários.</p>
+          <p className="text-xs text-emerald-400/70">55% destinado a Jully para cobrir os custos mensais.</p>
         </motion.div>
       </div>
 
@@ -229,7 +228,7 @@ export default function FechamentoPage() {
                     <div className="flex items-center gap-2">
                       <h4 className="text-white font-medium text-base">{barber.name}</h4>
                       <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${isOwner ? "bg-blue-600 text-white" : "bg-blue-500/20 text-blue-400"}`}>
-                        {isOwner ? "Dono · 100%" : "Comissão 45%"}
+                        {isOwner ? "Dono · 45%" : "Comissão 45%"}
                       </span>
                     </div>
                     <p className="text-xs text-gray-400 mt-0.5">
@@ -241,14 +240,11 @@ export default function FechamentoPage() {
                 <div className="text-right">
                   <p className="text-xs text-gray-400 uppercase tracking-wider">Produção Bruta: <strong className="text-white">R$ {barber.total.toFixed(2)}</strong></p>
                   <h4 className="text-blue-400 font-bold text-lg mt-0.5">
-                    {isOwner ? "Faturamento: " : "Comissão (45%): "}
-                    R$ {barber.commission.toFixed(2)}
+                    Comissão (45%): R$ {barber.commission.toFixed(2)}
                   </h4>
-                  {!isOwner && (
-                    <p className="text-[11px] text-emerald-400">
-                      Repasse para a casa (55%): + R$ {(barber.total * 0.55).toFixed(2)}
-                    </p>
-                  )}
+                  <p className="text-[11px] text-emerald-400">
+                    Repasse Casa / Jully (55%): + R$ {(barber.total * 0.55).toFixed(2)}
+                  </p>
                 </div>
               </motion.div>
             );

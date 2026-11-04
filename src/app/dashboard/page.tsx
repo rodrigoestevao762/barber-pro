@@ -252,8 +252,8 @@ export default function DashboardPage() {
   const activeChosenService = OFFICIAL_SERVICES.find(s => s.id === selectedServiceId) || OFFICIAL_SERVICES[0];
   const targetBarberForCalc = BARBERS.find(b => b.id === (isAdmin ? walkInBarberId : (userBarberId || "barbeiro-nando"))) || BARBERS[0];
   const isTargetBarberOwner = targetBarberForCalc.role === "ADMIN";
-  const commissionPreview = isTargetBarberOwner ? activeChosenService.price : activeChosenService.price * 0.45;
-  const housePreview = isTargetBarberOwner ? 0 : activeChosenService.price * 0.55;
+  const commissionPreview = activeChosenService.price * 0.45;
+  const housePreview = activeChosenService.price * 0.55;
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 pb-12 relative">
@@ -446,10 +446,10 @@ export default function DashboardPage() {
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">
-                    Retido pela Casa
+                    Casa / Gestão (55%)
                   </span>
                 </div>
-                <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">Lucro Líquido Barbearia</p>
+                <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">Conta Administração (Jully)</p>
                 <h3 className="text-3xl font-serif text-emerald-400 mt-1">
                   R$ {Number(dashboardData.houseNetProfit || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </h3>
@@ -458,20 +458,20 @@ export default function DashboardPage() {
                 <Wallet className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-xs text-emerald-400/80 relative z-10">Dono 100% + 55% sobre a produção dos funcionários.</p>
+            <p className="text-xs text-emerald-400/80 relative z-10">55% de toda a produção da barbearia destinado a cobrir custos mensais.</p>
           </div>
 
-          {/* Comissões a Pagar aos Funcionários (45%) */}
+          {/* Comissões dos Barbeiros (45%) */}
           <div className="bg-blue-600/10 border border-blue-500/40 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between shadow-2xl">
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/15 blur-2xl rounded-full pointer-events-none" />
             <div className="flex justify-between items-start mb-4 relative z-10">
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="text-[10px] bg-blue-600/30 text-blue-400 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">
-                    Repasse 45%
+                    Comissões 45%
                   </span>
                 </div>
-                <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">Comissões da Equipe</p>
+                <p className="text-gray-400 text-xs tracking-wider uppercase font-semibold">Comissões dos Barbeiros</p>
                 <h3 className="text-3xl font-serif text-blue-400 mt-1">
                   R$ {Number(dashboardData.totalEmployeeCommissions || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </h3>
@@ -480,7 +480,7 @@ export default function DashboardPage() {
                 <Scissors className="w-5 h-5" />
               </div>
             </div>
-            <p className="text-xs text-gray-400 relative z-10">Valor total a pagar aos barbeiros funcionários hoje.</p>
+            <p className="text-xs text-gray-400 relative z-10">45% de repasse para cada profissional (Dono Mr. Bastos, Nando e Saul).</p>
           </div>
 
           {/* Cortes Realizados */}
@@ -509,11 +509,11 @@ export default function DashboardPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-[11px] bg-gradient-to-r from-blue-700 to-blue-600 text-white px-3 py-0.5 rounded-full uppercase font-bold tracking-wider flex items-center gap-1 shadow-md">
                     <Award className="w-3.5 h-3.5" />
-                    {isSelectedBarberOwner ? "100% Dono" : "Comissão Oficial: 45%"}
+                    Comissão Oficial: 45%
                   </span>
                 </div>
                 <p className="text-gray-300 text-xs tracking-[0.2em] uppercase font-semibold">
-                  {isSelectedBarberOwner ? "Recebimento do Dono (100%)" : "Minha Comissão Líquida a Receber"}
+                  Minha Comissão Líquida a Receber
                 </p>
                 <h3 className="text-4xl md:text-5xl font-serif text-blue-400 mt-2 font-bold tracking-tight">
                   R$ {Number(dashboardData.myCommission || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
@@ -527,9 +527,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 text-white bg-white/5 border border-white/10 w-fit px-3.5 py-1.5 rounded-xl text-xs font-medium relative z-10">
               <TrendingUp className="w-3.5 h-3.5 text-blue-400" />
               <span>
-                {isSelectedBarberOwner
-                  ? "Como proprietário, você recebe 100% de seus atendimentos."
-                  : "Você recebe 45% de cada serviço concluído no seu nome."}
+                Você recebe 45% de cada serviço concluído no seu nome (55% destinado à casa).
               </span>
             </div>
           </div>
@@ -629,7 +627,7 @@ export default function DashboardPage() {
                           </h4>
                           {isOwner ? (
                             <span className="text-[9px] bg-gradient-to-r from-blue-700 to-blue-600 text-white px-1.5 py-0.2 rounded font-bold uppercase">
-                              Dono (100%)
+                              Dono · 45%
                             </span>
                           ) : (
                             <span className="text-[9px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
@@ -652,21 +650,19 @@ export default function DashboardPage() {
                       {/* Repasse de comissão */}
                       <div className="flex justify-between items-center text-xs bg-white/[0.02] p-2 rounded-xl">
                         <span className="text-gray-400">
-                          {isOwner ? "Faturamento Próprio:" : "Comissão a Pagar (45%):"}
+                          Comissão a Pagar (45%):
                         </span>
                         <span className="text-blue-400 font-mono font-bold">
                           R$ {Number(bStats.commission || 0).toFixed(2)}
                         </span>
                       </div>
 
-                      {!isOwner && (
-                        <div className="flex justify-between items-center text-xs bg-emerald-500/[0.04] p-2 rounded-xl border border-emerald-500/10">
-                          <span className="text-emerald-400/90">Lucro Barbearia (55%):</span>
-                          <span className="text-emerald-400 font-mono font-bold">
-                            + R$ {Number(bStats.houseShare || 0).toFixed(2)}
-                          </span>
-                        </div>
-                      )}
+                      <div className="flex justify-between items-center text-xs bg-emerald-500/[0.04] p-2 rounded-xl border border-emerald-500/10">
+                        <span className="text-emerald-400/90">Casa / Gestão (55%):</span>
+                        <span className="text-emerald-400 font-mono font-bold">
+                          + R$ {Number(bStats.houseShare || 0).toFixed(2)}
+                        </span>
+                      </div>
 
                       <div className="flex justify-between items-center text-xs pt-1 text-gray-400">
                         <span>Cortes Finalizados:</span>
@@ -750,7 +746,7 @@ export default function DashboardPage() {
               const aptTime = getDisplayTime(apt.date);
               const isOwnerCut = barberInfo.role === "ADMIN";
               const cutPrice = Number(apt.service?.price || 0);
-              const barberCutShare = isOwnerCut ? cutPrice : cutPrice * 0.45;
+              const barberCutShare = cutPrice * 0.45;
 
               return (
                 <div 
@@ -779,7 +775,7 @@ export default function DashboardPage() {
                       <p className="text-xs text-gray-400 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                         <span>{apt.service?.name} · <strong className="text-white">R$ {cutPrice.toFixed(2)}</strong></span>
                         <span className="text-blue-400">
-                          Comissão: R$ {barberCutShare.toFixed(2)} ({isOwnerCut ? "100%" : "45%"})
+                          Comissão: R$ {barberCutShare.toFixed(2)} (45%)
                         </span>
                       </p>
                       <p className="text-[11px] text-gray-500 font-mono mt-0.5 truncate">
@@ -908,7 +904,7 @@ export default function DashboardPage() {
                             className={`py-2.5 px-3 rounded-xl text-xs font-semibold border transition-all flex items-center justify-center gap-1.5 ${walkInBarberId === b.id ? "border-blue-500 bg-gradient-to-r from-blue-700 to-blue-600 text-white shadow-md" : "border-white/10 text-gray-300 hover:border-white/30"}`}
                           >
                             <span>{b.name.split(" ")[0]}</span>
-                            <span className="text-[10px] opacity-80">({b.role === "ADMIN" ? "100%" : "45%"})</span>
+                            <span className="text-[10px] opacity-80">(45%)</span>
                           </button>
                         ))}
                       </div>
@@ -1026,18 +1022,16 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-blue-400">
-                      {isTargetBarberOwner ? "Recebimento do Dono (100%):" : `Comissão do Barbeiro (${targetBarberForCalc.name.split(" ")[0]} - 45%):`}
+                      Comissão do Barbeiro ({targetBarberForCalc.name.split(" ")[0]} - 45%):
                     </span>
                     <strong className="text-blue-400 font-mono text-sm">
                       R$ {commissionPreview.toFixed(2)}
                     </strong>
                   </div>
-                  {!isTargetBarberOwner && (
-                    <div className="flex justify-between items-center text-[11px] text-gray-400 pt-1 border-t border-white/10">
-                      <span>Repasse da Barbearia (55%):</span>
-                      <span className="font-mono">R$ {housePreview.toFixed(2)}</span>
-                    </div>
-                  )}
+                  <div className="flex justify-between items-center text-[11px] text-emerald-400/90 pt-1 border-t border-white/10">
+                    <span>Casa / Administração - Jully (55%):</span>
+                    <span className="font-mono font-bold">R$ {housePreview.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
 

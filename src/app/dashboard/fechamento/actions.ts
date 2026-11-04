@@ -63,7 +63,7 @@ export async function getFechamentoData(dateStr?: string) {
         name: b.name,
         total: 0,
         commission: 0,
-        rate: isOwner ? 1.0 : 0.45,
+        rate: 0.45,
         isOwner,
       };
     });
@@ -80,14 +80,14 @@ export async function getFechamentoData(dateStr?: string) {
           name: app.barber?.name || "Barbeiro", 
           total: 0, 
           commission: 0,
-          rate: isOwner ? 1.0 : 0.45,
+          rate: 0.45,
           isOwner,
         };
       }
       
       barberRevenues[bId].total += price;
-      // Regra oficial Mr. Bastos: Dono = 100%, Barbeiro Funcionário = 45%
-      const effectiveRate = barberRevenues[bId].isOwner ? 1.0 : 0.45;
+      // Regra oficial Mr. Bastos: Todos os barbeiros (inclusive Dono) = 45%, Casa / Administração (Jully) = 55%
+      const effectiveRate = 0.45;
       barberRevenues[bId].commission += (price * effectiveRate);
     });
 
@@ -116,7 +116,7 @@ export async function getFechamentoData(dateStr?: string) {
         name: b.name,
         total: 0,
         commission: 0,
-        rate: isOwner ? 1.0 : 0.45,
+        rate: 0.45,
         isOwner,
       };
     });
@@ -127,7 +127,7 @@ export async function getFechamentoData(dateStr?: string) {
       const bId = app.barberId || "barbeiro-dono";
       if (barberRevenues[bId]) {
         barberRevenues[bId].total += price;
-        const rate = barberRevenues[bId].isOwner ? 1.0 : 0.45;
+        const rate = 0.45;
         barberRevenues[bId].commission += (price * rate);
       }
     });
