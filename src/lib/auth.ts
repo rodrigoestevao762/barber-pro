@@ -19,7 +19,7 @@ const PROVISIONAL_USERS = [
     name: "Mr. Bastos (Dono)",
     role: "ADMIN",
     barberId: "barbeiro-dono",
-    passwords: ["123", "admin123", "@Familia435", "@Familia435#"],
+    passwords: ["123"],
   },
   {
     id: "admin-jully",
@@ -30,7 +30,7 @@ const PROVISIONAL_USERS = [
     name: "Jully Bastos",
     role: "ADMIN",
     barberId: "barbeiro-dono",
-    passwords: ["123", "admin123", "@Familia435", "@Familia435#", "jully123"],
+    passwords: ["123"],
   },
   {
     id: "barbeiro-nando",
@@ -41,7 +41,7 @@ const PROVISIONAL_USERS = [
     name: "Nando Barbeiro",
     role: "BARBER",
     barberId: "barbeiro-nando",
-    passwords: ["123", "barbeiro123"],
+    passwords: ["123"],
   },
   {
     id: "barbeiro-saul",
@@ -52,7 +52,7 @@ const PROVISIONAL_USERS = [
     name: "Saul Barbeiro",
     role: "BARBER",
     barberId: "barbeiro-saul",
-    passwords: ["123", "barbeiro123"],
+    passwords: ["123"],
   },
 ];
 
