@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell, User as UserIcon, Wallet, Archive, Shield, Home } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { signOut, useSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { getDisplayTime } from "@/lib/timezone";
+import { disconnectAccount } from "@/lib/logout";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
@@ -111,11 +112,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <button 
-          onClick={() => signOut({ callbackUrl: '/' })} 
-          className="mt-auto p-3 text-gray-500 hover:text-red-400 transition-colors group relative"
-          title="Sair do painel"
+          onClick={disconnectAccount} 
+          className="mt-auto p-3 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-all group relative cursor-pointer"
+          title="Desconectar da Conta"
         >
           <LogOut className="w-5 h-5" />
+          <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#050B14] border border-red-500/40 text-red-300 rounded-lg opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300 pointer-events-none whitespace-nowrap text-xs tracking-wider uppercase font-semibold shadow-xl">
+            Desconectar Conta
+          </div>
         </button>
       </nav>
 
@@ -129,7 +133,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <item.icon className="w-5 h-5" />
           </Link>
         ))}
-        <button onClick={() => signOut({ callbackUrl: '/' })} className="p-3 text-gray-500 hover:text-red-400 transition-colors" title="Encerrar Sessão">
+        <button onClick={disconnectAccount} className="p-3 text-red-400 hover:text-red-300 transition-colors cursor-pointer" title="Desconectar da Conta">
           <LogOut className="w-5 h-5" />
         </button>
       </nav>
@@ -177,6 +181,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <Home className="w-4 h-4 text-blue-400" />
             <span className="hidden sm:inline">Voltar ao Site</span>
           </Link>
+          <button
+            type="button"
+            onClick={disconnectAccount}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-xs font-semibold text-red-300 hover:text-red-200 transition-all shadow-sm cursor-pointer"
+            title="Encerrar sessão e desconectar a conta"
+          >
+            <LogOut className="w-4 h-4 text-red-400" />
+            <span className="hidden sm:inline">Desconectar</span>
+          </button>
           <div className="relative">
             <button 
               onClick={() => setIsNotifOpen(!isNotifOpen)} 

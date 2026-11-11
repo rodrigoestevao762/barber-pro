@@ -1,11 +1,12 @@
 "use client";
 
 import { motion, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
-import { Calendar, ChevronRight, ChevronLeft, Menu, X, Scissors, Star, MapPin, Clock, Smartphone } from "lucide-react";
+import { Calendar, ChevronRight, ChevronLeft, Menu, X, Scissors, Star, MapPin, Clock, Smartphone, LogOut } from "lucide-react";
 import { useState, useEffect, useRef, ReactNode } from "react";
 import Link from "next/link";
 import BookingModal from "@/components/BookingModal";
 import { useSession } from "next-auth/react";
+import { disconnectAccount } from "@/lib/logout";
 import ExperienciaSection from "@/components/ExperienciaSection";
 import NossaAreaSection from "@/components/NossaAreaSection";
 import { LogoMrBastos } from "@/components/LogoMrBastos";
@@ -222,10 +223,28 @@ export default function Home() {
             Nossa Área
             <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
           </a>
-          <Link href={session ? ((session?.user as any)?.role === "CLIENT" ? "/painel-cliente" : "/dashboard") : "/login"} className="hover:text-blue-400 transition-colors relative group">
-            {session ? "Painel" : "Login"}
-            <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
-          </Link>
+          {session ? (
+            <div className="flex items-center gap-3">
+              <Link href={((session?.user as any)?.role === "CLIENT" ? "/painel-cliente" : "/dashboard")} className="hover:text-blue-400 transition-colors relative group">
+                Painel
+                <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+              </Link>
+              <button
+                type="button"
+                onClick={disconnectAccount}
+                className="text-gray-300 hover:text-red-400 transition-colors p-1 cursor-pointer"
+                title="Desconectar da conta"
+                aria-label="Desconectar da conta"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <Link href="/login" className="hover:text-blue-400 transition-colors relative group">
+              Login
+              <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+          )}
           <div onClick={() => setIsModalOpen(true)}>
             <MagneticButton className="bg-gradient-to-r from-blue-700 to-blue-600 text-white px-8 py-4 flex items-center gap-3 hover:bg-white transition-colors duration-300 shadow-xl shadow-black/40 font-bold">
               <Calendar className="w-4 h-4" /> AGENDAR
@@ -270,13 +289,13 @@ export default function Home() {
             </div>
 
             {/* Links Estilo Cards VIP */}
-            <div className="flex-1 py-6 flex flex-col justify-center gap-3.5">
+            <div className="flex-1 py-4 flex flex-col justify-center gap-2.5">
               <p className="text-[10px] uppercase font-bold tracking-[0.3em] text-blue-400 mb-0.5">Navegação Exclusiva</p>
               
               <a
                 href="#servicos"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
+                className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-3.5">
                   <span className="text-xs font-mono font-bold text-blue-400">01</span>
@@ -291,7 +310,7 @@ export default function Home() {
               <a
                 href="#experiencia"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
+                className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-3.5">
                   <span className="text-xs font-mono font-bold text-blue-400">02</span>
@@ -306,7 +325,7 @@ export default function Home() {
               <a
                 href="#nossa-area"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
+                className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-3.5">
                   <span className="text-xs font-mono font-bold text-blue-400">03</span>
@@ -321,7 +340,7 @@ export default function Home() {
               <Link
                 href={session ? ((session?.user as any)?.role === "CLIENT" ? "/painel-cliente" : "/dashboard") : "/login"}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
+                className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 hover:border-blue-500/40 active:bg-blue-600/10 flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-3.5">
                   <span className="text-xs font-mono font-bold text-blue-400">04</span>
@@ -337,13 +356,39 @@ export default function Home() {
                 <ChevronRight className="w-4 h-4 text-gray-500" />
               </Link>
 
+              {session && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setIsMobileMenuOpen(false);
+                    await disconnectAccount();
+                  }}
+                  className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 active:bg-red-500/20 flex items-center justify-between transition-all group text-left cursor-pointer"
+                >
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-6 h-6 rounded-lg bg-red-500/20 text-red-400 flex items-center justify-center border border-red-500/30 shrink-0">
+                      <LogOut className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <span className="text-sm font-serif text-red-300 block">
+                        Desconectar Conta
+                      </span>
+                      <span className="text-[10px] text-gray-400 font-light">
+                        Encerrar sessão de {(session?.user?.name || "usuário")}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-red-400 font-mono uppercase tracking-wider font-bold shrink-0">Sair</span>
+                </button>
+              )}
+
               {/* Avaliação no Google no Menu Mobile */}
               <a
                 href="https://g.page/r/CRXf9JwKqxNQEBM/review"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-4 rounded-2xl bg-amber-500/[0.08] border border-amber-500/30 active:bg-amber-500/20 flex items-center justify-between transition-all"
+                className="p-3.5 rounded-2xl bg-amber-500/[0.08] border border-amber-500/30 active:bg-amber-500/20 flex items-center justify-between transition-all"
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-8 h-8 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/40">
@@ -366,7 +411,7 @@ export default function Home() {
                     window.dispatchEvent(new CustomEvent("trigger-pwa-install"));
                   }
                 }}
-                className="p-4 rounded-2xl bg-blue-600/10 border border-blue-500/30 active:bg-blue-600/20 flex items-center justify-between transition-all text-left w-full"
+                className="p-3.5 rounded-2xl bg-blue-600/10 border border-blue-500/30 active:bg-blue-600/20 flex items-center justify-between transition-all text-left w-full"
               >
                 <div className="flex items-center gap-3.5">
                   <div className="w-8 h-8 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/40">

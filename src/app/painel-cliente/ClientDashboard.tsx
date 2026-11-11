@@ -9,12 +9,13 @@ import {
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import BookingModal from "@/components/BookingModal";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { LogoMrBastos } from "@/components/LogoMrBastos";
 import { BARBERS, getBarberById } from "@/lib/barbers";
 import { getDisplayTime } from "@/lib/timezone";
 import { checkDayStatus } from "@/lib/holidays";
+import { disconnectAccount } from "@/lib/logout";
 
 export default function ClientDashboard() {
   const { data: session, status } = useSession();
@@ -334,14 +335,15 @@ export default function ClientDashboard() {
               <span className="hidden xs:inline">Voltar ao Site</span>
             </Link>
 
-            {/* BOTÃO SAIR (LOGOUT) */}
+            {/* BOTÃO DESCONECTAR (LOGOUT) */}
             <button
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-gray-400 hover:text-red-400 transition-colors flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider p-2 rounded-lg hover:bg-white/5"
-              title="Encerrar sessão"
+              type="button"
+              onClick={disconnectAccount}
+              className="text-gray-400 hover:text-red-400 transition-colors flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider p-2 rounded-xl hover:bg-white/5 cursor-pointer"
+              title="Encerrar sessão e desconectar a conta"
             >
-              <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline">Sair</span>
+              <LogOut className="w-4 h-4 text-red-400" />
+              <span className="hidden sm:inline">Desconectar</span>
             </button>
           </div>
         </div>
