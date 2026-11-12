@@ -1,17 +1,19 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell, User as UserIcon, Wallet, Archive, Shield, Home } from "lucide-react";
+import { LayoutDashboard, Users, Calendar, Settings, LogOut, Scissors, Bell, User as UserIcon, Wallet, Archive, Shield, Home, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { getDisplayTime } from "@/lib/timezone";
 import { disconnectAccount } from "@/lib/logout";
+import { getBarberByEmail, getBarberById } from "@/lib/barbers";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [greeting, setGreeting] = useState("BOM DIA");
@@ -54,23 +56,23 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Menu dinâmico por perfil (Dono vs Barbeiro funcionário)
   const navItems = isAdmin
     ? [
-        { id: "/dashboard", icon: LayoutDashboard, label: "Visão Geral (Casa)" },
-        { id: "/dashboard/agenda", icon: Calendar, label: "Agenda Geral" },
-        { id: "/dashboard/financeiro", icon: Wallet, label: "Financeiro Barbearia" },
-        { id: "/dashboard/fechamento", icon: Archive, label: "Fechamento de Caixa" },
-        { id: "/dashboard/clientes", icon: Users, label: "Clientes" },
-        { id: "/dashboard/settings", icon: Settings, label: "Ajustes" },
+        { id: "/dashboard", icon: LayoutDashboard, label: "Visão Geral (Casa)", shortLabel: "Início" },
+        { id: "/dashboard/agenda", icon: Calendar, label: "Agenda Geral", shortLabel: "Agenda" },
+        { id: "/dashboard/financeiro", icon: Wallet, label: "Financeiro Barbearia", shortLabel: "Caixa" },
+        { id: "/dashboard/fechamento", icon: Archive, label: "Fechamento de Caixa", shortLabel: "Fechar" },
+        { id: "/dashboard/clientes", icon: Users, label: "Clientes", shortLabel: "Clientes" },
+        { id: "/dashboard/settings", icon: Settings, label: "Ajustes", shortLabel: "Ajustes" },
       ]
     : [
-        { id: "/dashboard", icon: LayoutDashboard, label: "Meus Atendimentos & Comissões" },
-        { id: "/dashboard/agenda", icon: Calendar, label: "Minha Agenda" },
-        { id: "/dashboard/financeiro", icon: Wallet, label: "Meu Caixa (45%)" },
-        { id: "/dashboard/clientes", icon: Users, label: "Clientes" },
-        { id: "/dashboard/settings", icon: Settings, label: "Meu Perfil" },
+        { id: "/dashboard", icon: LayoutDashboard, label: "Meus Atendimentos & Comissões", shortLabel: "Início" },
+        { id: "/dashboard/agenda", icon: Calendar, label: "Minha Agenda", shortLabel: "Agenda" },
+        { id: "/dashboard/financeiro", icon: Wallet, label: "Meu Caixa (45%)", shortLabel: "Caixa" },
+        { id: "/dashboard/clientes", icon: Users, label: "Clientes", shortLabel: "Clientes" },
+        { id: "/dashboard/settings", icon: Settings, label: "Meu Perfil", shortLabel: "Perfil" },
       ];
 
   return (
-    <div className="min-h-screen bg-[#050B14] text-white relative overflow-hidden font-sans selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#050B14] text-white relative overflow-x-hidden font-sans selection:bg-blue-600 selection:text-white pb-24 md:pb-0">
       
       {/* Background glow effects */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
@@ -95,20 +97,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </Link>
 
-          {navItems.map((item) => (
-            <Link
-              key={item.id}
-              href={item.id}
-              className="relative group p-3"
-            >
-              <item.icon className={`w-5 h-5 relative z-10 transition-colors duration-300 text-gray-400 group-hover:text-blue-400`} />
-              
-              {/* Tooltip */}
-              <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#050B14] border border-blue-500/30 text-white rounded-lg opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300 pointer-events-none whitespace-nowrap text-xs tracking-wider uppercase font-semibold shadow-xl">
-                {item.label}
-              </div>
-            </Link>
-          ))}
+          {navItems.map((item) => {
+            const isActive = pathname === item.id;
+            return (
+              <Link
+                key={item.id}
+                href={item.id}
+                className={`relative group p-3 rounded-xl transition-all ${
+                  isActive ? "bg-blue-600/20 text-blue-400 border border-blue-500/40" : "text-gray-400 hover:text-blue-400"
+                }`}
+              >
+                <item.icon className="w-5 h-5 relative z-10 transition-colors duration-200" />
+                
+                {/* Tooltip */}
+                <div className="absolute left-full ml-4 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#050B14] border border-blue-500/30 text-white rounded-lg opacity-0 group-hover:opacity-100 -translate-x-4 group-hover:translate-x-0 transition-all duration-300 pointer-events-none whitespace-nowrap text-xs tracking-wider uppercase font-semibold shadow-xl">
+                  {item.label}
+                </div>
+              </Link>
+            );
+          })}
         </div>
 
         <button 
@@ -124,22 +131,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </nav>
 
       {/* Mobile Bottom Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full h-20 bg-[#050B14]/95 border-t border-white/10 z-[100] flex justify-around items-center px-4 pb-safe">
-        <Link href="/" className="p-3 text-gray-400 hover:text-blue-400 transition-colors" title="Voltar ao Site">
-          <Home className="w-5 h-5" />
-        </Link>
-        {navItems.map((item) => (
-          <Link key={item.id} href={item.id} className="p-3 text-gray-400 hover:text-blue-400 transition-colors">
-            <item.icon className="w-5 h-5" />
-          </Link>
-        ))}
-        <button onClick={disconnectAccount} className="p-3 text-red-400 hover:text-red-300 transition-colors cursor-pointer" title="Desconectar da Conta">
-          <LogOut className="w-5 h-5" />
+      <nav className="md:hidden fixed bottom-0 left-0 w-full bg-[#050B14]/95 backdrop-blur-xl border-t border-white/10 z-[100] flex justify-between items-center gap-0.5 px-1.5 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+        {navItems.map((item) => {
+          const isActive = pathname === item.id;
+          return (
+            <Link
+              key={item.id}
+              href={item.id}
+              className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-0.5 py-1.5 rounded-xl transition-colors ${
+                isActive ? "text-blue-400 bg-blue-600/15" : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <item.icon className="w-4 h-4 shrink-0" />
+              <span className="text-[9px] font-bold tracking-tight truncate max-w-full">{item.shortLabel}</span>
+            </Link>
+          );
+        })}
+        <button
+          onClick={disconnectAccount}
+          className="flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 px-0.5 py-1.5 rounded-xl text-red-400 hover:text-red-300 transition-colors cursor-pointer"
+          title="Desconectar da Conta"
+        >
+          <LogOut className="w-4 h-4 shrink-0" />
+          <span className="text-[9px] font-bold tracking-tight truncate max-w-full">Sair</span>
         </button>
       </nav>
 
-      {/* Top Header */}
-      <header className="px-6 pt-8 md:pl-36 md:pr-12 md:pt-10 flex flex-col md:flex-row md:justify-between items-start md:items-end gap-6 md:gap-0 relative z-40">
+      {/* Top Header (z-[120] garante que notificações fiquem acima de todos os cards da página) */}
+      <header className="px-4 sm:px-6 pt-[calc(1.25rem+env(safe-area-inset-top))] md:pl-36 md:pr-12 md:pt-10 flex flex-col md:flex-row md:justify-between items-start md:items-end gap-5 md:gap-0 relative z-[120]">
         <div>
           <div className="flex items-center gap-2 mb-1">
             {isAdmin ? (
@@ -191,9 +210,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span className="hidden sm:inline">Desconectar</span>
           </button>
           <div className="relative">
-            <button 
-              onClick={() => setIsNotifOpen(!isNotifOpen)} 
-              className="p-3 bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-white transition-colors relative"
+            <button
+              type="button"
+              onClick={() => setIsNotifOpen(!isNotifOpen)}
+              aria-expanded={isNotifOpen}
+              aria-label="Notificações de atendimentos"
+              className="p-3 bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-white transition-colors relative cursor-pointer"
             >
               <Bell className="w-5 h-5" />
               {notifications.length > 0 && (
@@ -204,34 +226,47 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <AnimatePresence>
               {isNotifOpen && (
                 <>
-                  {/* Backdrop invisível para fechar ao clicar em qualquer lugar fora */}
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setIsNotifOpen(false)} 
+                  {/* Backdrop: escuro no celular para foco total; transparente no desktop */}
+                  <div
+                    className="fixed inset-0 bg-black/70 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none z-40"
+                    onClick={() => setIsNotifOpen(false)}
                   />
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.96, y: 8 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className="absolute right-0 top-full mt-3 w-80 max-w-[calc(100vw-2rem)] bg-[#050B14] border border-blue-500/40 rounded-2xl p-4 shadow-2xl shadow-black/95 z-50 backdrop-blur-2xl ring-1 ring-white/10"
+                    exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                    className="fixed inset-x-4 top-[calc(env(safe-area-inset-top)+4.5rem)] w-auto max-h-[70dvh] flex flex-col md:absolute md:inset-x-auto md:right-0 md:top-full md:mt-3 md:w-80 md:max-h-none bg-[#050B14] border border-blue-500/40 rounded-2xl p-4 shadow-2xl shadow-black/95 z-50 backdrop-blur-2xl ring-1 ring-white/10"
                   >
-                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-white/10">
-                      <h4 className="text-sm font-serif text-white">Últimos Atendimentos</h4>
-                      <span className="text-[10px] text-blue-400 font-mono font-medium">Recentes</span>
+                    <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-white/10 shrink-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Bell className="w-4 h-4 text-blue-400 shrink-0" />
+                        <h4 className="text-sm font-serif text-white truncate">Últimos Atendimentos</h4>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] text-blue-400 font-mono font-medium">Recentes</span>
+                        <button
+                          type="button"
+                          onClick={() => setIsNotifOpen(false)}
+                          aria-label="Fechar notificações"
+                          className="md:hidden p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-[55dvh] md:max-h-72 overflow-y-auto overscroll-contain pr-1">
                       {notifications.length === 0 ? (
                         <p className="text-xs text-gray-500 text-center py-4">Sem notificações no momento.</p>
                       ) : (
                         notifications.map((n) => (
                           <div key={n.id} className="text-xs p-2.5 rounded-xl bg-white/[0.03] border border-white/5 hover:border-blue-500/30 transition-colors">
-                            <div className="flex items-center justify-between">
-                              <p className="text-white font-medium">{n.user?.name || "Cliente"}</p>
-                              <span className="text-[10px] text-blue-400 font-mono font-bold">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-white font-medium truncate">{n.user?.name || "Cliente"}</p>
+                              <span className="text-[10px] text-blue-400 font-mono font-bold shrink-0">
                                 {getDisplayTime(n.date)}
                               </span>
                             </div>
-                            <p className="text-gray-400 text-[11px] mt-0.5">
+                            <p className="text-gray-400 text-[11px] mt-0.5 truncate">
                               {n.service?.name} {n.service?.price ? `· R$ ${Number(n.service.price).toFixed(2)}` : ""}
                             </p>
                           </div>
@@ -245,9 +280,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full">
-            <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-serif text-xs font-bold">
-              {(session?.user?.name || 'M')[0]}
-            </div>
+            {(() => {
+              const email = session?.user?.email?.toLowerCase() || "";
+              const isJully = email.includes("jully");
+              const matchedBarber = !isJully
+                ? getBarberByEmail(email) || getBarberById((session?.user as any)?.barberId)
+                : undefined;
+
+              if (matchedBarber?.avatar) {
+                return (
+                  <img
+                    src={matchedBarber.avatar}
+                    alt={session?.user?.name || matchedBarber.name}
+                    width={28}
+                    height={28}
+                    className="w-7 h-7 rounded-full object-cover object-top border border-blue-500/40 shrink-0"
+                  />
+                );
+              }
+
+              return (
+                <div className="w-7 h-7 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-serif text-xs font-bold shrink-0">
+                  {(session?.user?.name || "M")[0]}
+                </div>
+              );
+            })()}
             <span className="text-xs font-medium text-gray-300 hidden sm:inline">{session?.user?.name}</span>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar, Clock, CheckCircle, User, Plus, X, Phone, MessageCircle, 
   Scissors, Shield, ChevronRight, Edit3, AlertCircle, Check, RotateCcw, 
-  Power, CheckCircle2, ArrowRight
+  Power, CheckCircle2, ArrowRight, Coffee
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
@@ -12,6 +12,7 @@ import { BARBERS, BarberData } from '@/lib/barbers';
 import { OFFICIAL_SERVICES, ServiceItem } from '@/lib/services';
 import { getDisplayTime, parseBrazilDateTime } from '@/lib/timezone';
 import { checkDayStatus } from '@/lib/holidays';
+import LunchBreakControl from '@/components/LunchBreakControl';
 
 export default function AgendaPage() {
   const { data: session } = useSession();
@@ -118,19 +119,118 @@ export default function AgendaPage() {
     }
   };
 
-  // Carrega status de disponibilidade dos barbeiros
-  useEffect(() => {
-    fetch('/api/barbers?all=true')
-      .then((res) => res.json())
-      .then((data) => {
-        const list = Array.isArray(data) ? data : (data?.barbers || []);
+  // Carrega status de disponibilidade e escala individual (almoço, sair antes, folga) dos barbeiros
+  const [barberSchedules, setBarberSchedules] = useState<any[]>([]);
+  const [adminScheduleBarberId, setAdminScheduleBarberId] = useState<string>("barbeiro-dono");
+  const [updatingSchedule, setUpdatingSchedule] = useState(false);
+  const [scheduleFeedback, setScheduleFeedback] = useState<string | null>(null);
+
+  const fetchBarbersSchedule = async (dateStr = selectedDate) => {
+    try {
+      const res = await fetch(`/api/barbers?all=true&date=${dateStr}`, { cache: "no-store" });
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data?.barbers || []);
+      if (list.length > 0) {
+        setBarberSchedules(list);
         const owner = list.find((b: any) => b.id === "barbeiro-dono");
         if (owner) {
-          setIsOwnerAvailable(owner.isAvailable !== false);
+          setIsOwnerAvailable(owner.isGlobalAvailable !== false);
         }
-      })
-      .catch(() => {});
-  }, []);
+      }
+    } catch (_) {}
+  };
+
+  useEffect(() => {
+    fetchBarbersSchedule(selectedDate);
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (!scheduleFeedback) return;
+    const t = setTimeout(() => setScheduleFeedback(null), 4000);
+    return () => clearTimeout(t);
+  }, [scheduleFeedback]);
+
+  const effectiveScheduleBarberId = isAdmin
+    ? (selectedBarberFilter !== "all" ? selectedBarberFilter : adminScheduleBarberId)
+    : (userBarberId || "barbeiro-nando");
+
+  const activeManagedSchedule =
+    barberSchedules.find((b) => b.id === effectiveScheduleBarberId) ||
+    BARBERS.find((b) => b.id === effectiveScheduleBarberId) ||
+    BARBERS[0];
+
+  const handleUpdateBarberLunch = async (time: string | null, scope: "default" | "date") => {
+    setUpdatingSchedule(true);
+    try {
+      const res = await fetch('/api/barbers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          barberId: effectiveScheduleBarberId,
+          date: selectedDate,
+          lunchBreakTime: time,
+          lunchBreakScope: scope,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchBarbersSchedule(selectedDate);
+        setScheduleFeedback(data.message || "Pausa de almoço atualizada!");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdatingSchedule(false);
+    }
+  };
+
+  const handleToggleBarberDateClosed = async () => {
+    setUpdatingSchedule(true);
+    try {
+      const res = await fetch('/api/barbers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          barberId: effectiveScheduleBarberId,
+          date: selectedDate,
+          isDateClosed: !activeManagedSchedule?.isDateClosed,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchBarbersSchedule(selectedDate);
+        setScheduleFeedback(data.message || "Disponibilidade na data atualizada.");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdatingSchedule(false);
+    }
+  };
+
+  const handleUpdateBarberEarlyClosing = async (timeVal: string) => {
+    setUpdatingSchedule(true);
+    try {
+      const res = await fetch('/api/barbers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          barberId: effectiveScheduleBarberId,
+          date: selectedDate,
+          earlyClosingTime: timeVal || null,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchBarbersSchedule(selectedDate);
+        setScheduleFeedback(data.message || "Saída antecipada atualizada.");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdatingSchedule(false);
+    }
+  };
 
   const toggleOwnerAvailability = async () => {
     setIsTogglingOwner(true);
@@ -139,10 +239,11 @@ export default function AgendaPage() {
       const res = await fetch('/api/barbers', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ barberId: "barbeiro-dono", isAvailable: newStatus })
+        body: JSON.stringify({ barberId: "barbeiro-dono", isGlobalAvailable: newStatus })
       });
       if (res.ok) {
         setIsOwnerAvailable(newStatus);
+        await fetchBarbersSchedule(selectedDate);
       }
     } catch (e) {
       console.error(e);
@@ -513,6 +614,105 @@ export default function AgendaPage() {
         </div>
       )}
 
+      {/* ── PAUSA INDIVIDUAL PARA ALMOÇO, SAÍDA ANTECIPADA & FOLGA PONTUAL ── */}
+      {scheduleFeedback && (
+        <div className="fixed bottom-20 right-4 z-[150] md:bottom-6 md:right-6 bg-[#050B14]/95 border border-blue-500/50 text-blue-200 px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{scheduleFeedback}</span>
+        </div>
+      )}
+
+      <div className="bg-[#060E1B] border border-blue-900/45 rounded-2xl p-4 sm:p-5 space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-1.5">
+              <Coffee className="w-3.5 h-3.5" /> Controle Individual de Almoço &amp; Expediente
+            </span>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Cada profissional bloqueia somente o seu próprio horário de almoço, folga ou saída antecipada.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {isAdmin && BARBERS.map((b) => {
+              const bSched = barberSchedules.find((s) => s.id === b.id);
+              const active = effectiveScheduleBarberId === b.id;
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => {
+                    if (selectedBarberFilter !== "all") {
+                      setSelectedBarberFilter(b.id);
+                    }
+                    setAdminScheduleBarberId(b.id);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 ${
+                    active
+                      ? "bg-blue-600 text-white border-blue-400"
+                      : "bg-[#050B14] text-slate-300 border-blue-900/40 hover:border-blue-500/60"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      bSched?.isDateClosed || bSched?.isGlobalAvailable === false
+                        ? "bg-red-400"
+                        : bSched?.lunchBreakTime
+                        ? "bg-amber-400"
+                        : "bg-emerald-400"
+                    }`}
+                  />
+                  <span>{b.name.split(" ")[0]}</span>
+                  {bSched?.lunchBreakTime && (
+                    <span className="text-[10px] font-mono opacity-85">
+                      ({bSched.lunchBreakTime.split("-")[0]})
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              disabled={updatingSchedule}
+              onClick={handleToggleBarberDateClosed}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                activeManagedSchedule?.isDateClosed
+                  ? "bg-red-500/20 text-red-300 border-red-500/40"
+                  : "bg-[#050B14] text-slate-300 border-blue-900/40 hover:border-blue-500/60"
+              }`}
+            >
+              {activeManagedSchedule?.isDateClosed ? "Agenda Fechada (Reabrir)" : "Fechar Só Hoje"}
+            </button>
+
+            <select
+              value={activeManagedSchedule?.earlyClosingTime || ""}
+              disabled={updatingSchedule}
+              onChange={(e) => handleUpdateBarberEarlyClosing(e.target.value)}
+              className="bg-[#050B14] border border-blue-900/50 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+            >
+              <option value="">Sair antes: Normal (20h)</option>
+              <option value="19:00">Sair às 19:00</option>
+              <option value="18:00">Sair às 18:00</option>
+              <option value="17:00">Sair às 17:00</option>
+              <option value="16:00">Sair às 16:00</option>
+              <option value="15:00">Sair às 15:00</option>
+            </select>
+          </div>
+        </div>
+
+        <LunchBreakControl
+          barberId={effectiveScheduleBarberId}
+          barberName={activeManagedSchedule?.name || "Barbeiro"}
+          selectedDate={selectedDate}
+          lunchBreakTime={activeManagedSchedule?.lunchBreakTime || null}
+          isLunchBreakFixed={Boolean(activeManagedSchedule?.isLunchBreakFixed)}
+          hasLunchDateOverride={Boolean(activeManagedSchedule?.hasLunchDateOverride)}
+          onUpdateLunchBreak={handleUpdateBarberLunch}
+          updatingLunch={updatingSchedule}
+        />
+      </div>
+
       {/* ── ALERTA DE DOMINGO OU FERIADO SELECIONADO ── */}
       {currentDayStatus.isClosed && (
         <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-start gap-3">
@@ -683,6 +883,11 @@ export default function AgendaPage() {
                         <span className="text-blue-400">
                           Comissão: R$ {barberCommission.toFixed(2)} (45%)
                         </span>
+                        {apt.paymentMethod && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 font-bold uppercase">
+                            {apt.paymentMethod.replace("CARTAO_", "Cartão ")}
+                          </span>
+                        )}
                       </p>
                       <p className="text-[11px] text-gray-500 font-mono mt-0.5 truncate">
                         WhatsApp: {apt.user?.phone || "Não informado"}
@@ -1026,6 +1231,26 @@ export default function AgendaPage() {
                     onChange={(e) => setNewTime(e.target.value)}
                     className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-2.5 px-4 text-white text-sm focus:border-blue-500 focus:outline-none [&::-webkit-calendar-picker-indicator]:invert"
                   />
+                  {(() => {
+                    const targetBId = isAdmin ? newBarberId : (userBarberId || "barbeiro-nando");
+                    const bSched = barberSchedules.find((s) => s.id === targetBId);
+                    if (!bSched) return null;
+                    const newHour = `${(newTime || "10:00").slice(0, 2)}:00`;
+                    const inLunch =
+                      Array.isArray(bSched.lunchBreakSlots) &&
+                      (bSched.lunchBreakSlots.includes(newTime) || bSched.lunchBreakSlots.includes(newHour));
+                    const afterEarly = bSched.earlyClosingTime && newTime > bSched.earlyClosingTime;
+                    if (!inLunch && !afterEarly && !bSched.isDateClosed) return null;
+                    return (
+                      <p className="mt-2 p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/35 text-amber-300 text-[11px]">
+                        ⚠️ {bSched.isDateClosed
+                          ? `${bSched.name} marcou folga nesta data (${selectedDate.split("-").reverse().join("/")}).`
+                          : inLunch
+                          ? `${bSched.name} está em pausa de almoço neste horário (${bSched.lunchBreakTime}).`
+                          : `${bSched.name} encerra os atendimentos às ${bSched.earlyClosingTime} nesta data.`}
+                      </p>
+                    );
+                  })()}
                 </div>
 
                 <button

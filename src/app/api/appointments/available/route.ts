@@ -1,11 +1,25 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { BARBERS, getBarberById } from "@/lib/barbers";
 import { getAppointmentsForDate } from "@/lib/appointments-store";
+import { normalizeBarberId } from "@/lib/barber-availability";
+import {
+  checkBarberDayStatusDB,
+  getAllBarbersScheduleForDateDB,
+  getBarberDayScheduleDB,
+} from "@/lib/barber-schedule";
 import { getBrazilNow, formatAptTimeToHHMM } from "@/lib/timezone";
 import { checkDayStatus } from "@/lib/holidays";
-import { isBarberAvailable } from "@/lib/barber-availability";
 
+export const dynamic = "force-dynamic";
+
+function jsonNoStore(body: unknown, status = 200) {
+  return NextResponse.json(body, {
+    status,
+    headers: { "Cache-Control": "no-store, no-cache, must-revalidate" },
+  });
+}
+
+// Horário de funcionamento oficial Mr. Bastos: Segunda a Sábado 08h às 20h
 const WORK_HOURS = [
   "08:00",
   "09:00",
@@ -32,100 +46,140 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Data não informada" }, { status: 400 });
     }
 
-    // 1. Verificação de Domingos e Feriados (Alagoinhas - BA + Nacionais)
-    const dayStatus = checkDayStatus(dateParam);
+    const cleanDateStr = dateParam.substring(0, 10);
+
+    // 1. Verificação de Domingo e Feriados Oficiais (Alagoinhas - BA e Nacionais)
+    const dayStatus = checkDayStatus(cleanDateStr);
     if (dayStatus.isClosed) {
-      return NextResponse.json({
+      return jsonNoStore({
         availableTimes: [],
         isClosed: true,
-        isSunday: dayStatus.isSunday,
-        isHoliday: dayStatus.isHoliday,
+        isSunday: dayStatus.isSunday || false,
+        isHoliday: dayStatus.isHoliday || false,
+        isBarberOff: false,
         reason: dayStatus.reason,
       });
     }
 
-    // 2. Se o barbeiro específico estiver em folga/escala inativa (ex: Dono 4x4)
-    if (barberId && barberId !== "all" && barberId !== "qualquer") {
-      if (!isBarberAvailable(barberId)) {
-        return NextResponse.json({
-          availableTimes: [],
-          isBarberOff: true,
-          reason: "Este profissional não está disponível para agendamentos hoje.",
-        });
-      }
-    }
-
+    // 2. Se a data for no passado (antes de hoje no Brasil), não há horários livres
     const brazilNow = getBrazilNow();
-
-    // 3. Se a data solicitada for no passado (antes de hoje no fuso do Brasil), não há horários livres
-    if (dateParam < brazilNow.date) {
-      return NextResponse.json({ availableTimes: [] });
+    if (cleanDateStr < brazilNow.date) {
+      return jsonNoStore({ availableTimes: [] });
     }
 
-    // Intervalo do dia no fuso horário do Brasil (UTC-3)
-    const startOfDay = new Date(`${dateParam}T00:00:00-03:00`);
-    const endOfDay = new Date(`${dateParam}T23:59:59-03:00`);
+    // 3. Coleta todos os agendamentos ativos do dia (PostgreSQL + Store local em disco/memória)
+    const startOfDay = new Date(`${cleanDateStr}T00:00:00-03:00`);
+    const endOfDay = new Date(`${cleanDateStr}T23:59:59-03:00`);
 
-    // Filtra para remover horários que já passaram se a data for hoje
-    const filterOutPastTimes = (times: string[]) => {
-      if (dateParam === brazilNow.date) {
-        return times.filter((time) => time > brazilNow.time);
-      }
-      return times;
+    const bookedByBarber = new Map<string, Set<string>>();
+    const recordBooking = (bId: string, timeStr: string) => {
+      const norm = normalizeBarberId(bId);
+      if (!bookedByBarber.has(norm)) bookedByBarber.set(norm, new Set());
+      bookedByBarber.get(norm)!.add(timeStr);
     };
 
     try {
-      // Busca agendamentos do banco
-      const bookedAppointments = await prisma.appointment.findMany({
+      const dbApts = await prisma.appointment.findMany({
         where: {
           date: { gte: startOfDay, lte: endOfDay },
           status: { notIn: ["CANCELLED"] },
-          ...(barberId && barberId !== "qualquer" && barberId !== "all" ? { barberId } : {}),
         },
+        select: { date: true, barberId: true },
       });
-
-      if (bookedAppointments && bookedAppointments.length > 0) {
-        if (barberId && barberId !== "qualquer" && barberId !== "all") {
-          const bookedTimes = bookedAppointments.map((apt) => formatAptTimeToHHMM(apt.date));
-          const availableTimes = filterOutPastTimes(
-            WORK_HOURS.filter((time) => !bookedTimes.includes(time))
-          );
-          return NextResponse.json({ availableTimes });
-        } else {
-          const timesCount: Record<string, number> = {};
-          bookedAppointments.forEach((apt) => {
-            const t = formatAptTimeToHHMM(apt.date);
-            timesCount[t] = (timesCount[t] || 0) + 1;
-          });
-          const totalBarbers = BARBERS.length;
-          const availableTimes = filterOutPastTimes(
-            WORK_HOURS.filter((time) => (timesCount[time] || 0) < totalBarbers)
-          );
-          return NextResponse.json({ availableTimes });
-        }
-      } else {
-        // Verifica no store em memória
-        const storedApts = getAppointmentsForDate(dateParam, barberId);
-        const bookedTimes = storedApts
-          .filter((apt) => apt.status !== "CANCELLED")
-          .map((apt) => formatAptTimeToHHMM(apt.date));
-        const availableTimes = filterOutPastTimes(
-          WORK_HOURS.filter((time) => !bookedTimes.includes(time))
-        );
-        return NextResponse.json({ availableTimes });
+      for (const apt of dbApts) {
+        recordBooking(apt.barberId || "barbeiro-dono", formatAptTimeToHHMM(apt.date));
       }
-    } catch (dbErr) {
-      // Fallback em memória para contingência de rede
-      const storedApts = getAppointmentsForDate(dateParam, barberId);
-      const bookedTimes = storedApts
-        .filter((apt) => apt.status !== "CANCELLED")
-        .map((apt) => formatAptTimeToHHMM(apt.date));
-      const availableTimes = filterOutPastTimes(
-        WORK_HOURS.filter((time) => !bookedTimes.includes(time))
-      );
-      return NextResponse.json({ availableTimes });
+    } catch (_) {
+      // Silencioso: fallback para store local abaixo
     }
+
+    const storedApts = getAppointmentsForDate(cleanDateStr, null);
+    for (const apt of storedApts) {
+      if (apt.status !== "CANCELLED") {
+        recordBooking(apt.barberId, formatAptTimeToHHMM(apt.date));
+      }
+    }
+
+    // 4A. Barbeiro específico selecionado: aplica escala, saída antecipada e pausa de almoço INDIVIDUAIS
+    if (barberId && barberId !== "qualquer" && barberId !== "all") {
+      const normBarberId = normalizeBarberId(barberId);
+      const barberDayCheck = await checkBarberDayStatusDB(normBarberId, cleanDateStr);
+      if (barberDayCheck.isClosed) {
+        return jsonNoStore({
+          availableTimes: [],
+          isClosed: true,
+          isSunday: false,
+          isHoliday: false,
+          isBarberOff: true,
+          barberId: normBarberId,
+          reason: barberDayCheck.reason,
+        });
+      }
+
+      const schedule = await getBarberDayScheduleDB(normBarberId, cleanDateStr);
+      const barberBooked = bookedByBarber.get(normBarberId) || new Set<string>();
+
+      let availableTimes = [...WORK_HOURS];
+
+      if (schedule.earlyClosingTime) {
+        availableTimes = availableTimes.filter((t) => t <= schedule.earlyClosingTime!);
+      }
+
+      if (schedule.lunchBreakSlots.length > 0) {
+        availableTimes = availableTimes.filter((t) => !schedule.lunchBreakSlots.includes(t));
+      }
+
+      if (cleanDateStr === brazilNow.date) {
+        availableTimes = availableTimes.filter((t) => t > brazilNow.time);
+      }
+
+      availableTimes = availableTimes.filter((t) => !barberBooked.has(t));
+
+      return jsonNoStore({
+        availableTimes,
+        isClosed: false,
+        isBarberOff: false,
+        barberId: normBarberId,
+        earlyClosingTime: schedule.earlyClosingTime,
+        lunchBreakTime: schedule.lunchBreakTime,
+        lunchBreakSlots: schedule.lunchBreakSlots,
+        isLunchBreakFixed: schedule.isLunchBreakFixed,
+      });
+    }
+
+    // 4B. "Qualquer Profissional": horário é livre se ao menos um barbeiro ativo não estiver em almoço, fora ou ocupado
+    const allSchedules = await getAllBarbersScheduleForDateDB(cleanDateStr);
+    const activeSchedules = allSchedules.filter((s) => s.isEffectiveAvailable);
+
+    if (activeSchedules.length === 0) {
+      return jsonNoStore({
+        availableTimes: [],
+        isClosed: true,
+        isBarberOff: true,
+        reason: "Nenhum profissional disponível para agendamentos nesta data.",
+      });
+    }
+
+    const availableTimes = WORK_HOURS.filter((time) => {
+      if (cleanDateStr === brazilNow.date && time <= brazilNow.time) {
+        return false;
+      }
+
+      return activeSchedules.some((sched) => {
+        if (sched.earlyClosingTime && time > sched.earlyClosingTime) return false;
+        if (sched.lunchBreakSlots.includes(time)) return false;
+        const barberBooked = bookedByBarber.get(sched.barberId);
+        return !(barberBooked && barberBooked.has(time));
+      });
+    });
+
+    return jsonNoStore({
+      availableTimes,
+      isClosed: false,
+      isBarberOff: false,
+    });
   } catch (error) {
+    console.error("Erro ao buscar horários disponíveis:", error);
     return NextResponse.json({ error: "Erro ao buscar horários" }, { status: 500 });
   }
 }

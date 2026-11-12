@@ -82,3 +82,15 @@ model CashClosing {
   barberRevenues String?  // Stored as JSON string for simplicity
   createdAt      DateTime @default(now())
 }
+
+model BarberSchedule {
+  id               String   @id // "{barberId}:GLOBAL", "{barberId}:DEFAULT" ou "{barberId}:{YYYY-MM-DD}"
+  barberId         String
+  dateKey          String   // "GLOBAL", "DEFAULT" (fixo diário) ou "YYYY-MM-DD"
+  isClosed         Boolean  @default(false)
+  earlyClosingTime String?  // ex: "17:00"
+  lunchBreakTime   String?  // ex: "12:00", "13:00", "12:00-14:00", ou "NONE" para liberar apenas nesta data
+  updatedAt        DateTime @updatedAt
+
+  @@index([barberId, dateKey])
+}

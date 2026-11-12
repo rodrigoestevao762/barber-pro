@@ -1,65 +1,112 @@
-export const dynamic = 'force-dynamic';
+import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
+import { authOptions } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import { getAllStoredUsers } from "@/lib/users-store";
+import { getAllStoredAppointments } from "@/lib/appointments-store";
+import ClientesClientView, { ClientCrmItem } from "./ClientesClientView";
 
-import prisma from '@/lib/prisma';
-import { Users, Phone, Mail } from 'lucide-react';
-import { getAllStoredAppointments } from '@/lib/appointments-store';
+export const dynamic = "force-dynamic";
 
 export default async function ClientesPage() {
-  let clients: any[] = [];
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as any)?.role;
 
-  try {
-    clients = await prisma.user.findMany({
-      where: { role: 'CLIENT' },
-      orderBy: { createdAt: 'desc' }
-    });
-  } catch (err) {
-    // Fallback gracioso com clientes registrados nos agendamentos
-    const apts = getAllStoredAppointments();
-    const map = new Map<string, any>();
-    apts.forEach((a) => {
-      const key = a.user.phone || a.user.name;
-      if (key && !map.has(key)) {
-        map.set(key, {
-          id: a.user.id,
-          name: a.user.name,
-          phone: a.user.phone,
-          email: a.user.email || "cliente@mrbastos.com",
-          createdAt: new Date(),
-        });
-      }
-    });
-    clients = Array.from(map.values());
+  if (!session || (role !== "ADMIN" && role !== "BARBER")) {
+    redirect("/login");
   }
 
-  return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-md">
-        <h2 className="text-3xl font-serif text-white mb-8 flex items-center gap-3">
-          <Users className="text-blue-400" /> Todos os Clientes
-        </h2>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {clients.length === 0 && <p className="text-gray-500 italic">Nenhum cliente cadastrado.</p>}
-          {clients.map(client => (
-            <div key={client.id} className="p-6 bg-black/20 border border-white/5 rounded-2xl flex flex-col gap-4 hover:border-blue-500/30 transition-colors">
-              <div>
-                <h4 className="text-white font-medium text-xl">{client.name || "Sem Nome"}</h4>
-                <span className="text-xs text-gray-500 uppercase tracking-widest">
-                  Cliente desde {new Date(client.createdAt).getFullYear()}
-                </span>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-400 flex items-center gap-2">
-                  <Phone className="w-4 h-4 text-blue-400" /> {client.phone || "Não informado"}
-                </p>
-                <p className="text-sm text-gray-400 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-blue-400" /> {client.email || "Não informado"}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  const clientMap = new Map<string, ClientCrmItem>();
+
+  // 1. Busca clientes reais do PostgreSQL quando acessível
+  try {
+    const dbClients = await prisma.user.findMany({
+      where: { role: "CLIENT" },
+      include: {
+        appointments: {
+          where: { status: { not: "CANCELLED" } },
+          include: { service: true, barber: true },
+          orderBy: { date: "desc" },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    for (const u of dbClients) {
+      const key = (u.email || u.phone || u.id).toLowerCase();
+      const latestApt = u.appointments[0];
+      clientMap.set(key, {
+        id: u.id,
+        name: u.name || "Cliente VIP",
+        email: u.email || null,
+        phone: u.phone || null,
+        createdAt: u.createdAt.toISOString(),
+        totalAppointments: u.appointments.length,
+        completedAppointments: u.appointments.filter((a) => a.status === "COMPLETED").length,
+        lastServiceName: latestApt?.service?.name || null,
+        lastServiceDate: latestApt ? latestApt.date.toISOString() : null,
+        lastBarberName: latestApt?.barber?.name || null,
+      });
+    }
+  } catch (err) {
+    console.warn("[CRM Clientes] PostgreSQL indisponível, usando repositório resiliente:", err);
+  }
+
+  // 2. Mescla clientes e atendimentos do store resiliente (sem duplicar)
+  const storedUsers = getAllStoredUsers().filter((u) => u.role === "CLIENT");
+  const storedApts = getAllStoredAppointments().filter((a) => a.status !== "CANCELLED");
+
+  for (const su of storedUsers) {
+    const key = (su.email || su.phone || su.id).toLowerCase();
+    const userApts = storedApts
+      .filter(
+        (a) =>
+          a.user?.id === su.id ||
+          (su.email && a.user?.email?.toLowerCase() === su.email.toLowerCase()) ||
+          (su.phone &&
+            a.user?.phone?.replace(/\D/g, "") === su.phone.replace(/\D/g, ""))
+      )
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const existing = clientMap.get(key);
+    const latestStored = userApts[0];
+
+    if (!existing) {
+      clientMap.set(key, {
+        id: su.id,
+        name: su.name || "Cliente VIP",
+        email: su.email || null,
+        phone: su.phone || null,
+        createdAt: su.createdAt,
+        totalAppointments: userApts.length,
+        completedAppointments: userApts.filter((a) => a.status === "COMPLETED").length,
+        lastServiceName: latestStored?.service?.name || null,
+        lastServiceDate: latestStored ? latestStored.date : null,
+        lastBarberName: latestStored?.barber?.name || null,
+      });
+    } else if (userApts.length > existing.totalAppointments) {
+      existing.totalAppointments = userApts.length;
+      existing.completedAppointments = Math.max(
+        existing.completedAppointments,
+        userApts.filter((a) => a.status === "COMPLETED").length
+      );
+      if (latestStored) {
+        existing.lastServiceName = latestStored.service?.name || existing.lastServiceName;
+        existing.lastServiceDate = latestStored.date || existing.lastServiceDate;
+        existing.lastBarberName = latestStored.barber?.name || existing.lastBarberName;
+      }
+    }
+  }
+
+  const clients = Array.from(clientMap.values()).sort((a, b) => {
+    const aTime = a.lastServiceDate
+      ? new Date(a.lastServiceDate).getTime()
+      : new Date(a.createdAt).getTime();
+    const bTime = b.lastServiceDate
+      ? new Date(b.lastServiceDate).getTime()
+      : new Date(b.createdAt).getTime();
+    return bTime - aTime;
+  });
+
+  return <ClientesClientView clients={clients} />;
 }

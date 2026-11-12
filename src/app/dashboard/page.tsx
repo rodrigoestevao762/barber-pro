@@ -2,12 +2,13 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
-import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock, CreditCard, Banknote, Sparkles, Calendar, Power, CheckCircle2, MessageCircle, AlertCircle, Edit3, Send } from "lucide-react";
+import { TrendingUp, Users, Scissors, Clock, ChevronRight, CheckCircle, Clock3, X, Shield, DollarSign, Wallet, Award, ArrowUpRight, Lock, CreditCard, Banknote, Sparkles, Calendar, Power, CheckCircle2, MessageCircle, AlertCircle, Edit3, Send, Coffee } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { BARBERS, BarberData } from "@/lib/barbers";
 import { OFFICIAL_SERVICES, ServiceItem } from "@/lib/services";
 import { getDisplayTime } from "@/lib/timezone";
+import LunchBreakControl from "@/components/LunchBreakControl";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -66,9 +67,12 @@ export default function DashboardPage() {
   });
   const [selectedBarberFilter, setSelectedBarberFilter] = useState<string>("all");
 
-  // Disponibilidade do Dono (Escala Flexível / 4x4)
+  // Disponibilidade Global (Escala 4x4) + Escala & Almoço Individual por Barbeiro
   const [isOwnerAvailable, setIsOwnerAvailable] = useState(true);
   const [isTogglingOwner, setIsTogglingOwner] = useState(false);
+  const [barberSchedules, setBarberSchedules] = useState<any[]>([]);
+  const [managedBarberId, setManagedBarberId] = useState<string>("barbeiro-dono");
+  const [updatingSchedule, setUpdatingSchedule] = useState(false);
 
   // Modal de Cancelamento por Imprevisto com WhatsApp
   const [cancellingApt, setCancellingApt] = useState<any | null>(null);
@@ -77,19 +81,115 @@ export default function DashboardPage() {
   const [isProcessingCancel, setIsProcessingCancel] = useState(false);
   const [cancelSuccessWhatsappUrl, setCancelSuccessWhatsappUrl] = useState<string | null>(null);
 
-  // Carrega status da escala 4x4 do dono
-  useEffect(() => {
-    fetch('/api/barbers?all=true')
-      .then((res) => res.json())
-      .then((data) => {
-        const list = Array.isArray(data) ? data : (data?.barbers || []);
+  const fetchBarbersSchedule = async (dateStr = selectedDate) => {
+    try {
+      const res = await fetch(`/api/barbers?all=true&date=${dateStr}`, { cache: "no-store" });
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : (data?.barbers || []);
+      if (list.length > 0) {
+        setBarberSchedules(list);
         const owner = list.find((b: any) => b.id === "barbeiro-dono");
         if (owner) {
-          setIsOwnerAvailable(owner.isAvailable !== false);
+          setIsOwnerAvailable(owner.isGlobalAvailable !== false);
         }
-      })
-      .catch(() => {});
-  }, []);
+      }
+    } catch (_) {}
+  };
+
+  useEffect(() => {
+    fetchBarbersSchedule(selectedDate);
+  }, [selectedDate]);
+
+  useEffect(() => {
+    if (!isAdmin && userBarberId) {
+      setManagedBarberId(userBarberId);
+    } else if (isAdmin && selectedBarberFilter !== "all") {
+      setManagedBarberId(selectedBarberFilter);
+    }
+  }, [isAdmin, userBarberId, selectedBarberFilter]);
+
+  const effectiveManagedBarberId = isAdmin
+    ? (selectedBarberFilter !== "all" ? selectedBarberFilter : managedBarberId)
+    : (userBarberId || "barbeiro-nando");
+
+  const activeManagedSchedule =
+    barberSchedules.find((b) => b.id === effectiveManagedBarberId) ||
+    BARBERS.find((b) => b.id === effectiveManagedBarberId) ||
+    BARBERS[0];
+
+  const handleUpdateBarberLunch = async (time: string | null, scope: "default" | "date") => {
+    setUpdatingSchedule(true);
+    try {
+      const res = await fetch("/api/barbers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          barberId: effectiveManagedBarberId,
+          date: selectedDate,
+          lunchBreakTime: time,
+          lunchBreakScope: scope,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchBarbersSchedule(selectedDate);
+        setToastMessage(data.message || "Pausa para almoço atualizada com sucesso!");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdatingSchedule(false);
+    }
+  };
+
+  const handleToggleBarberDateClosed = async () => {
+    const nextClosed = !activeManagedSchedule?.isDateClosed;
+    setUpdatingSchedule(true);
+    try {
+      const res = await fetch("/api/barbers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          barberId: effectiveManagedBarberId,
+          date: selectedDate,
+          isDateClosed: nextClosed,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchBarbersSchedule(selectedDate);
+        setToastMessage(data.message || "Disponibilidade na data atualizada.");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdatingSchedule(false);
+    }
+  };
+
+  const handleUpdateBarberEarlyClosing = async (timeVal: string) => {
+    setUpdatingSchedule(true);
+    try {
+      const res = await fetch("/api/barbers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          barberId: effectiveManagedBarberId,
+          date: selectedDate,
+          earlyClosingTime: timeVal || null,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        await fetchBarbersSchedule(selectedDate);
+        setToastMessage(data.message || "Horário de encerramento atualizado.");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUpdatingSchedule(false);
+    }
+  };
 
   const toggleOwnerAvailability = async () => {
     setIsTogglingOwner(true);
@@ -98,10 +198,11 @@ export default function DashboardPage() {
       const res = await fetch('/api/barbers', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ barberId: "barbeiro-dono", isAvailable: newStatus })
+        body: JSON.stringify({ barberId: "barbeiro-dono", isGlobalAvailable: newStatus })
       });
       if (res.ok) {
         setIsOwnerAvailable(newStatus);
+        await fetchBarbersSchedule(selectedDate);
         setToastMessage(newStatus 
           ? "Mr. Bastos está ATIVO no site! Clientes podem agendar com ele."
           : "Mr. Bastos está em FOLGA da escala 4x4 (ocultado do agendamento online).");
@@ -419,6 +520,103 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* ── CONTROLE INDIVIDUAL DE PAUSA PARA ALMOÇO, SAÍDA ANTECIPADA & DATA (POR BARBEIRO) ── */}
+      <div className="bg-[#060E1B] border border-blue-900/45 rounded-3xl p-5 sm:p-6 space-y-4 shadow-xl">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-3 border-b border-blue-900/30">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-blue-400 flex items-center gap-1.5">
+              <Coffee className="w-3.5 h-3.5" /> Horários &amp; Pausa Individual por Barbeiro
+            </span>
+            <h3 className="text-base sm:text-lg font-serif text-white mt-0.5">
+              {isAdmin
+                ? "Configure o almoço, saída antecipada ou folga individual de cada profissional"
+                : `Configurar sua pausa de almoço e expediente (${activeManagedSchedule.name})`}
+            </h3>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {isAdmin && BARBERS.map((b) => {
+              const bSched = barberSchedules.find((s) => s.id === b.id);
+              const isSelected = effectiveManagedBarberId === b.id;
+              return (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => {
+                    if (selectedBarberFilter !== "all") {
+                      setSelectedBarberFilter(b.id);
+                    }
+                    setManagedBarberId(b.id);
+                  }}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
+                    isSelected
+                      ? "bg-blue-600 text-white border-blue-400 shadow-md shadow-blue-950/50"
+                      : "bg-[#050B14] text-slate-300 border-blue-900/40 hover:border-blue-500/60"
+                  }`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      bSched?.isDateClosed || bSched?.isGlobalAvailable === false
+                        ? "bg-red-400"
+                        : bSched?.lunchBreakTime
+                        ? "bg-amber-400"
+                        : "bg-emerald-400"
+                    }`}
+                  />
+                  <span>{b.name.split(" ")[0]}</span>
+                  {bSched?.lunchBreakTime && (
+                    <span className="text-[10px] opacity-85 font-mono">
+                      ({bSched.lunchBreakTime.split("-")[0]})
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              disabled={updatingSchedule}
+              onClick={handleToggleBarberDateClosed}
+              className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${
+                activeManagedSchedule?.isDateClosed
+                  ? "bg-red-500/20 text-red-300 border-red-500/40 hover:bg-red-500/30"
+                  : "bg-[#050B14] text-slate-300 border-blue-900/40 hover:border-blue-500/60"
+              }`}
+            >
+              {activeManagedSchedule?.isDateClosed
+                ? `Fechado em ${selectedDate.split("-").reverse().slice(0, 2).join("/")} (Abrir)`
+                : `Folga só ${selectedDate.split("-").reverse().slice(0, 2).join("/")}`}
+            </button>
+
+            <select
+              value={activeManagedSchedule?.earlyClosingTime || ""}
+              disabled={updatingSchedule}
+              onChange={(e) => handleUpdateBarberEarlyClosing(e.target.value)}
+              className="bg-[#050B14] border border-blue-900/50 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+              title="Encerrar atendimentos deste barbeiro mais cedo na data selecionada"
+            >
+              <option value="">Sair antes: Normal (20h)</option>
+              <option value="19:00">Sair às 19:00</option>
+              <option value="18:00">Sair às 18:00</option>
+              <option value="17:00">Sair às 17:00</option>
+              <option value="16:00">Sair às 16:00</option>
+              <option value="15:00">Sair às 15:00</option>
+            </select>
+          </div>
+        </div>
+
+        <LunchBreakControl
+          barberId={effectiveManagedBarberId}
+          barberName={activeManagedSchedule?.name || "Barbeiro"}
+          selectedDate={selectedDate}
+          lunchBreakTime={activeManagedSchedule?.lunchBreakTime || null}
+          isLunchBreakFixed={Boolean(activeManagedSchedule?.isLunchBreakFixed)}
+          hasLunchDateOverride={Boolean(activeManagedSchedule?.hasLunchDateOverride)}
+          onUpdateLunchBreak={handleUpdateBarberLunch}
+          updatingLunch={updatingSchedule}
+        />
+      </div>
+
       {/* ── BENTO GRID DE CARDS PRINCIPAIS (COMISSÕES & FATURAMENTO) ── */}
       {isAdmin && selectedBarberFilter === "all" ? (
         /* VISÃO GERAL DO DONO (TODOS) */
@@ -616,9 +814,13 @@ export default function DashboardPage() {
                 >
                   <div>
                     <div className="flex items-center gap-3.5 mb-4">
-                      <div 
-                        className="w-12 h-12 rounded-full bg-cover bg-center border border-white/20 shrink-0"
-                        style={{ backgroundImage: `url(${barber.avatar})` }}
+                      <img
+                        src={barber.avatar}
+                        alt={barber.name}
+                        width={48}
+                        height={48}
+                        loading="lazy"
+                        className="w-12 h-12 rounded-full object-cover object-top border border-white/20 shrink-0"
                       />
                       <div>
                         <div className="flex items-center gap-2">
@@ -777,6 +979,11 @@ export default function DashboardPage() {
                         <span className="text-blue-400">
                           Comissão: R$ {barberCutShare.toFixed(2)} (45%)
                         </span>
+                        {apt.paymentMethod && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 font-bold uppercase">
+                            {apt.paymentMethod.replace("CARTAO_", "Cartão ")}
+                          </span>
+                        )}
                       </p>
                       <p className="text-[11px] text-gray-500 font-mono mt-0.5 truncate">
                         WhatsApp: {apt.user?.phone || "Não informado"}

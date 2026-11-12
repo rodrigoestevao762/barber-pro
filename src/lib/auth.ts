@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import prisma from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { BARBERS, getBarberByEmail } from "@/lib/barbers";
+import { findStoredUserByEmailOrPhone } from "@/lib/users-store";
 
 process.env.NEXTAUTH_URL = process.env.NEXTAUTH_URL || "https://mrbastos.com.br";
 process.env.NEXTAUTH_URL_INTERNAL = process.env.NEXTAUTH_URL_INTERNAL || "https://mrbastos.com.br";
@@ -164,6 +165,27 @@ export const authOptions: NextAuthOptions = {
               phone: foundProvisional.phone,
               role: foundProvisional.role,
               barberId: foundProvisional.barberId,
+            } as any;
+          }
+        }
+
+        // Fallback em repositório local para clientes cadastrados caso o banco esteja inacessível
+        const storedUser = findStoredUserByEmailOrPhone(lowerInput);
+        if (storedUser && storedUser.passwordHash) {
+          let passwordMatches = false;
+          if (storedUser.passwordHash.startsWith("$2")) {
+            passwordMatches = await bcrypt.compare(pwd, storedUser.passwordHash);
+          } else {
+            passwordMatches = storedUser.passwordHash === pwd;
+          }
+          if (passwordMatches) {
+            return {
+              id: storedUser.id,
+              name: storedUser.name,
+              email: storedUser.email,
+              phone: storedUser.phone,
+              role: storedUser.role,
+              barberId: storedUser.barberId,
             } as any;
           }
         }

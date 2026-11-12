@@ -132,7 +132,7 @@ export default function LoginPage() {
                   type="text" 
                   value={identifier} 
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-blue-500 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
+                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-blue-500 rounded-xl py-3.5 pl-11 pr-4 text-base sm:text-sm text-white focus:outline-none transition-colors duration-150 placeholder:text-gray-600"
                   placeholder="seuemail@exemplo.com ou telefone (com DDD)" 
                 />
               </div>
@@ -163,7 +163,7 @@ export default function LoginPage() {
                   type="password" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-blue-500 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none transition-all duration-300 placeholder:text-gray-600"
+                  className="w-full bg-white/[0.03] border border-white/10 hover:border-white/20 focus:bg-white/[0.05] focus:border-blue-500 rounded-xl py-3.5 pl-11 pr-4 text-base sm:text-sm text-white focus:outline-none transition-colors duration-150 placeholder:text-gray-600"
                   placeholder="Sua senha de acesso" 
                 />
               </div>
@@ -172,7 +172,7 @@ export default function LoginPage() {
             <button 
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-700 to-blue-600 text-white font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-all duration-300 flex items-center justify-center gap-3 group mt-6 hover:bg-white active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-blue-500/20"
+              className="w-full bg-gradient-to-r from-blue-700 to-blue-600 text-white font-bold text-xs uppercase tracking-[0.2em] py-4 rounded-xl transition-colors duration-150 flex items-center justify-center gap-3 group mt-6 hover:bg-white active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-blue-500/20"
             >
               {loading ? "Autenticando..." : "Entrar no Painel"}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -267,7 +267,7 @@ export default function LoginPage() {
                         value={recoveryEmail}
                         onChange={(e) => setRecoveryEmail(e.target.value)}
                         placeholder="Ex: seuemail@gmail.com"
-                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white text-sm focus:border-blue-500 focus:outline-none"
+                        className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-white text-base sm:text-sm focus:border-blue-500 focus:outline-none"
                       />
                     </div>
                   </div>

@@ -33,12 +33,33 @@ export default function ClientDashboard() {
   const [newRescheduleDate, setNewRescheduleDate] = useState("");
   const [newRescheduleTime, setNewRescheduleTime] = useState("");
   const [rescheduleAvailableTimes, setRescheduleAvailableTimes] = useState<string[]>([]);
+  const [rescheduleScheduleInfo, setRescheduleScheduleInfo] = useState<{
+    lunchBreakTime: string | null;
+    earlyClosingTime: string | null;
+    isBarberOff: boolean;
+    reason: string | null;
+  }>({ lunchBreakTime: null, earlyClosingTime: null, isBarberOff: false, reason: null });
   const [isSubmittingReschedule, setIsSubmittingReschedule] = useState(false);
   const [rescheduleFeedback, setRescheduleFeedback] = useState<{ type: "success" | "error"; msg: string; whatsappUrl?: string } | null>(null);
 
-  // Estados de Cancelamento
+  // Estados de Cancelamento & Notificações VIP
   const [cancellingAptId, setCancellingAptId] = useState<string | null>(null);
   const [cancelFeedback, setCancelFeedback] = useState<{ type: "success" | "error"; msg: string; whatsappUrl?: string } | null>(null);
+  const [newBookingBanner, setNewBookingBanner] = useState(false);
+  const [actionSuccessModal, setActionSuccessModal] = useState<{
+    title: string;
+    message: string;
+    whatsappUrl?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("newBooking") === "1") {
+        setNewBookingBanner(true);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -129,15 +150,12 @@ export default function ClientDashboard() {
   ) || appointments[0];
 
   const handleRebook = () => {
-    if (lastApt) {
-      const barberPhone = lastApt.barber?.phone || BARBERS[0].phone;
-      const barberName = lastApt.barber?.name || BARBERS[0].name;
-      const serviceName = lastApt.service?.name || "Corte";
-      const msg = `Olá, ${barberName}! Sou o ${clientName}. Gostaria de repetir o meu último ${serviceName} com você. Quais horários você tem disponíveis nos próximos dias na Mr. Bastos Barbearia?`;
-      window.open(`https://wa.me/${barberPhone}?text=${encodeURIComponent(msg)}`, "_blank");
+    if (lastApt?.service?.id) {
+      setSelectedServiceId(lastApt.service.id);
     } else {
-      setIsModalOpen(true);
+      setSelectedServiceId(undefined);
     }
+    setIsModalOpen(true);
   };
 
   const handleContactBarber = (barberPhone?: string, barberName?: string) => {
@@ -147,13 +165,19 @@ export default function ClientDashboard() {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   };
 
-  // Carrega horários disponíveis para o modal de reagendamento
+  // Carrega horários disponíveis e regras individuais (almoço/escala) para o modal de reagendamento
   useEffect(() => {
     if (rescheduleApt && newRescheduleDate) {
       const dayStatus = checkDayStatus(newRescheduleDate);
       if (dayStatus.isClosed) {
         setRescheduleAvailableTimes([]);
         setNewRescheduleTime("");
+        setRescheduleScheduleInfo({
+          lunchBreakTime: null,
+          earlyClosingTime: null,
+          isBarberOff: true,
+          reason: dayStatus.reason || "Barbearia fechada nesta data.",
+        });
         return;
       }
 
@@ -161,6 +185,12 @@ export default function ClientDashboard() {
       fetch(`/api/appointments/available?date=${newRescheduleDate}&barberId=${barberId}`)
         .then((res) => res.json())
         .then((data) => {
+          setRescheduleScheduleInfo({
+            lunchBreakTime: data.lunchBreakTime || null,
+            earlyClosingTime: data.earlyClosingTime || null,
+            isBarberOff: Boolean(data.isClosed),
+            reason: data.reason || null,
+          });
           if (Array.isArray(data.availableTimes)) {
             setRescheduleAvailableTimes(data.availableTimes);
           } else {
@@ -200,12 +230,22 @@ export default function ClientDashboard() {
             msg: "Agendamento cancelado com sucesso dentro dos 30 minutos! O horário foi liberado.",
             whatsappUrl,
           });
+          setActionSuccessModal({
+            title: "Cancelamento Confirmado",
+            message: "Seu horário foi cancelado dentro do prazo de 30 minutos e liberado imediatamente na agenda.",
+            whatsappUrl,
+          });
         } else {
           const msg = `Olá, ${barberName}! Sou o ${clientName}. Solicitei o cancelamento do meu agendamento de ${apt.service?.name || "serviço"} do dia ${aptDateStr} às ${aptTimeStr} no sistema. Poderia aprovar por favor?`;
           const whatsappUrl = `https://wa.me/${barberPhone}?text=${encodeURIComponent(msg)}`;
           setCancelFeedback({
             type: "success",
             msg: "Como passaram 30 minutos do agendamento, sua solicitação de cancelamento foi enviada para o barbeiro aprovar.",
+            whatsappUrl,
+          });
+          setActionSuccessModal({
+            title: "Solicitação de Cancelamento Enviada",
+            message: "Como se passaram mais de 30 minutos, enviamos sua solicitação ao barbeiro. Você também pode avisá-lo no WhatsApp:",
             whatsappUrl,
           });
         }
@@ -268,6 +308,12 @@ export default function ClientDashboard() {
           msg: "Solicitação enviada com sucesso! O barbeiro foi notificado para aprovar no painel.",
           whatsappUrl,
         });
+        setActionSuccessModal({
+          title: "Solicitação de Reagendamento Enviada",
+          message: `Solicitação para ${newDateDisplay} registrada. O barbeiro ${barberName} já recebeu no painel!`,
+          whatsappUrl,
+        });
+        setRescheduleApt(null);
         loadDashboardData();
       } else {
         setRescheduleFeedback({
@@ -382,6 +428,35 @@ export default function ClientDashboard() {
       )}
 
       <main className="max-w-4xl mx-auto px-6 py-10 space-y-8">
+        {newBookingBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-emerald-500/15 border border-emerald-500/40 rounded-2xl p-4 sm:p-5 flex items-start sm:items-center justify-between gap-4 shadow-lg"
+          >
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                <CheckCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">
+                  Novo agendamento confirmado com sucesso!
+                </p>
+                <p className="text-xs text-emerald-200/80 mt-0.5">
+                  Seu horário na Mr. Bastos Barbearia já aparece abaixo no seu Painel VIP e no seu Cartão Fidelidade.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNewBookingBanner(false)}
+              className="text-emerald-300 hover:text-white p-1.5 rounded-lg"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+
         {loading ? (
           <div className="py-24 text-center text-blue-400 animate-pulse font-serif text-lg tracking-widest uppercase">
             Carregando seus dados...
@@ -702,6 +777,56 @@ export default function ClientDashboard() {
         )}
       </main>
 
+      {/* ── MODAL DE CONFIRMAÇÃO DE AÇÃO (CANCELAMENTO / REAGENDAMENTO) ── */}
+      <AnimatePresence>
+        {actionSuccessModal && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setActionSuccessModal(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.94, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.94, opacity: 0 }}
+              className="relative w-full max-w-md bg-[#050B14] border border-blue-500/40 rounded-3xl p-6 sm:p-7 z-10 shadow-2xl space-y-4 text-center"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mx-auto">
+                <CheckCircle className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-serif font-bold text-white">
+                {actionSuccessModal.title}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                {actionSuccessModal.message}
+              </p>
+              <div className="flex flex-col gap-2 pt-2">
+                {actionSuccessModal.whatsappUrl && (
+                  <a
+                    href={actionSuccessModal.whatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#128C7E] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all"
+                  >
+                    <MessageCircle className="w-4 h-4" /> Avisar Barbeiro no WhatsApp
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setActionSuccessModal(null)}
+                  className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold"
+                >
+                  Entendido
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* ── MODAL DE REAGENDAMENTO DO CLIENTE ── */}
       <AnimatePresence>
         {rescheduleApt && (
@@ -786,6 +911,16 @@ export default function ClientDashboard() {
                       {checkDayStatus(newRescheduleDate).reason}
                     </p>
                   )}
+                  {newRescheduleDate && !checkDayStatus(newRescheduleDate).isClosed && rescheduleScheduleInfo.lunchBreakTime && (
+                    <p className="text-amber-300 text-[11px] mt-1.5 flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/25 rounded-lg px-2.5 py-1.5">
+                      <span>☕ Pausa de almoço do profissional neste dia: <strong>{rescheduleScheduleInfo.lunchBreakTime.replace("-", " às ")}</strong> (horário travado).</span>
+                    </p>
+                  )}
+                  {newRescheduleDate && !checkDayStatus(newRescheduleDate).isClosed && rescheduleScheduleInfo.earlyClosingTime && (
+                    <p className="text-blue-300 text-[11px] mt-1.5 flex items-center gap-1.5 bg-blue-500/10 border border-blue-500/25 rounded-lg px-2.5 py-1.5">
+                      <span>⏰ Atendimento nesta data até <strong>{rescheduleScheduleInfo.earlyClosingTime}</strong>.</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -796,9 +931,9 @@ export default function ClientDashboard() {
                     <p className="text-xs text-gray-500 italic py-4 text-center border border-dashed border-white/10 rounded-xl">
                       Selecione uma nova data acima para carregar os horários livres.
                     </p>
-                  ) : checkDayStatus(newRescheduleDate).isClosed ? (
-                    <p className="text-xs text-amber-400 italic py-4 text-center border border-dashed border-amber-500/20 rounded-xl bg-amber-500/5">
-                      Barbearia fechada nesta data. Por favor, selecione outro dia.
+                  ) : checkDayStatus(newRescheduleDate).isClosed || rescheduleScheduleInfo.isBarberOff ? (
+                    <p className="text-xs text-amber-400 italic py-4 text-center border border-dashed border-amber-500/20 rounded-xl bg-amber-500/5 px-3">
+                      {rescheduleScheduleInfo.reason || "Profissional ou barbearia indisponível nesta data. Por favor, selecione outro dia."}
                     </p>
                   ) : (
                     <div className="grid grid-cols-3 gap-2 max-h-40 overflow-y-auto pr-1">

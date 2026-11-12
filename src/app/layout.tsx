@@ -1,6 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#050B14",
+};
 import { Providers } from "./Providers";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import CookieConsentBanner from "@/components/CookieConsentBanner";

@@ -2,8 +2,9 @@
 
 import { motion, useScroll, useTransform, useSpring } from "framer-motion";
 import { useRef, useState } from "react";
-import { MapPin, Clock, ChevronRight, Play, Pause, Volume2, VolumeX, Star, ExternalLink, Sparkles } from "lucide-react";
+import { MapPin, Clock, ChevronRight, Play, Pause, Volume2, VolumeX, Star, ExternalLink, Sparkles, Scissors, Calendar } from "lucide-react";
 import { LogoMrBastos } from "@/components/LogoMrBastos";
+import { BARBERS } from "@/lib/barbers";
 
 const GOOGLE_REVIEW_URL = "https://g.page/r/CRXf9JwKqxNQEBM/review";
 const GOOGLE_MAPS_URL = "https://www.google.com/maps/place/Mr.+Bastos+Barbearia/@-12.1389992,-38.4158771,17z/data=!4m6!3m5!1s0x716bdf7b3e01493:0x5013ab0a9cf4df15!8m2!3d-12.1390859!4d-38.4132289!16s%2Fg%2F11rschcdpj?entry=ttu&g_ep=EgoyMDI2MTAyOC4wIKXMDSoASAFQAw%3D%3D";
@@ -265,7 +266,11 @@ function GalleryCard({
   );
 }
 
-export default function NossaAreaSection() {
+export default function NossaAreaSection({
+  onSelectBarber,
+}: {
+  onSelectBarber?: (barberId: string) => void;
+}) {
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -426,6 +431,97 @@ export default function NossaAreaSection() {
             </p>
           </div>
         </motion.div>
+      </div>
+
+      {/* ── NOSSA EQUIPE (RETRATOS OFICIAIS) ── */}
+      <div id="equipe" className="max-w-7xl mx-auto mb-16 md:mb-20">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
+          <div>
+            <p className="text-blue-400 uppercase tracking-[0.45em] text-xs font-semibold flex items-center gap-3 mb-3">
+              <span className="w-8 h-[1px] bg-blue-600" />
+              Mestres da Navalha
+            </p>
+            <h3 className="text-3xl md:text-4xl font-serif text-white leading-tight">
+              Conheça Nossa <span className="text-blue-400">Equipe</span>
+            </h3>
+          </div>
+          <p className="text-gray-400 text-sm font-light max-w-md">
+            Profissionais especialistas em visagismo, degradê navalhado e barboterapia em Alagoinhas.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {BARBERS.map((barber, idx) => {
+            const isOwner = barber.role === "ADMIN";
+            return (
+              <motion.article
+                key={barber.id}
+                initial={{ opacity: 0, y: 36 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.75, delay: idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="group relative rounded-3xl overflow-hidden border border-white/10 bg-[#050B14] hover:border-blue-500/50 transition-all duration-500 shadow-2xl flex flex-col"
+              >
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-[#081221]">
+                  <img
+                    src={barber.avatar}
+                    alt={`${barber.name} - Mr. Bastos Barbearia`}
+                    width={720}
+                    height={960}
+                    loading="lazy"
+                    className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#050B14] via-[#050B14]/20 to-transparent pointer-events-none" />
+                  <div className="absolute top-4 left-4 z-10">
+                    <span
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest backdrop-blur-md border ${
+                        isOwner
+                          ? "bg-blue-600/90 text-white border-blue-400/50 shadow-lg shadow-blue-600/30"
+                          : "bg-[#050B14]/80 text-blue-300 border-blue-500/40"
+                      }`}
+                    >
+                      <Scissors className="w-3 h-3" />
+                      {isOwner ? "Fundador & Mestre" : "Especialista"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-6 flex-1 flex flex-col justify-between gap-4 -mt-6 relative z-10">
+                  <div>
+                    <h4 className="text-2xl font-serif text-white group-hover:text-blue-400 transition-colors">
+                      {barber.name}
+                    </h4>
+                    <p className="text-xs font-semibold text-blue-400 mt-1">
+                      {barber.specialty}
+                    </p>
+                    <p className="text-xs text-gray-400 font-light leading-relaxed mt-2.5">
+                      {barber.bio}
+                    </p>
+                  </div>
+
+                  {onSelectBarber ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelectBarber(barber.id)}
+                      className="w-full py-3 px-4 rounded-xl bg-white/[0.04] hover:bg-blue-600 text-gray-200 hover:text-white border border-white/10 hover:border-blue-500 text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Agendar com {barber.name.split(" ")[0]}</span>
+                    </button>
+                  ) : (
+                    <a
+                      href="#servicos"
+                      className="w-full py-3 px-4 rounded-xl bg-white/[0.04] hover:bg-blue-600 text-gray-200 hover:text-white border border-white/10 hover:border-blue-500 text-[11px] font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all duration-300"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Agendar Horário</span>
+                    </a>
+                  )}
+                </div>
+              </motion.article>
+            );
+          })}
+        </div>
       </div>
 
       {/* ── GALERIA COM VÍDEO TOUR EM FORMATO MAIOR E FOTOS OFICIAIS ── */}

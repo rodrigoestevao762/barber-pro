@@ -95,6 +95,7 @@ export default function FinanceiroPage() {
         id: b.id,
         name: b.name,
         role: b.role,
+        avatar: b.avatar,
         cutsToday: 0,
         totalEarned: 0,
         personalExpenses: 0,
@@ -517,12 +518,22 @@ export default function FinanceiroPage() {
                   return (
                     <div key={`summary-${barber.id}`} className="bg-black/40 border border-white/5 rounded-2xl p-5 hover:border-white/20 transition-all flex flex-col justify-between">
                       <div>
-                        <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-                          <div>
-                            <h4 className="text-white font-bold">{barber.name}</h4>
-                            <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full inline-block mt-1 ${isOwner ? "bg-blue-600 text-white" : "bg-blue-500/20 text-blue-400"}`}>
-                              {isOwner ? "Proprietário · 45%" : "Comissão 45%"}
-                            </span>
+                        <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4 gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <img
+                              src={barber.avatar || BARBERS.find(b => b.id === barber.id)?.avatar || "/barbeiros/mr-bastos.jpg"}
+                              alt={barber.name}
+                              width={40}
+                              height={40}
+                              loading="lazy"
+                              className="w-10 h-10 rounded-full object-cover object-top border border-white/20 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <h4 className="text-white font-bold truncate">{barber.name}</h4>
+                              <span className={`text-[9px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full inline-block mt-1 ${isOwner ? "bg-blue-600 text-white" : "bg-blue-500/20 text-blue-400"}`}>
+                                {isOwner ? "Proprietário · 45%" : "Comissão 45%"}
+                              </span>
+                            </div>
                           </div>
                           <button 
                             onClick={() => setActiveTab(barber.id)}

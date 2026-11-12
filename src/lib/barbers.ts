@@ -20,7 +20,7 @@ export const BARBERS: BarberData[] = [
     phoneDisplay: "(75) 99867-9820",
     role: "ADMIN",
     specialty: "Cortes Clássicos, Barboterapia & Visagismo",
-    avatar: "/nossa-area/area-01.jpg",
+    avatar: "/barbeiros/mr-bastos.jpg",
     bio: "Mestre barbeiro e proprietário da Mr. Bastos Barbearia. Tradição e excelência em Alagoinhas.",
     commissionRate: 0.45, // Dono recebe 45% de seus cortes; 55% vai para a Casa / Administração (Jully) para custos mensais
   },
@@ -32,7 +32,7 @@ export const BARBERS: BarberData[] = [
     phoneDisplay: "(75) 99969-7600",
     role: "BARBER",
     specialty: "Fade, Degradê Navalhado & Freestyle",
-    avatar: "/nossa-area/area-04.jpg",
+    avatar: "/barbeiros/nando.jpg",
     bio: "Especialista em transições de degradê, cortes modernos e acabamento milimétrico na lâmina.",
     commissionRate: 0.45, // Comissão oficial de 45% (55% repasse para a casa)
   },
@@ -44,7 +44,7 @@ export const BARBERS: BarberData[] = [
     phoneDisplay: "(75) 98120-8732",
     role: "BARBER",
     specialty: "Barba Terapia, Alinhamento & Navalha",
-    avatar: "/nossa-area/area-07.jpg",
+    avatar: "/barbeiros/saul.jpg",
     bio: "Especialista em desenho e escultura de barba na navalha, toalha quente e tratamentos faciais.",
     commissionRate: 0.45, // Comissão oficial de 45% (55% repasse para a casa)
   },

@@ -1,804 +1,913 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  X,
+  Calendar,
+  Clock,
+  Scissors,
+  User,
+  CheckCircle2,
+  Sparkles,
+  Phone,
+  Lock,
+  Mail,
+  QrCode,
+  CreditCard,
+  Banknote,
+  Coffee,
+  AlertCircle,
+  Loader2,
+  MapPin,
+} from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
-import { X, Calendar, Clock, ChevronRight, CheckCircle2, User, Scissors, Star, Mail, Phone, Lock, Shield, Sparkles, Check, Edit3, AlertTriangle } from "lucide-react";
-import { useState, useEffect } from "react";
-import { BARBERS, BarberData } from "@/lib/barbers";
+import { useRouter } from "next/navigation";
 import { OFFICIAL_SERVICES, ServiceItem } from "@/lib/services";
-import { checkDayStatus } from "@/lib/holidays";
+import { BARBERS as OFFICIAL_BARBERS } from "@/lib/barbers";
 
-export default function BookingModal({ 
-  isOpen, 
-  onClose,
-  initialServiceId,
-  initialUserData,
-}: { 
-  isOpen: boolean; 
+interface BookingModalProps {
+  isOpen: boolean;
   onClose: () => void;
   initialServiceId?: string;
-  initialUserData?: { name?: string; email?: string; phone?: string };
-}) {
-  const { data: session, status } = useSession();
+  initialBarberId?: string;
+  initialUserData?: {
+    name?: string;
+    email?: string;
+    phone?: string;
+  };
+}
+
+interface BarberApiItem {
+  id: string;
+  name: string;
+  role: string;
+  avatar?: string;
+  specialty?: string;
+  specialties?: string;
+  isAvailable?: boolean;
+  lunchBreakTime?: string | null;
+  earlyClosingTime?: string | null;
+}
+
+const PAYMENT_OPTIONS = [
+  { id: "PIX", label: "PIX", desc: "Instantâneo", icon: QrCode },
+  { id: "CARTAO_CREDITO", label: "Crédito", desc: "Na hora", icon: CreditCard },
+  { id: "CARTAO_DEBITO", label: "Débito", desc: "Na hora", icon: CreditCard },
+  { id: "DINHEIRO", label: "Dinheiro", desc: "Presencial", icon: Banknote },
+];
+
+export default function BookingModal({
+  isOpen,
+  onClose,
+  initialServiceId,
+  initialBarberId,
+  initialUserData,
+}: BookingModalProps) {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
 
-  const [step, setStep] = useState(1); // 1: Serviço, 2: Barbeiro, 3: Data/Hora e Dados do Cliente
-  const [services, setServices] = useState<ServiceItem[]>(OFFICIAL_SERVICES);
-  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
-  const [barbersList, setBarbersList] = useState<BarberData[]>(BARBERS);
-  const [selectedBarber, setSelectedBarber] = useState<BarberData>(BARBERS[0]); // Padrão Mr. Bastos
-  const [selectedDate, setSelectedDate] = useState("");
-  const [selectedTime, setSelectedTime] = useState("");
-  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
-  const [dayClosedInfo, setDayClosedInfo] = useState<{ isClosed: boolean; reason: string | null } | null>(null);
-  
-  // Dados do Cliente
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [maxReachedStep, setMaxReachedStep] = useState<1 | 2 | 3>(1);
+
+  const [selectedService, setSelectedService] = useState<string>("");
+  const [selectedBarber, setSelectedBarber] = useState<string>("qualquer");
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("PIX");
+
+  // Dados do cliente
   const [clientName, setClientName] = useState("");
-  const [clientEmail, setClientEmail] = useState("");
   const [clientPhone, setClientPhone] = useState("");
-  const [clientPassword, setClientPassword] = useState("123");
-  const [isEditingData, setIsEditingData] = useState(false);
+  const [clientEmail, setClientEmail] = useState("");
+  const [clientPassword, setClientPassword] = useState("");
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  // Estado de profissionais e disponibilidade dinâmica
+  const [barbers, setBarbers] = useState<BarberApiItem[]>(OFFICIAL_BARBERS);
+  const [availableTimes, setAvailableTimes] = useState<string[]>([]);
+  const [loadingTimes, setLoadingTimes] = useState(false);
+  const [isClosedDay, setIsClosedDay] = useState(false);
+  const [closedReason, setClosedReason] = useState("");
+  const [dayLunchInfo, setDayLunchInfo] = useState<string | null>(null);
+  const [dayEarlyClosing, setDayEarlyClosing] = useState<string | null>(null);
+
+  const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [confirmedBarber, setConfirmedBarber] = useState<BarberData>(BARBERS[0]);
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [confirmedBarberName, setConfirmedBarberName] = useState("Nossa Equipe");
+  const [redirectCountdown, setRedirectCountdown] = useState<number>(3);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const handleGoToVipPanel = async () => {
-    setIsRedirecting(true);
-    try {
-      const loginId = clientEmail.trim().toLowerCase() || clientPhone.replace(/\D/g, "");
-      await signIn("credentials", {
-        identifier: loginId,
-        phone: loginId,
-        password: clientPassword || "123",
-        callbackUrl: "/painel-cliente",
-      });
-    } catch (_) {
-      window.location.href = "/painel-cliente";
-    }
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const getTodayStr = () => {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+    const obj = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+    return `${obj.year}-${obj.month}-${obj.day}`;
   };
 
-  const isLoggedIn = status === "authenticated" || !!initialUserData?.name || !!(session as any)?.user?.name;
-
-  // Auto preenchimento dos dados do cliente logado
+  // Trava scroll do fundo ao abrir no celular/desktop
   useEffect(() => {
-    if (isOpen) {
-      const u = session?.user as any;
-      const effectiveName = initialUserData?.name || u?.name || "";
-      const effectiveEmail = initialUserData?.email || u?.email || "";
-      const effectivePhone = initialUserData?.phone || u?.phone || "";
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isOpen]);
 
-      if (effectiveName) setClientName(effectiveName);
-      if (effectiveEmail) setClientEmail(effectiveEmail);
-      if (effectivePhone) setClientPhone(effectivePhone);
-      setClientPassword("123");
-      setIsEditingData(false);
+  // Preenche dados do usuário se logado ou passados via initialUserData
+  useEffect(() => {
+    if (session?.user) {
+      if (session.user.name) setClientName(session.user.name);
+      if (session.user.email) setClientEmail(session.user.email);
+      if ((session.user as any).phone) setClientPhone((session.user as any).phone);
+    } else if (initialUserData) {
+      if (initialUserData.name) setClientName(initialUserData.name);
+      if (initialUserData.email) setClientEmail(initialUserData.email);
+      if (initialUserData.phone) setClientPhone(initialUserData.phone);
     }
-  }, [isOpen, session, initialUserData]);
+  }, [session, initialUserData]);
 
+  // Inicializa ao abrir
   useEffect(() => {
-    if (isOpen) {
-      setServices(OFFICIAL_SERVICES);
-      
-      // Busca lista de barbeiros ativos (respeitando a escala flexível 4x4 do dono)
-      fetch("/api/barbers")
-        .then((res) => res.json())
-        .then((data) => {
-          const list: BarberData[] = Array.isArray(data) ? data : (data?.barbers || []);
-          if (list.length > 0) {
-            setBarbersList(list);
-            setSelectedBarber((prev) => {
-              const found = list.find((b) => b.id === prev?.id);
-              return found || list[0];
-            });
-          }
-        })
-        .catch(() => {});
+    if (!isOpen) return;
 
-      if (initialServiceId) {
-        const s = OFFICIAL_SERVICES.find(
-          (d) => d.id === initialServiceId || d.name.toLowerCase() === initialServiceId.toLowerCase()
-        );
-        if (s) {
-          setSelectedService(s);
-          setStep(2); // Vai direto para escolha do barbeiro
-        } else {
-          setStep(1);
-          setSelectedService(null);
-        }
-      } else {
-        setStep(1);
-        setSelectedService(null);
-      }
+    const today = getTodayStr();
+    setSelectedDate(today);
+    setSelectedTime("");
+    setErrorMsg("");
+    setPaymentMethod("PIX");
+    setSelectedBarber(initialBarberId || "qualquer");
 
-      setSelectedDate("");
-      setSelectedTime("");
-      setAvailableTimes([]);
-      setDayClosedInfo(null);
-      setIsSuccess(false);
-      setErrorMsg("");
-    }
-  }, [isOpen, initialServiceId]);
-
-  // Busca horários disponíveis quando a data OU o barbeiro mudar
-  useEffect(() => {
-    if (selectedDate && selectedBarber) {
-      // 1. Verifica se a data selecionada é domingo ou feriado (Nacional ou Alagoinhas - BA)
-      const dayCheck = checkDayStatus(selectedDate);
-      if (dayCheck.isClosed) {
-        setDayClosedInfo(dayCheck);
-        setAvailableTimes([]);
-        setSelectedTime("");
-        return;
-      }
-      setDayClosedInfo(null);
-
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-      const nowTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-      fetch(`/api/appointments/available?date=${selectedDate}&barberId=${selectedBarber.id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.isClosed) {
-            setDayClosedInfo({ isClosed: true, reason: data.reason });
-            setAvailableTimes([]);
-            setSelectedTime("");
-            return;
-          }
-          if (Array.isArray(data.availableTimes)) {
-            let times = data.availableTimes;
-            if (selectedDate === todayStr) {
-              times = times.filter((t: string) => t > nowTimeStr);
-            }
-            setAvailableTimes(times);
-            setSelectedTime((prev) => (times.includes(prev) ? prev : ""));
-          } else {
-            setAvailableTimes([]);
-            setSelectedTime("");
-          }
-        })
-        .catch(() => {
-          const defaultHours = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
-          if (selectedDate === todayStr) {
-            setAvailableTimes(defaultHours.filter((t) => t > nowTimeStr));
-          } else if (selectedDate > todayStr) {
-            setAvailableTimes(defaultHours);
-          } else {
-            setAvailableTimes([]);
-          }
-          setSelectedTime("");
-        });
+    if (initialServiceId) {
+      setSelectedService(initialServiceId);
+      setStep(2);
+      setMaxReachedStep(2);
     } else {
-      setAvailableTimes([]);
-      setSelectedTime("");
-      setDayClosedInfo(null);
+      setSelectedService("");
+      setStep(1);
+      setMaxReachedStep(1);
     }
+
+    if (!session?.user) {
+      setClientPassword("");
+    }
+  }, [isOpen, initialServiceId, initialBarberId, session]);
+
+  // Busca barbeiros disponíveis (com escala e pausa de almoço da data)
+  useEffect(() => {
+    if (!isOpen) return;
+    const queryDate = selectedDate || getTodayStr();
+    fetch(`/api/barbers?date=${queryDate}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBarbers(data);
+        }
+      })
+      .catch(() => {});
+  }, [isOpen, selectedDate]);
+
+  // Busca horários disponíveis quando data ou barbeiro muda
+  useEffect(() => {
+    if (!selectedDate) return;
+    setLoadingTimes(true);
+    setIsClosedDay(false);
+    setClosedReason("");
+    setDayLunchInfo(null);
+    setDayEarlyClosing(null);
+
+    const bParam = selectedBarber ? `&barberId=${selectedBarber}` : "";
+    fetch(`/api/appointments/available?date=${selectedDate}${bParam}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.isClosed) {
+          setIsClosedDay(true);
+          setClosedReason(data.reason || "Não há atendimento nesta data.");
+          setAvailableTimes([]);
+          setSelectedTime("");
+        } else {
+          const times: string[] = Array.isArray(data.availableTimes)
+            ? data.availableTimes
+            : [];
+          setAvailableTimes(times);
+          setDayLunchInfo(data.lunchBreakTime || null);
+          setDayEarlyClosing(data.earlyClosingTime || null);
+          setSelectedTime((prev) => (prev && times.includes(prev) ? prev : times[0] || ""));
+        }
+      })
+      .catch(() => {
+        setAvailableTimes([]);
+      })
+      .finally(() => setLoadingTimes(false));
   }, [selectedDate, selectedBarber]);
 
-  const handleBooking = async () => {
-    if (!clientName.trim()) {
-      setErrorMsg("Por favor, preencha seu nome completo.");
-      return;
+  // Rola o corpo do modal para o topo ao trocar de passo
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
     }
+  }, [step]);
 
-    if (!clientEmail.trim() || !clientEmail.includes("@")) {
-      setErrorMsg("Por favor, informe um e-mail válido para criar sua conta e permitir a recuperação de senha.");
-      return;
+  // Contagem regressiva automática no Step 4 -> redireciona ao Painel do Cliente VIP
+  useEffect(() => {
+    if (!isOpen || step !== 4) return;
+    setRedirectCountdown(3);
+    const timer = setInterval(() => {
+      setRedirectCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onClose();
+          router.push("/painel-cliente?newBooking=1");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isOpen, step, onClose, router]);
+
+  const serviceObj: ServiceItem | undefined = OFFICIAL_SERVICES.find(
+    (s) => s.id === selectedService
+  );
+  const selectedBarberObj = barbers.find((b) => b.id === selectedBarber);
+
+  const handleSelectServiceStep = (id: string) => {
+    setSelectedService(id);
+    setErrorMsg("");
+    setStep(2);
+    setMaxReachedStep((prev) => (prev < 2 ? 2 : prev));
+  };
+
+  const handleSelectBarberStep = (id: string) => {
+    setSelectedBarber(id);
+    setErrorMsg("");
+    setStep(3);
+    setMaxReachedStep(3);
+  };
+
+  const handleNextBusinessDay = () => {
+    const base = new Date(`${selectedDate || getTodayStr()}T12:00:00-03:00`);
+    base.setDate(base.getDate() + 1);
+    if (base.getDay() === 0) {
+      base.setDate(base.getDate() + 1);
     }
+    const y = base.getFullYear();
+    const m = String(base.getMonth() + 1).padStart(2, "0");
+    const d = String(base.getDate()).padStart(2, "0");
+    setSelectedDate(`${y}-${m}-${d}`);
+  };
 
-    if (!clientPhone.trim() || clientPhone.replace(/\D/g, "").length < 10) {
-      setErrorMsg("Por favor, preencha seu WhatsApp com DDD para contato.");
-      return;
-    }
-
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selectedDate || !selectedTime) {
-      setErrorMsg("Por favor, selecione a data e o horário desejado.");
+      setErrorMsg("Por favor, selecione uma data e um horário livre.");
       return;
     }
-
-    // Validação estrita de feriados e domingos
-    const dayCheck = checkDayStatus(selectedDate);
-    if (dayCheck.isClosed) {
-      setErrorMsg(dayCheck.reason || "A barbearia está fechada neste dia (domingo ou feriado). Escolha outra data.");
+    if (!clientName.trim() || !clientPhone.trim()) {
+      setErrorMsg("Informe seu nome e WhatsApp para confirmarmos a reserva.");
       return;
     }
-
-    // Validação estrita de horário passado
-    const now = new Date();
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-    const nowTimeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-
-    if (selectedDate < todayStr || (selectedDate === todayStr && selectedTime <= nowTimeStr)) {
-      setErrorMsg("Este horário já passou. Por favor, escolha um horário futuro.");
-      return;
+    if (!session?.user) {
+      if (!clientEmail.trim()) {
+        setErrorMsg("Informe seu e-mail para receber o comprovante e acessar sua conta VIP.");
+        return;
+      }
+      if (!clientPassword || clientPassword.trim().length < 3) {
+        setErrorMsg("Crie uma senha de pelo menos 3 dígitos para acessar seu Painel VIP.");
+        return;
+      }
     }
 
-    setIsLoading(true);
+    setSubmitting(true);
     setErrorMsg("");
 
-    setConfirmedBarber(selectedBarber);
-    const fullDate = `${selectedDate}T${selectedTime}:00-03:00`;
-
     try {
+      const dateStr = `${selectedDate}T${selectedTime}:00-03:00`;
       const res = await fetch("/api/appointments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          serviceId: selectedService?.id,
-          barberId: selectedBarber.id,
-          date: fullDate,
+          serviceId: selectedService,
+          barberId: selectedBarber,
+          date: dateStr,
           clientName: clientName.trim(),
-          clientEmail: clientEmail.trim().toLowerCase(),
+          clientEmail: clientEmail.trim(),
           clientPhone: clientPhone.trim(),
-          clientPassword: clientPassword || "123",
-          isWalkIn: false,
+          clientPassword: clientPassword.trim(),
+          paymentMethod,
         }),
       });
 
-      if (res.ok) {
-        setIsSuccess(true);
-        // Autentica imediatamente na sessão do novo cliente criado
-        const loginId = clientEmail.trim().toLowerCase() || clientPhone.replace(/\D/g, "");
-        try {
-          await signIn("credentials", {
-            identifier: loginId,
-            phone: loginId,
-            password: clientPassword || "123",
-            redirect: false,
-          });
-        } catch (_) {}
-      } else {
-        const data = await res.json();
-        setErrorMsg(data.error || "Erro ao agendar.");
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Não foi possível confirmar o agendamento.");
       }
-    } catch (e) {
-      // Confirmação fallback em caso de rede/offline
-      setIsSuccess(true);
+
+      if (data.barber?.name) {
+        setConfirmedBarberName(data.barber.name);
+      } else if (selectedBarberObj?.name) {
+        setConfirmedBarberName(selectedBarberObj.name);
+      } else {
+        setConfirmedBarberName("Equipe Mr. Bastos");
+      }
+
+      // Se o cliente não estava logado, autentica silenciosamente para entrar direto no Painel VIP
+      if (!session?.user && clientEmail.trim() && clientPassword.trim()) {
+        await signIn("credentials", {
+          email: clientEmail.trim().toLowerCase(),
+          password: clientPassword.trim(),
+          redirect: false,
+        }).catch(() => {});
+      }
+
+      setStep(4);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Erro ao conectar com a agenda. Tente novamente.");
     } finally {
-      setIsLoading(false);
+      setSubmitting(false);
     }
   };
 
+  if (!isOpen || !mounted) return null;
 
-  const getTodayStr = () => {
-    const d = new Date();
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
-
-  const getTomorrowStr = () => {
-    const d = new Date();
-    d.setDate(d.getDate() + 1);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${day}`;
-  };
-
-  if (!isOpen) return null;
-
-  const dateFormatted = selectedDate ? selectedDate.split("-").reverse().join("/") : "";
-  const whatsappMsg = `Olá, ${confirmedBarber.name}! Acabei de agendar um ${selectedService?.name || "serviço"} (R$ ${selectedService?.price}) na Mr. Bastos Barbearia para o dia ${dateFormatted} às ${selectedTime}.\n\nMeus dados:\nNome: ${clientName}\nE-mail: ${clientEmail}\nWhatsApp: ${clientPhone}\n\nPoderia me confirmar?`;
-  const whatsappUrl = `https://wa.me/${confirmedBarber.phone}?text=${encodeURIComponent(whatsappMsg)}`;
-
-  if (!mounted || typeof document === "undefined") return null;
-
-  return createPortal(
-    <AnimatePresence>
-      <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-[#050B14]/85 backdrop-blur-md"
-          onClick={onClose}
-        />
-        
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="relative w-full max-w-2xl bg-[#050B14] border border-blue-500/30 rounded-3xl p-6 md:p-8 z-10 shadow-2xl max-h-[92vh] flex flex-col overflow-hidden text-white"
-        >
-          {/* Header */}
-          <div className="flex justify-between items-center pb-5 border-b border-white/10 shrink-0">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-blue-400 font-semibold">
-                Agendamento Online
-              </p>
-              <h2 className="text-2xl font-serif text-white mt-0.5">Mr. Bastos Barbearia</h2>
+  const modalNode = (
+    <div
+      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/85 backdrop-blur-md p-0 sm:p-4"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && step !== 4) onClose();
+      }}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 24, scale: 0.98 }}
+        className="w-full sm:max-w-2xl bg-[#050B14] border-t sm:border border-blue-800/50 rounded-t-3xl sm:rounded-3xl shadow-[0_0_60px_rgba(37,99,235,0.22)] flex flex-col max-h-[94dvh] sm:max-h-[90dvh] overflow-hidden"
+      >
+        {/* TOPO FIXO */}
+        <div className="px-5 py-4 sm:px-6 sm:py-5 border-b border-blue-900/40 bg-[#040912] flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-600/15 border border-blue-500/35 flex items-center justify-center text-blue-400">
+              <Scissors className="w-5 h-5" />
             </div>
-            <button 
-              onClick={onClose}
-              className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-white/5 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div>
+              <h2 className="text-base sm:text-lg font-serif font-bold text-white leading-tight">
+                Agendar Horário <span className="text-blue-400">Mr. Bastos</span>
+              </h2>
+              <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                <MapPin className="w-3 h-3 text-blue-400" /> Hiper Gbarbosa — Alagoinhas, BA
+              </p>
+            </div>
           </div>
 
-          {/* Stepper (Passos 1, 2, 3) */}
-          {!isSuccess && (
-            <div className="flex items-center gap-2 py-4 border-b border-white/5 shrink-0 text-xs">
-              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 1 ? 'bg-blue-600 text-white shadow-md' : selectedService ? 'bg-white/10 text-white' : 'text-gray-500'}`}>
-                1. Serviço
-              </span>
-              <span className="text-gray-600">→</span>
-              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 2 ? 'bg-blue-600 text-white shadow-md' : selectedBarber ? 'bg-white/10 text-white' : 'text-gray-500'}`}>
-                2. Barbeiro
-              </span>
-              <span className="text-gray-600">→</span>
-              <span className={`px-3 py-1 rounded-full font-semibold transition-all ${step === 3 ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500'}`}>
-                3. Data, Horário & E-mail
-              </span>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-          {/* Conteúdo Central com Scroll */}
-          <div className="py-6 overflow-y-auto flex-1 pr-1 scrollbar-hide">
-            {isSuccess ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring" }}>
-                  <CheckCircle2 className="w-20 h-20 text-blue-400 mb-4" />
-                </motion.div>
-                <h3 className="text-3xl font-serif text-white mb-2">Tudo Pronto, {clientName}!</h3>
-                <p className="text-gray-300 font-light max-w-md text-sm mb-4 leading-relaxed">
-                  Seu horário para <strong>{selectedService?.name}</strong> foi reservado com <strong>{confirmedBarber.name}</strong> para o dia <strong>{dateFormatted}</strong> às <strong>{selectedTime}</strong>.
-                </p>
-                <p className="text-xs text-gray-400 mb-6 max-w-md">
-                  Sua conta foi criada com o e-mail <strong className="text-white">{clientEmail}</strong>. Você pode acessar seu Painel VIP pelo e-mail ou WhatsApp com a senha cadastrada.
-                </p>
-
-                {/* Card de envio para o WhatsApp do Barbeiro */}
-                <div className="w-full max-w-md bg-white/[0.03] border border-[#25D366]/40 rounded-2xl p-5 mb-8 text-left">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-3 h-3 rounded-full bg-[#25D366] animate-pulse" />
-                    <p className="text-xs font-semibold text-[#25D366] uppercase tracking-wider">
-                      Notificar Barbeiro no WhatsApp
-                    </p>
-                  </div>
-                  <p className="text-xs text-gray-400 leading-relaxed mb-4">
-                    Toque no botão abaixo para enviar os detalhes do agendamento direto para o WhatsApp de <strong>{confirmedBarber.name}</strong> ({confirmedBarber.phoneDisplay}):
-                  </p>
-                  <a 
-                    href={whatsappUrl} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="w-full bg-[#25D366] text-white py-3.5 px-4 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 hover:bg-[#128C7E] transition-all duration-300 shadow-lg shadow-[#25D366]/20 hover:scale-[1.02]"
-                  >
-                    <span>Enviar para WhatsApp de {confirmedBarber.name.split(" ")[0]}</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </a>
-                </div>
-
-                {/* Botão Acessar Painel VIP */}
+        {/* STEPPER CLICÁVEL (Passos 1 -> 2 -> 3) */}
+        {step < 4 && (
+          <div className="px-5 py-3 bg-[#060E1B] border-b border-blue-900/30 grid grid-cols-3 gap-2 shrink-0">
+            {[
+              { n: 1, label: "1. Serviço" },
+              { n: 2, label: "2. Barbeiro" },
+              { n: 3, label: "3. Data & VIP" },
+            ].map((s) => {
+              const active = step === s.n;
+              const unlocked = s.n <= maxReachedStep || (s.n === 2 && Boolean(selectedService));
+              return (
                 <button
+                  key={s.n}
                   type="button"
-                  onClick={handleGoToVipPanel}
-                  disabled={isRedirecting}
-                  className="w-full max-w-md bg-blue-600 text-white py-3.5 px-4 rounded-xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 hover:bg-white transition-all duration-300 shadow-lg shadow-blue-500/20 mb-3 disabled:opacity-50"
+                  disabled={!unlocked}
+                  onClick={() => unlocked && setStep(s.n as 1 | 2 | 3)}
+                  className={`py-2 px-2 rounded-xl text-[11px] font-bold transition-all text-center truncate ${
+                    active
+                      ? "bg-blue-600 text-white shadow-sm shadow-blue-900/50"
+                      : unlocked
+                      ? "bg-blue-950/60 text-blue-300 border border-blue-800/40 hover:border-blue-500/50"
+                      : "bg-[#050B14] text-slate-600 border border-slate-800/40 cursor-not-allowed"
+                  }`}
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <span>{isRedirecting ? "Acessando seu painel..." : "Acessar Meu Painel VIP Agora"}</span>
-                  <ChevronRight className="w-4 h-4" />
+                  {s.label}
                 </button>
+              );
+            })}
+          </div>
+        )}
 
-                <button 
-                  onClick={onClose} 
-                  className="text-gray-400 hover:text-white text-xs uppercase tracking-widest font-semibold transition-colors"
-                >
-                  Fechar janela
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* STEP 1: ESCOLHA DO SERVIÇO (TODOS OS 9 SERVIÇOS E COMBOS OFICIAIS) */}
-                {step === 1 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                    <div className="flex justify-between items-center">
-                      <p className="text-blue-400 text-xs uppercase tracking-widest font-semibold">
-                        Passo 1: Selecione o Serviço Desejado
-                      </p>
-                      <span className="text-xs text-gray-400 font-mono">9 opções disponíveis</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1">
-                      {services.map((s) => (
-                        <div 
-                          key={s.id} 
-                          onClick={() => setSelectedService(s)}
-                          className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex justify-between items-center ${selectedService?.id === s.id ? 'border-blue-500 bg-blue-600/15 shadow-md shadow-blue-500/10' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
-                        >
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="text-base font-serif text-white">{s.name}</h4>
-                              {s.isCombo && (
-                                <span className="text-[9px] bg-blue-600/20 text-blue-400 border border-blue-500/30 px-1.5 py-0.2 rounded font-bold uppercase">
-                                  Combo
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-xs text-gray-400 mt-1 line-clamp-1">{s.description}</p>
-                            <p className="text-[11px] text-gray-500 mt-0.5">{s.duration} minutos</p>
+        {/* CORPO COM SCROLL CONTIDO */}
+        <div
+          ref={scrollContainerRef}
+          style={{ overscrollBehavior: "contain" }}
+          className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5"
+        >
+          <AnimatePresence mode="wait">
+            {/* PASSO 1: SERVIÇOS COM FOTOS */}
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                className="space-y-3"
+              >
+                <p className="text-xs text-slate-400">
+                  Toque no serviço desejado para avançar automaticamente:
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {OFFICIAL_SERVICES.map((service) => {
+                    const isSelected = selectedService === service.id;
+                    return (
+                      <button
+                        key={service.id}
+                        type="button"
+                        onClick={() => handleSelectServiceStep(service.id)}
+                        className={`text-left rounded-2xl p-3 border transition-all flex items-center gap-3 group ${
+                          isSelected
+                            ? "bg-blue-600/15 border-blue-500 shadow-md shadow-blue-950/40"
+                            : "bg-[#081221] border-blue-900/40 hover:border-blue-500/60"
+                        }`}
+                      >
+                        <img
+                          src={service.image}
+                          alt={service.name}
+                          className="w-14 h-14 rounded-xl object-cover border border-blue-900/50 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-xs sm:text-sm font-bold text-white truncate group-hover:text-blue-300">
+                              {service.name}
+                            </span>
+                            <span className="text-xs font-black text-blue-400 shrink-0">
+                              R$ {service.price}
+                            </span>
                           </div>
-                          <span className="text-blue-400 font-mono font-bold text-base shrink-0 ml-3">R$ {s.price}</span>
+                          <p className="text-[11px] text-slate-400 line-clamp-1 mt-0.5">
+                            {service.description}
+                          </p>
+                          <span className="text-[10px] text-slate-500 mt-1 inline-flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-blue-400" /> {service.duration} min
+                            {service.badge && (
+                              <span className="ml-1.5 text-blue-300 font-bold">
+                                • {service.badge}
+                              </span>
+                            )}
+                          </span>
                         </div>
-                      ))}
-                    </div>
-                  </motion.div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* PASSO 2: BARBEIROS (COM TRANSPARÊNCIA DE PAUSA DE ALMOÇO) */}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                className="space-y-4"
+              >
+                {serviceObj && (
+                  <div className="flex items-center justify-between bg-blue-950/35 border border-blue-800/40 rounded-xl px-4 py-2.5 text-xs">
+                    <span className="text-slate-300">
+                      Serviço:{" "}
+                      <strong className="text-white">{serviceObj.name}</strong>
+                    </span>
+                    <span className="font-black text-blue-400">
+                      R$ {serviceObj.price} ({serviceObj.duration}m)
+                    </span>
+                  </div>
                 )}
 
-                {/* STEP 2: ESCOLHA DO BARBEIRO (APENAS OS 3 BARBEIROS OFICIAIS) */}
-                {step === 2 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-                    <div className="flex justify-between items-baseline">
-                      <p className="text-blue-400 text-xs uppercase tracking-widest font-semibold">
-                        Passo 2: Escolha o Barbeiro Responsável
-                      </p>
-                      <span className="text-xs text-gray-400 font-light">
-                        Serviço: <strong className="text-white">{selectedService?.name} (R$ {selectedService?.price})</strong>
-                      </span>
+                <p className="text-xs text-slate-400">
+                  Escolha o profissional de sua preferência na equipe Mr. Bastos:
+                </p>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {/* Qualquer profissional disponível */}
+                  <button
+                    type="button"
+                    onClick={() => handleSelectBarberStep("qualquer")}
+                    className={`w-full text-left rounded-2xl p-4 border transition-all flex items-center justify-between gap-4 ${
+                      selectedBarber === "qualquer"
+                        ? "bg-blue-600/15 border-blue-500"
+                        : "bg-[#081221] border-blue-900/40 hover:border-blue-500/60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-xl bg-blue-600/20 border border-blue-500/35 flex items-center justify-center text-blue-400 shrink-0">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-bold text-white">
+                          Qualquer Profissional Disponível
+                        </h4>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Alocamos automaticamente o primeiro barbeiro livre no horário escolhido
+                        </p>
+                      </div>
                     </div>
+                  </button>
 
-                    <p className="text-xs text-gray-400">
-                      Selecione o profissional com quem você deseja realizar seu atendimento na unidade Alagoinhas – BA:
-                    </p>
-
-                    <div className="space-y-3">
-                      {barbersList.map((barber) => {
-                        const isSelected = selectedBarber?.id === barber.id;
-                        const isOwner = barber.role === "ADMIN";
-
-                        return (
-                          <div
-                            key={barber.id}
-                            onClick={() => setSelectedBarber(barber)}
-                            className={`p-4 border rounded-2xl cursor-pointer transition-all duration-300 flex items-center justify-between ${isSelected ? 'border-blue-500 bg-blue-600/15 shadow-md shadow-blue-500/10 ring-1 ring-blue-500' : 'border-white/10 hover:border-white/20 bg-white/[0.02]'}`}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div 
-                                className="w-14 h-14 rounded-2xl bg-cover bg-center border border-white/20 shrink-0 shadow-md"
-                                style={{ backgroundImage: `url(${barber.avatar})` }}
-                              />
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h4 className="text-base font-serif text-white">{barber.name}</h4>
-                                  {isOwner ? (
-                                    <span className="text-[9px] bg-blue-600 text-white px-2 py-0.5 rounded font-bold uppercase">
-                                      Fundador / Dono
-                                    </span>
-                                  ) : (
-                                    <span className="text-[9px] bg-white/10 text-gray-300 px-2 py-0.5 rounded font-medium uppercase">
-                                      Barbeiro
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-blue-400 mt-0.5">{barber.specialty}</p>
-                                <p className="text-[11px] text-gray-400 mt-0.5">{barber.bio}</p>
-                              </div>
+                  {barbers.map((barber) => {
+                    const isSelected = selectedBarber === barber.id;
+                    return (
+                      <button
+                        key={barber.id}
+                        type="button"
+                        onClick={() => handleSelectBarberStep(barber.id)}
+                        className={`w-full text-left rounded-2xl p-4 border transition-all flex items-center justify-between gap-3 ${
+                          isSelected
+                            ? "bg-blue-600/15 border-blue-500"
+                            : "bg-[#081221] border-blue-900/40 hover:border-blue-500/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3.5 min-w-0">
+                          {barber.avatar ? (
+                            <img
+                              src={barber.avatar}
+                              alt={barber.name}
+                              width={56}
+                              height={56}
+                              fetchPriority="low"
+                              className="w-14 h-14 rounded-xl object-cover object-top border border-blue-500/35 shrink-0 bg-[#050B14]"
+                            />
+                          ) : (
+                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-600 to-blue-800 text-white font-black text-base flex items-center justify-center shrink-0">
+                              {barber.name.charAt(0)}
                             </div>
-
-                            <div className="text-right shrink-0 ml-2">
-                              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded-lg ${isSelected ? 'bg-blue-600 text-white' : 'text-gray-400 border border-white/10'}`}>
-                                {isSelected ? 'Selecionado' : 'Escolher'}
+                          )}
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h4 className="text-sm font-bold text-white truncate">
+                                {barber.name}
+                              </h4>
+                              <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-500/15 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full">
+                                {barber.role === "ADMIN" ? "Fundador & Mestre" : barber.role === "BARBER" ? "Barbeiro" : barber.role}
                               </span>
                             </div>
+                            <p className="text-xs text-slate-400 mt-0.5 truncate">
+                              {barber.specialties || barber.specialty}
+                            </p>
+                            {barber.lunchBreakTime && (
+                              <p className="text-[10px] text-amber-400 mt-1 inline-flex items-center gap-1 font-semibold">
+                                <Coffee className="w-3 h-3" /> Pausa almoço:{" "}
+                                {barber.lunchBreakTime.replace("-", " às ")}
+                              </p>
+                            )}
                           </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {/* PASSO 3: DATA, HORÁRIO, PAGAMENTO E DADOS VIP */}
+            {step === 3 && (
+              <motion.form
+                key="step3"
+                onSubmit={handleSubmit}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 12 }}
+                className="space-y-5"
+              >
+                {/* Resumo rápido */}
+                <div className="bg-[#081221] border border-blue-900/45 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <Scissors className="w-3.5 h-3.5 text-blue-400" />
+                    <strong className="text-white">{serviceObj?.name}</strong>
+                    <span className="text-slate-500">•</span>
+                    <span className="text-blue-300 font-semibold">
+                      {selectedBarber === "qualquer"
+                        ? "Qualquer Barbeiro"
+                        : selectedBarberObj?.name}
+                    </span>
+                  </div>
+                  <span className="font-black text-blue-400">
+                    R$ {serviceObj?.price || 0}
+                  </span>
+                </div>
+
+                {/* Data */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-blue-400" /> Escolha a Data
+                  </label>
+                  <input
+                    type="date"
+                    min={getTodayStr()}
+                    value={selectedDate}
+                    onChange={(e) => {
+                      setSelectedDate(e.target.value);
+                      setSelectedTime("");
+                    }}
+                    className="w-full bg-[#081221] border border-blue-900/50 rounded-xl px-4 py-3 text-base sm:text-sm text-white focus:outline-none focus:border-blue-500 [color-scheme:dark]"
+                    required
+                  />
+                </div>
+
+                {/* Avisos individuais de almoço / saída antecipada / fechado */}
+                {(dayLunchInfo || dayEarlyClosing) && !isClosedDay && (
+                  <div className="flex flex-wrap gap-2">
+                    {dayLunchInfo && (
+                      <div className="flex-1 min-w-[200px] bg-amber-500/10 border border-amber-500/30 rounded-xl px-3.5 py-2 text-[11px] text-amber-300 flex items-center gap-2">
+                        <Coffee className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          Pausa para almoço de {selectedBarberObj?.name || "profissional"}:{" "}
+                          <strong>{dayLunchInfo.replace("-", " às ")}</strong> (já travada)
+                        </span>
+                      </div>
+                    )}
+                    {dayEarlyClosing && (
+                      <div className="bg-blue-500/10 border border-blue-500/30 rounded-xl px-3.5 py-2 text-[11px] text-blue-300 flex items-center gap-2">
+                        <Clock className="w-3.5 h-3.5 shrink-0" />
+                        <span>Encerra às {dayEarlyClosing} nesta data</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Grade de Horários */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-blue-400" /> Horários Disponíveis
+                  </label>
+
+                  {loadingTimes ? (
+                    <div className="flex items-center justify-center py-6 bg-[#081221] rounded-xl border border-blue-900/30">
+                      <Loader2 className="w-5 h-5 animate-spin text-blue-400 mr-2" />
+                      <span className="text-xs text-slate-400">Consultando agenda...</span>
+                    </div>
+                  ) : isClosedDay ? (
+                    <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-center space-y-2">
+                      <p className="text-xs text-red-300 font-semibold">{closedReason}</p>
+                      <button
+                        type="button"
+                        onClick={handleNextBusinessDay}
+                        className="text-xs font-bold text-blue-400 hover:underline"
+                      >
+                        Ir para o próximo dia útil →
+                      </button>
+                    </div>
+                  ) : availableTimes.length === 0 ? (
+                    <div className="p-4 rounded-xl bg-[#081221] border border-blue-900/40 text-center space-y-2">
+                      <p className="text-xs text-slate-400">
+                        Nenhum horário livre nesta data para a seleção atual.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleNextBusinessDay}
+                        className="text-xs font-bold text-blue-400 hover:underline"
+                      >
+                        Ver horários de amanhã →
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                      {availableTimes.map((time) => {
+                        const active = selectedTime === time;
+                        return (
+                          <button
+                            key={time}
+                            type="button"
+                            onClick={() => setSelectedTime(time)}
+                            className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                              active
+                                ? "bg-blue-600 text-white border-blue-400 shadow-md shadow-blue-900/40"
+                                : "bg-[#081221] text-slate-300 border-blue-900/40 hover:border-blue-500/60"
+                            }`}
+                          >
+                            {time}
+                          </button>
                         );
                       })}
                     </div>
-                  </motion.div>
-                )}
+                  )}
+                </div>
 
-                {/* STEP 3: DATA, HORÁRIO & E-MAIL */}
-                {step === 3 && (
-                  <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-                    <div className="flex justify-between items-baseline border-b border-white/5 pb-3">
-                      <div>
-                        <p className="text-blue-400 text-xs uppercase tracking-widest font-semibold flex items-center gap-2">
-                          <span>Passo 3: Data, Horário & Identificação</span>
-                          {isLoggedIn && (
-                            <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                              Conta VIP Conectada
-                            </span>
-                          )}
-                        </p>
-                        <p className="text-[11px] text-gray-400 mt-0.5">
-                          {isLoggedIn 
-                            ? "Seus dados estão vinculados à sua conta. Basta escolher o melhor dia e horário."
-                            : "Preencha seus dados para criar sua conta VIP e garantir o agendamento."}
-                        </p>
-                      </div>
-                      <span className="text-xs text-gray-400 font-light">
-                        Barbeiro: <strong className="text-blue-400">{selectedBarber?.name}</strong>
-                      </span>
+                {/* Forma de Pagamento */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    Forma de Pagamento (no local)
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {PAYMENT_OPTIONS.map((opt) => {
+                      const Icon = opt.icon;
+                      const active = paymentMethod === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => setPaymentMethod(opt.id)}
+                          className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${
+                            active
+                              ? "bg-blue-600/20 border-blue-500 text-white"
+                              : "bg-[#081221] border-blue-900/40 text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          <Icon
+                            className={`w-4 h-4 shrink-0 ${
+                              active ? "text-blue-400" : "text-slate-500"
+                            }`}
+                          />
+                          <div>
+                            <p className="text-[11px] font-bold leading-none">{opt.label}</p>
+                            <p className="text-[9px] text-slate-500 mt-0.5">{opt.desc}</p>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Dados do Cliente VIP */}
+                <div className="space-y-3 pt-2 border-t border-blue-900/30">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                    Seus Dados (Conta VIP &amp; Confirmação)
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        placeholder="Seu nome completo"
+                        value={clientName}
+                        onChange={(e) => setClientName(e.target.value)}
+                        required
+                        className="w-full bg-[#081221] border border-blue-900/50 rounded-xl pl-10 pr-3 py-3 text-base sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                      />
                     </div>
+                    <div className="relative">
+                      <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="tel"
+                        placeholder="WhatsApp (75) 99999-9999"
+                        value={clientPhone}
+                        onChange={(e) => setClientPhone(e.target.value)}
+                        required
+                        className="w-full bg-[#081221] border border-blue-900/50 rounded-xl pl-10 pr-3 py-3 text-base sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                  </div>
 
-                    {errorMsg && (
-                      <p className="text-red-400 text-xs text-center bg-red-500/10 py-2.5 px-4 rounded-xl border border-red-500/20 font-medium">
-                        {errorMsg}
-                      </p>
-                    )}
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                      {/* Coluna 1: Dados do Cliente com Tratamento Especial para Usuário Logado */}
-                      <div className="space-y-4">
-                        {isLoggedIn && !isEditingData ? (
-                          <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-600/15 via-white/[0.02] to-transparent border border-blue-500/40 space-y-4 shadow-xl">
-                            <div className="flex items-start justify-between border-b border-white/10 pb-3">
-                              <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-serif text-xl font-bold shadow-lg shadow-blue-500/30">
-                                  {(clientName || "C")[0].toUpperCase()}
-                                </div>
-                                <div>
-                                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider flex items-center gap-1 w-fit mb-1">
-                                    <Sparkles className="w-3 h-3" /> Conta VIP Logada
-                                  </span>
-                                  <h4 className="text-white font-serif text-lg font-bold leading-tight">{clientName || "Cliente Mr. Bastos"}</h4>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => setIsEditingData(true)}
-                                className="text-[11px] text-blue-400 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/5"
-                                title="Editar dados para este agendamento"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" /> Editar
-                              </button>
-                            </div>
-
-                            <div className="space-y-2.5 text-xs">
-                              <div className="flex items-center gap-2.5 text-gray-200 bg-white/[0.03] p-2.5 rounded-xl border border-white/5">
-                                <Phone className="w-4 h-4 text-blue-400 shrink-0" />
-                                <div>
-                                  <span className="text-[10px] text-gray-500 uppercase block font-medium">WhatsApp Cadastrado</span>
-                                  <strong className="text-white font-mono text-sm">{clientPhone || "(75) 98888-7777"}</strong>
-                                </div>
-                              </div>
-
-                              <div className="flex items-center gap-2.5 text-gray-200 bg-white/[0.03] p-2.5 rounded-xl border border-white/5">
-                                <Mail className="w-4 h-4 text-blue-400 shrink-0" />
-                                <div className="truncate">
-                                  <span className="text-[10px] text-gray-500 uppercase block font-medium">E-mail Oficial da Conta</span>
-                                  <strong className="text-white truncate block text-xs">{clientEmail || "cliente@mrbastos.com"}</strong>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-[11px] text-emerald-300 flex items-start gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                              <p className="leading-relaxed">
-                                <strong>Seus dados já estão preenchidos!</strong> Basta escolher o dia e horário ao lado para concluir seu agendamento em 1 clique.
-                              </p>
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            {isLoggedIn && (
-                              <div className="flex justify-between items-center pb-1">
-                                <span className="text-xs text-gray-400">Editando dados do agendamento:</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setIsEditingData(false)}
-                                  className="text-xs text-blue-400 hover:underline"
-                                >
-                                  Usar dados da minha conta
-                                </button>
-                              </div>
-                            )}
-
-                            <div>
-                              <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                                <User className="w-3.5 h-3.5 text-blue-400" /> Seu Nome Completo
-                              </label>
-                              <input 
-                                type="text" 
-                                placeholder="Digite seu nome completo"
-                                value={clientName} 
-                                onChange={(e) => setClientName(e.target.value)}
-                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors"
-                              />
-                            </div>
-
-                            {/* CAMPO DE E-MAIL OFICIAL (PARA CONTA E RECUPERAÇÃO DE SENHA) */}
-                            <div>
-                              <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                                <Mail className="w-3.5 h-3.5 text-blue-400" /> Seu E-mail Oficial
-                                <span className="text-[9px] text-blue-400 font-normal normal-case">(para conta e recuperar senha)</span>
-                              </label>
-                              <input 
-                                type="email" 
-                                placeholder="Ex: seuemail@gmail.com"
-                                value={clientEmail} 
-                                onChange={(e) => setClientEmail(e.target.value)}
-                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors"
-                              />
-                              <p className="text-[10px] text-gray-500 mt-1">
-                                Seu e-mail será usado para cadastrar sua conta VIP e recuperar sua senha caso esqueça.
-                              </p>
-                            </div>
-
-                            <div>
-                              <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                                <Phone className="w-3.5 h-3.5 text-blue-400" /> WhatsApp com DDD
-                                <span className="text-[9px] text-gray-500 font-normal normal-case">(login e confirmação)</span>
-                              </label>
-                              <input 
-                                type="text" 
-                                placeholder="Ex: (75) 99999-9999"
-                                value={clientPhone} 
-                                onChange={(e) => setClientPhone(e.target.value)}
-                                className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors"
-                              />
-                            </div>
-
-                            {!isLoggedIn && (
-                              <div>
-                                <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                                  <Lock className="w-3.5 h-3.5 text-blue-400" /> Senha de Acesso ao Painel
-                                </label>
-                                <input 
-                                  type="password" 
-                                  placeholder="Crie uma senha de acesso"
-                                  value={clientPassword} 
-                                  onChange={(e) => setClientPassword(e.target.value)}
-                                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors"
-                                />
-                              </div>
-                            )}
-                          </>
-                        )}
+                  {!session?.user && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="email"
+                          placeholder="Seu melhor e-mail"
+                          value={clientEmail}
+                          onChange={(e) => setClientEmail(e.target.value)}
+                          required
+                          className="w-full bg-[#081221] border border-blue-900/50 rounded-xl pl-10 pr-3 py-3 text-base sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                        />
                       </div>
-
-                      {/* Coluna 2: Data e Horário com Atalhos Rápidos */}
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="text-gray-400 text-xs uppercase tracking-wider font-medium flex items-center gap-1.5">
-                              <Calendar className="w-3.5 h-3.5 text-blue-400" /> Data do Atendimento
-                            </label>
-                            {/* Atalhos Rápidos: Hoje e Amanhã */}
-                            <div className="flex items-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => setSelectedDate(getTodayStr())}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
-                                  selectedDate === getTodayStr()
-                                    ? "bg-blue-600 text-white border-blue-500"
-                                    : "border-white/10 text-gray-400 hover:text-white hover:border-white/30"
-                                }`}
-                              >
-                                Hoje
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setSelectedDate(getTomorrowStr())}
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition-all ${
-                                  selectedDate === getTomorrowStr()
-                                    ? "bg-blue-600 text-white border-blue-500"
-                                    : "border-white/10 text-gray-400 hover:text-white hover:border-white/30"
-                                }`}
-                              >
-                                Amanhã
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="relative">
-                            <input 
-                              type="date" 
-                              min={getTodayStr()}
-                              value={selectedDate}
-                              onChange={(e) => setSelectedDate(e.target.value)}
-                              className="w-full bg-white/[0.03] border border-white/10 rounded-xl py-3 px-4 text-white text-sm focus:border-blue-500 focus:outline-none transition-colors [&::-webkit-calendar-picker-indicator]:invert"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-gray-400 text-xs uppercase tracking-wider mb-2 font-medium flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-blue-400" /> Horários de {selectedBarber?.name.split(" ")[0]}
-                          </label>
-                          {!selectedDate ? (
-                            <p className="text-xs text-gray-500 italic py-6 text-center border border-dashed border-white/10 rounded-xl">
-                              Selecione uma data acima para consultar a agenda de {selectedBarber?.name.split(" ")[0]}.
-                            </p>
-                          ) : dayClosedInfo?.isClosed ? (
-                            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs space-y-2">
-                              <div className="flex items-center gap-2 font-bold text-amber-300">
-                                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-                                <span>Barbearia Fechada</span>
-                              </div>
-                              <p className="leading-relaxed">
-                                {dayClosedInfo.reason || "Não abrimos aos domingos e feriados."}
-                              </p>
-                              <p className="text-[11px] text-amber-400/80">
-                                Por favor, selecione outro dia de segunda a sábado (exceto feriados) para agendar seu corte.
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
-                              {availableTimes.length === 0 ? (
-                                <p className="text-xs text-gray-500 col-span-3 py-4 text-center">Nenhum horário livre nesta data.</p>
-                              ) : (
-                                availableTimes.map((time) => (
-                                  <button 
-                                    key={time}
-                                    type="button"
-                                    onClick={() => setSelectedTime(time)}
-                                    className={`py-2.5 rounded-lg border text-xs font-mono font-bold transition-all ${selectedTime === time ? 'border-blue-500 bg-blue-600 text-white shadow-md' : 'border-white/10 text-gray-300 hover:border-white/30 bg-white/[0.02]'}`}
-                                  >
-                                    {time}
-                                  </button>
-                                ))
-                              )}
-                            </div>
-                          )}
-                        </div>
+                      <div className="relative">
+                        <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="password"
+                          placeholder="Crie uma senha VIP (mín. 3 dígitos)"
+                          value={clientPassword}
+                          onChange={(e) => setClientPassword(e.target.value)}
+                          required
+                          minLength={3}
+                          className="w-full bg-[#081221] border border-blue-900/50 rounded-xl pl-10 pr-3 py-3 text-base sm:text-sm text-white placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                        />
                       </div>
                     </div>
-                  </motion.div>
+                  )}
+                </div>
+
+                {errorMsg && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-xs text-red-300 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
                 )}
-              </>
+
+                <button
+                  type="submit"
+                  disabled={submitting || !selectedTime || isClosedDay}
+                  className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-blue-950/60 transition-all flex items-center justify-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" /> Confirmando Reserva...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" /> Confirmar Agendamento VIP
+                    </>
+                  )}
+                </button>
+              </motion.form>
             )}
-          </div>
 
-          {/* Footer com Botões de Navegação */}
-          {!isSuccess && (
-            <div className="pt-4 border-t border-white/10 shrink-0">
-              <div className="flex justify-between items-center">
-                {step > 1 ? (
-                  <button
-                    type="button"
-                    onClick={() => setStep(step - 1)}
-                    className="px-5 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:text-white text-xs uppercase tracking-wider font-semibold hover:bg-white/5 transition-all"
-                  >
-                    Voltar
-                  </button>
-                ) : (
-                  <div />
+            {/* PASSO 4: CONFIRMAÇÃO + AUTO-REDIRECT PAINEL VIP */}
+            {step === 4 && (
+              <motion.div
+                key="step4"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="py-4 text-center space-y-5"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/15 border border-emerald-500/35 flex items-center justify-center text-emerald-400 mx-auto">
+                  <CheckCircle2 className="w-9 h-9" />
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-2xl font-serif font-bold text-white">
+                    Horário Confirmado!
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400">
+                    Sua cadeira na <strong className="text-white">Mr. Bastos Barbearia</strong>{" "}
+                    já está reservada.
+                  </p>
+                </div>
+
+                <div className="bg-[#081221] border border-blue-900/50 rounded-2xl p-4 text-left space-y-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Serviço</span>
+                    <span className="font-bold text-white">{serviceObj?.name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Profissional</span>
+                    <span className="font-bold text-blue-400">{confirmedBarberName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Data e Horário</span>
+                    <span className="font-bold text-white">
+                      {selectedDate.split("-").reverse().join("/")} às {selectedTime}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Pagamento</span>
+                    <span className="font-bold text-emerald-400">{paymentMethod}</span>
+                  </div>
+                </div>
+
+                {!session?.user && clientEmail && (
+                  <div className="bg-blue-950/35 border border-blue-700/40 rounded-2xl p-4 text-left space-y-1 text-xs">
+                    <p className="font-bold text-blue-300 uppercase tracking-wider text-[10px]">
+                      Sua Conta VIP de Acesso
+                    </p>
+                    <p className="text-slate-300">
+                      Login: <strong className="text-white">{clientEmail}</strong>
+                    </p>
+                    <p className="text-slate-400 text-[11px]">
+                      Enviamos a confirmação para seu e-mail e liberamos seu Cartão Fidelidade.
+                    </p>
+                  </div>
                 )}
 
-                {step < 3 ? (
+                <div className="space-y-2.5 pt-1">
                   <button
                     type="button"
-                    disabled={(step === 1 && !selectedService) || (step === 2 && !selectedBarber)}
-                    onClick={() => setStep(step + 1)}
-                    className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                    onClick={() => {
+                      onClose();
+                      router.push("/painel-cliente?newBooking=1");
+                    }}
+                    className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider transition-all"
                   >
-                    Avançar <ChevronRight className="w-4 h-4" />
+                    Ir para Meu Painel VIP ({redirectCountdown}s)
                   </button>
-                ) : (
                   <button
                     type="button"
-                    disabled={isLoading || !clientName || !clientEmail || !clientPhone || !selectedDate || !selectedTime}
-                    onClick={handleBooking}
-                    className="px-8 py-3.5 rounded-xl bg-blue-600 text-white font-bold text-xs uppercase tracking-widest hover:bg-white transition-all disabled:opacity-40 flex items-center gap-2 shadow-xl shadow-blue-500/25"
+                    onClick={onClose}
+                    className="w-full py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition-colors"
                   >
-                    {isLoading ? "Confirmando..." : "Confirmar Agendamento"}
+                    Continuar no Site
                   </button>
-                )}
-              </div>
-
-              {step === 3 && (
-                <p className="text-[10px] text-gray-500 text-center mt-2.5">
-                  Seus dados pessoais estão protegidos conforme nossa{" "}
-                  <a href="/politica-de-privacidade" target="_blank" className="text-blue-400 hover:underline">
-                    Política de Privacidade (LGPD)
-                  </a>.
-                </p>
-              )}
-            </div>
-          )}
-        </motion.div>
-      </div>
-    </AnimatePresence>,
-    document.body
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.div>
+    </div>
   );
+
+  return createPortal(modalNode, document.body);
 }

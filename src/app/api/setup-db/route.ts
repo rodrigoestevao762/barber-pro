@@ -20,6 +20,24 @@ export async function GET() {
       );
     `);
 
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS public."BarberSchedule" (
+        "id" TEXT NOT NULL,
+        "barberId" TEXT NOT NULL,
+        "dateKey" TEXT NOT NULL,
+        "isClosed" BOOLEAN NOT NULL DEFAULT false,
+        "earlyClosingTime" TEXT,
+        "lunchBreakTime" TEXT,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT "BarberSchedule_pkey" PRIMARY KEY ("id")
+      );
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "BarberSchedule_barberId_dateKey_idx"
+      ON public."BarberSchedule"("barberId", "dateKey");
+    `);
+
     // Sincroniza todos os 9 serviços e combos oficiais
     for (const s of OFFICIAL_SERVICES) {
       try {

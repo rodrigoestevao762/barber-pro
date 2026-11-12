@@ -11,9 +11,56 @@ export interface StoredAppointment {
   barber: { id: string; name: string; phone?: string; role?: string };
   service: { id: string; name: string; price: number; duration: number };
   user: { id: string; name: string; phone?: string; email?: string };
+  paymentMethod?: string;
   durationSpent?: number;
   createdAt?: string;
 }
+
+function getAppointmentsFilePath(): string | null {
+  if (typeof window !== "undefined") return null;
+  try {
+    const path = require("path");
+    return process.env.VERCEL || process.env.NODE_ENV === "production"
+      ? path.join("/tmp", "mrbastos_appointments.json")
+      : path.join(process.cwd(), "src", "data", "mrbastos_appointments.json");
+  } catch (_) {
+    return null;
+  }
+}
+
+function saveAppointmentsToDisk(): void {
+  if (typeof window !== "undefined") return;
+  try {
+    const fs = require("fs");
+    const path = require("path");
+    const filePath = getAppointmentsFilePath();
+    if (!filePath || !(global as any).__mrbastos_appointments) return;
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      filePath,
+      JSON.stringify((global as any).__mrbastos_appointments, null, 2),
+      "utf-8"
+    );
+  } catch (_) {}
+}
+
+function loadAppointmentsFromDiskOnce(): void {
+  if (typeof window !== "undefined") return;
+  if ((global as any).__mrbastos_appointments) return;
+  try {
+    const fs = require("fs");
+    const filePath = getAppointmentsFilePath();
+    if (filePath && fs.existsSync(filePath)) {
+      const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        (global as any).__mrbastos_appointments = parsed;
+      }
+    }
+  } catch (_) {}
+}
+
+loadAppointmentsFromDiskOnce();
 
 export interface StoredClosing {
   id: string;
@@ -130,11 +177,13 @@ export function addStoredAppointment(aptData: Partial<StoredAppointment>): Store
       name: "Cliente Balcão",
       phone: "(75) 98888-0000",
     },
+    paymentMethod: aptData.paymentMethod,
     durationSpent: aptData.durationSpent,
     createdAt: aptData.createdAt || new Date().toISOString(),
   };
 
   global.__mrbastos_appointments.unshift(newApt);
+  saveAppointmentsToDisk();
   return newApt;
 }
 
@@ -155,6 +204,7 @@ export function updateStoredAppointment(id: string, updates: Partial<StoredAppoi
         apt.service = { id: service.id, name: service.name, price: service.price, duration: service.duration };
       }
     }
+    saveAppointmentsToDisk();
     return true;
   }
   return false;

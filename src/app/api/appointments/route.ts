@@ -1,64 +1,67 @@
-import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-import { BARBERS, getBarberById } from '@/lib/barbers';
-import { OFFICIAL_SERVICES } from '@/lib/services';
-import { addStoredAppointment } from '@/lib/appointments-store';
-import { getBrazilNow, getBrazilDateAndTimeString, parseBrazilDateTime } from '@/lib/timezone';
-import { checkDayStatus } from '@/lib/holidays';
-import { isBarberAvailable } from '@/lib/barber-availability';
+import { NextResponse } from "next/server";
+import prisma from "@/lib/prisma";
+import bcrypt from "bcryptjs";
+import { BARBERS, getBarberById } from "@/lib/barbers";
+import { OFFICIAL_SERVICES } from "@/lib/services";
+import { addStoredAppointment, getAppointmentsForDate } from "@/lib/appointments-store";
+import { upsertStoredUser } from "@/lib/users-store";
+import { normalizeBarberId } from "@/lib/barber-availability";
+import { checkBarberDayStatusDB, getBarberDayScheduleDB } from "@/lib/barber-schedule";
+import {
+  formatAptTimeToHHMM,
+  getBrazilDateAndTimeString,
+  getBrazilNow,
+  parseBrazilDateTime,
+} from "@/lib/timezone";
+import { checkDayStatus } from "@/lib/holidays";
+import {
+  sendAppointmentConfirmationEmail,
+  sendNewBookingNotificationToBarber,
+} from "@/lib/resend";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { 
-      serviceId, 
-      barberId, 
-      date, 
-      isWalkIn, 
-      clientName, 
-      clientEmail, 
-      clientPhone, 
-      clientPassword, 
-      status: reqStatus, 
-      paymentMethod 
+    const {
+      serviceId,
+      barberId: rawBarberId,
+      date,
+      isWalkIn,
+      clientName,
+      clientEmail,
+      clientPhone,
+      clientPassword,
+      status: reqStatus,
+      paymentMethod,
     } = body;
 
     const appointmentStatus = reqStatus || (isWalkIn ? "COMPLETED" : "PENDING");
 
-    // 1. Identifica e valida o Barbeiro
-    let assignedBarber = getBarberById(barberId);
-    if (!assignedBarber) {
-      assignedBarber = BARBERS[0];
-      barberId = assignedBarber.id;
-    }
+    // 1. Identifica o serviço oficial correspondente
+    const matchedService =
+      OFFICIAL_SERVICES.find(
+        (s) => s.id === serviceId || s.name.toLowerCase() === String(serviceId).toLowerCase()
+      ) || OFFICIAL_SERVICES[0];
 
-    // 2. Identifica o serviço oficial correspondente
-    const matchedService = OFFICIAL_SERVICES.find(
-      (s) => s.id === serviceId || s.name.toLowerCase() === String(serviceId).toLowerCase()
-    ) || OFFICIAL_SERVICES[0];
-
-    // Validação estrita contra agendamentos no passado (fuso horário do Brasil)
+    // Validação de data/hora no fuso brasileiro
     const appointmentDate = parseBrazilDateTime(date);
+    const requestedBrazil = getBrazilDateAndTimeString(appointmentDate);
+
+    // 2. Identifica e valida o Barbeiro Oficial (com suporte a "qualquer")
+    let assignedBarber =
+      rawBarberId && rawBarberId !== "qualquer" && rawBarberId !== "all"
+        ? getBarberById(rawBarberId) || BARBERS[0]
+        : undefined;
 
     if (!isWalkIn) {
       // 2.1 Validação de Domingo e Feriado (Alagoinhas - BA + Nacionais)
-      const dayCheck = checkDayStatus(date);
+      const dayCheck = checkDayStatus(requestedBrazil.date);
       if (dayCheck.isClosed) {
         return NextResponse.json({ error: dayCheck.reason }, { status: 400 });
       }
 
-      // 2.2 Validação de Escala Flexível do Barbeiro
-      if (!isBarberAvailable(assignedBarber.id)) {
-        return NextResponse.json(
-          { error: "Este profissional não está disponível para agendamentos hoje (escala flexível)." },
-          { status: 400 }
-        );
-      }
-
+      // 2.2 Validação contra horário passado
       const brazilNow = getBrazilNow();
-      const requestedBrazil = getBrazilDateAndTimeString(appointmentDate);
-
       const isPast =
         requestedBrazil.date < brazilNow.date ||
         (requestedBrazil.date === brazilNow.date && requestedBrazil.time <= brazilNow.time);
@@ -69,14 +72,129 @@ export async function POST(req: Request) {
           { status: 400 }
         );
       }
+
+      // 2.3 Coleta agendamentos ativos na data para checagem de conflito / escolha automática
+      const startOfDay = new Date(`${requestedBrazil.date}T00:00:00-03:00`);
+      const endOfDay = new Date(`${requestedBrazil.date}T23:59:59-03:00`);
+      const bookedAtTime = new Set<string>();
+
+      try {
+        const dbApts = await prisma.appointment.findMany({
+          where: {
+            date: { gte: startOfDay, lte: endOfDay },
+            status: { notIn: ["CANCELLED"] },
+          },
+          select: { date: true, barberId: true },
+        });
+        for (const a of dbApts) {
+          if (formatAptTimeToHHMM(a.date) === requestedBrazil.time) {
+            bookedAtTime.add(normalizeBarberId(a.barberId));
+          }
+        }
+      } catch (_) {}
+
+      for (const a of getAppointmentsForDate(requestedBrazil.date, null)) {
+        if (a.status !== "CANCELLED" && formatAptTimeToHHMM(a.date) === requestedBrazil.time) {
+          bookedAtTime.add(normalizeBarberId(a.barberId));
+        }
+      }
+
+      if (!assignedBarber) {
+        // "Qualquer Profissional": escolhe o primeiro barbeiro ativo, fora do almoço e livre
+        for (const candidate of BARBERS) {
+          const bStatus = await checkBarberDayStatusDB(candidate.id, requestedBrazil.date);
+          if (bStatus.isClosed) continue;
+
+          const bSchedule = await getBarberDayScheduleDB(candidate.id, requestedBrazil.date);
+          if (bSchedule.earlyClosingTime && requestedBrazil.time > bSchedule.earlyClosingTime) {
+            continue;
+          }
+          if (bSchedule.lunchBreakSlots.includes(requestedBrazil.time)) {
+            continue;
+          }
+          if (bookedAtTime.has(candidate.id)) {
+            continue;
+          }
+
+          assignedBarber = candidate;
+          break;
+        }
+
+        if (!assignedBarber) {
+          return NextResponse.json(
+            { error: "Nenhum profissional está disponível exatamente neste horário (pausa de almoço, escala ou horário ocupado). Escolha outro horário." },
+            { status: 400 }
+          );
+        }
+      } else {
+        // 2.4 Barbeiro específico selecionado: valida escala 4x4, folga na data, sair antes, almoço individual e conflito
+        const barberCheck = await checkBarberDayStatusDB(assignedBarber.id, requestedBrazil.date);
+        if (barberCheck.isClosed) {
+          return NextResponse.json({ error: barberCheck.reason }, { status: 400 });
+        }
+
+        const barberSchedule = await getBarberDayScheduleDB(assignedBarber.id, requestedBrazil.date);
+        if (barberSchedule.earlyClosingTime && requestedBrazil.time > barberSchedule.earlyClosingTime) {
+          return NextResponse.json(
+            {
+              error: `${assignedBarber.name} encerrou os atendimentos às ${barberSchedule.earlyClosingTime} nesta data.`,
+            },
+            { status: 400 }
+          );
+        }
+
+        if (barberSchedule.lunchBreakSlots.includes(requestedBrazil.time)) {
+          return NextResponse.json(
+            {
+              error: `${assignedBarber.name} está em pausa para o almoço às ${requestedBrazil.time}. Por favor, escolha outro horário.`,
+            },
+            { status: 400 }
+          );
+        }
+
+        if (bookedAtTime.has(assignedBarber.id)) {
+          return NextResponse.json(
+            {
+              error: `Este horário (${requestedBrazil.time}) já está reservado para ${assignedBarber.name}.`,
+            },
+            { status: 409 }
+          );
+        }
+      }
+    } else if (!assignedBarber) {
+      assignedBarber = BARBERS[0];
     }
 
+    const rawPhone = (clientPhone || "").trim();
+    const cleanPhone = rawPhone.replace(/\D/g, "");
+    const formattedEmail = clientEmail ? clientEmail.trim().toLowerCase() : null;
+    const rawPassword = clientPassword ? String(clientPassword).trim() : "";
+    const hashedPassword = await bcrypt.hash(rawPassword || "123", 10);
+
+    // 3. Garante persistência imediata no store local (usuário + agendamento + pagamento)
+    const fallbackClientEmail =
+      formattedEmail || `${cleanPhone || `cliente-${Date.now()}`}@cliente.mrbastos.com.br`;
+
+    const persistentClient = upsertStoredUser({
+      name: clientName?.trim() || (isWalkIn ? "Cliente Balcão" : "Cliente VIP"),
+      email: fallbackClientEmail,
+      phone: cleanPhone || rawPhone || null,
+      passwordHash: hashedPassword,
+      role: "CLIENT",
+    });
+
+    const finalPaymentMethod = paymentMethod || (isWalkIn ? "DINHEIRO" : "PIX");
+    const generatedAptId = `apt-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+    let dbClient: any = null;
+    let dbAppointment: any = null;
+
     try {
-      // 3. Garante que o Barbeiro existe na tabela Barber do banco de dados
+      // 4. Sincroniza Barbeiro no PostgreSQL
       try {
         await prisma.barber.upsert({
           where: { id: assignedBarber.id },
-          update: { 
+          update: {
             name: assignedBarber.name,
             commissionRate: assignedBarber.commissionRate,
           },
@@ -90,10 +208,9 @@ export async function POST(req: Request) {
         console.warn("Aviso ao sincronizar barbeiro no banco:", barberErr);
       }
 
-      // 4. Garante que o Serviço existe na tabela Service do banco de dados (evita erro de chave estrangeira)
-      let finalServiceId: string = serviceId;
+      // 5. Garante que o Serviço existe no PostgreSQL
+      let finalServiceId: string = matchedService.id;
       try {
-        // Tenta achar pelo ID ou pelo Nome
         const existingService = await prisma.service.findFirst({
           where: {
             OR: [
@@ -106,7 +223,6 @@ export async function POST(req: Request) {
         if (existingService) {
           finalServiceId = existingService.id;
         } else {
-          // Cria o serviço oficial no banco com o ID padronizado
           const newService = await prisma.service.upsert({
             where: { id: matchedService.id },
             update: {
@@ -125,61 +241,52 @@ export async function POST(req: Request) {
           finalServiceId = newService.id;
         }
       } catch (servErr) {
-        console.warn("Aviso ao sincronizar serviço no banco, usando fallback:", servErr);
+        console.warn("Aviso ao sincronizar serviço no banco:", servErr);
         const fallbackServ = await prisma.service.findFirst();
-        if (fallbackServ) {
-          finalServiceId = fallbackServ.id;
-        }
+        if (fallbackServ) finalServiceId = fallbackServ.id;
       }
 
-      // 5. Garante que o Cliente existe e cria/atualiza a conta no banco de dados
-      let client: any = null;
-
+      // 6. Busca ou cria Cliente no PostgreSQL
       if (isWalkIn && !clientName) {
-        client = await prisma.user.findFirst({ where: { role: "ADMIN" } });
+        dbClient = await prisma.user.findFirst({ where: { role: "ADMIN" } });
       } else {
-        const rawPhone = (clientPhone || "").trim();
-        const cleanPhone = rawPhone.replace(/\D/g, "");
-        const formattedEmail = clientEmail ? clientEmail.trim().toLowerCase() : null;
-
-        // Busca cliente existente por e-mail ou telefone
         const existingClient = await prisma.user.findFirst({
           where: {
             OR: [
               ...(formattedEmail ? [{ email: formattedEmail }] : []),
-              ...(cleanPhone ? [
-                { phone: cleanPhone },
-                { phone: cleanPhone.startsWith("55") ? cleanPhone.slice(2) : `55${cleanPhone}` },
-              ] : []),
+              ...(cleanPhone
+                ? [
+                    { phone: cleanPhone },
+                    { phone: cleanPhone.startsWith("55") ? cleanPhone.slice(2) : `55${cleanPhone}` },
+                  ]
+                : []),
             ],
           },
         });
 
         if (existingClient) {
-          client = existingClient;
+          dbClient = existingClient;
           const updateData: any = {};
-          if (formattedEmail && (!client.email || client.email !== formattedEmail)) {
+          if (formattedEmail && (!dbClient.email || dbClient.email !== formattedEmail)) {
             updateData.email = formattedEmail;
           }
-          if (clientName && (!client.name || client.name === "Cliente")) {
+          if (clientName && (!dbClient.name || dbClient.name === "Cliente")) {
             updateData.name = clientName.trim();
           }
-          if (clientPassword && clientPassword !== "123") {
-            updateData.password = await bcrypt.hash(clientPassword, 10);
+          if (rawPassword && rawPassword !== "123") {
+            updateData.password = hashedPassword;
           }
           if (Object.keys(updateData).length > 0) {
             try {
-              client = await prisma.user.update({
-                where: { id: client.id },
+              dbClient = await prisma.user.update({
+                where: { id: dbClient.id },
                 data: updateData,
               });
             } catch (_) {}
           }
         } else {
-          // Cria nova conta com perfil CLIENT
-          const hashedPassword = await bcrypt.hash(clientPassword || "123", 10);
           try {
-            client = await prisma.user.create({
+            dbClient = await prisma.user.create({
               data: {
                 name: clientName?.trim() || "Cliente",
                 phone: cleanPhone || null,
@@ -190,7 +297,7 @@ export async function POST(req: Request) {
             });
           } catch (createErr) {
             console.warn("Conflito ao criar cliente, buscando existente:", createErr);
-            client = await prisma.user.findFirst({
+            dbClient = await prisma.user.findFirst({
               where: {
                 OR: [
                   ...(formattedEmail ? [{ email: formattedEmail }] : []),
@@ -202,17 +309,16 @@ export async function POST(req: Request) {
         }
       }
 
-      // Se por algum motivo o cliente ainda for nulo, busca o primeiro usuário ou cria fallback
-      if (!client) {
-        client = await prisma.user.findFirst();
+      if (!dbClient) {
+        dbClient = await prisma.user.findFirst();
       }
 
-      // 6. Grava o agendamento no banco de dados
-      const appointment = await prisma.appointment.create({
+      // 7. Grava o agendamento no PostgreSQL
+      dbAppointment = await prisma.appointment.create({
         data: {
           date: appointmentDate,
           serviceId: finalServiceId,
-          userId: client.id,
+          userId: dbClient.id,
           barberId: assignedBarber.id,
           status: appointmentStatus,
         },
@@ -223,9 +329,9 @@ export async function POST(req: Request) {
         },
       });
 
-      // 7. Sincroniza também no store em memória para feedback instantâneo
+      // 8. Sincroniza também no store local/disco para contingência e forma de pagamento
       addStoredAppointment({
-        id: appointment.id,
+        id: dbAppointment.id,
         date: appointmentDate.toISOString(),
         barberId: assignedBarber.id,
         service: {
@@ -235,33 +341,68 @@ export async function POST(req: Request) {
           duration: matchedService.duration,
         },
         user: {
-          id: client.id,
-          name: client.name || clientName || "Cliente",
-          phone: client.phone || clientPhone || "(75) 98888-0000",
-          email: client.email || clientEmail,
+          id: dbClient.id,
+          name: dbClient.name || clientName || "Cliente",
+          phone: dbClient.phone || clientPhone || "(75) 98888-0000",
+          email: dbClient.email || formattedEmail || undefined,
         },
         status: appointmentStatus,
+        paymentMethod: finalPaymentMethod,
         durationSpent: appointmentStatus === "COMPLETED" ? matchedService.duration : undefined,
       });
+
+      // 9. Dispara notificações por e-mail Resend de forma assíncrona (não bloqueia a resposta)
+      if (!isWalkIn) {
+        const [year, month, day] = requestedBrazil.date.split("-");
+        const dateFormatted = `${day}/${month}/${year}`;
+        const timeFormatted = requestedBrazil.time;
+
+        if (formattedEmail) {
+          sendAppointmentConfirmationEmail({
+            to: formattedEmail,
+            clientName: dbClient.name || clientName || "Cliente VIP",
+            serviceName: matchedService.name,
+            servicePrice: matchedService.price,
+            barberName: assignedBarber.name,
+            dateFormatted,
+            timeFormatted,
+          }).catch((e) => console.error("Erro assíncrono envio confirmação:", e));
+        }
+
+        if (assignedBarber.email) {
+          sendNewBookingNotificationToBarber({
+            to: assignedBarber.email,
+            barberName: assignedBarber.name,
+            clientName: dbClient.name || clientName || "Cliente VIP",
+            clientPhone: dbClient.phone || rawPhone || "Não informado",
+            serviceName: matchedService.name,
+            servicePrice: matchedService.price,
+            dateFormatted,
+            timeFormatted,
+          }).catch((e) => console.error("Erro assíncrono notificação barbeiro:", e));
+        }
+      }
 
       return NextResponse.json({
         success: true,
         message: "Agendamento e conta de cliente criados com sucesso!",
-        appointment,
+        appointment: {
+          ...dbAppointment,
+          paymentMethod: finalPaymentMethod,
+        },
         barber: assignedBarber,
         client: {
-          id: client.id,
-          name: client.name,
-          email: client.email,
-          phone: client.phone,
+          id: dbClient.id,
+          name: dbClient.name,
+          email: dbClient.email,
+          phone: dbClient.phone,
         },
       });
-
     } catch (dbErr: any) {
-      console.error("ERRO NO BANCO AO AGENDAR:", dbErr);
+      console.error("ERRO NO BANCO AO AGENDAR (usando store local):", dbErr);
 
-      // Fallback em memória para contingência de rede
       const stored = addStoredAppointment({
+        id: generatedAptId,
         date: appointmentDate.toISOString(),
         barberId: assignedBarber.id,
         service: {
@@ -271,29 +412,68 @@ export async function POST(req: Request) {
           duration: matchedService.duration,
         },
         user: {
-          id: `u-${Date.now()}`,
-          name: clientName || "Cliente",
-          phone: clientPhone || "(75) 98888-0000",
-          email: clientEmail,
+          id: persistentClient.id,
+          name: persistentClient.name,
+          phone: persistentClient.phone || rawPhone || "(75) 98888-0000",
+          email: formattedEmail || persistentClient.email,
         },
         status: appointmentStatus,
+        paymentMethod: finalPaymentMethod,
         durationSpent: appointmentStatus === "COMPLETED" ? matchedService.duration : undefined,
       });
 
+      if (!isWalkIn) {
+        const [year, month, day] = requestedBrazil.date.split("-");
+        const dateFormatted = `${day}/${month}/${year}`;
+        const timeFormatted = requestedBrazil.time;
+
+        if (formattedEmail) {
+          sendAppointmentConfirmationEmail({
+            to: formattedEmail,
+            clientName: persistentClient.name,
+            serviceName: matchedService.name,
+            servicePrice: matchedService.price,
+            barberName: assignedBarber.name,
+            dateFormatted,
+            timeFormatted,
+          }).catch(() => {});
+        }
+
+        if (assignedBarber.email) {
+          sendNewBookingNotificationToBarber({
+            to: assignedBarber.email,
+            barberName: assignedBarber.name,
+            clientName: persistentClient.name,
+            clientPhone: persistentClient.phone || rawPhone || "Não informado",
+            serviceName: matchedService.name,
+            servicePrice: matchedService.price,
+            dateFormatted,
+            timeFormatted,
+          }).catch(() => {});
+        }
+      }
+
       return NextResponse.json({
         success: true,
-        message: "Agendamento gravado em modo seguro",
+        message: "Agendamento registrado com segurança",
         appointment: {
           ...stored,
           barber: assignedBarber,
         },
         barber: assignedBarber,
-        dbError: dbErr?.message || String(dbErr),
+        client: {
+          id: persistentClient.id,
+          name: persistentClient.name,
+          email: formattedEmail || persistentClient.email,
+          phone: persistentClient.phone,
+        },
       });
     }
-
   } catch (error: any) {
     console.error("ERRO GERAL:", error);
-    return NextResponse.json({ error: error.message || "Erro ao criar agendamento" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Erro ao criar agendamento" },
+      { status: 500 }
+    );
   }
 }
