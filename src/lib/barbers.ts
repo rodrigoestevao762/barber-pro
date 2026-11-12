@@ -19,9 +19,9 @@ export const BARBERS: BarberData[] = [
     phone: "5575998679820",
     phoneDisplay: "(75) 99867-9820",
     role: "ADMIN",
-    specialty: "Cortes Clássicos, Barboterapia & Visagismo",
+    specialty: "Corte, Degradê, Barba & Acabamento",
     avatar: "/barbeiros/mr-bastos.jpg",
-    bio: "Mestre barbeiro e proprietário da Mr. Bastos Barbearia. Tradição e excelência em Alagoinhas.",
+    bio: "Proprietário e barbeiro da Mr. Bastos Barbearia. Atendimento completo em cortes na tesoura ou máquina, degradê, barba na navalha, pezinho e sobrancelha.",
     commissionRate: 0.45, // Dono recebe 45% de seus cortes; 55% vai para a Casa / Administração (Jully) para custos mensais
   },
   {
@@ -31,9 +31,9 @@ export const BARBERS: BarberData[] = [
     phone: "5575999697600",
     phoneDisplay: "(75) 99969-7600",
     role: "BARBER",
-    specialty: "Fade, Degradê Navalhado & Freestyle",
+    specialty: "Corte, Degradê, Barba & Acabamento",
     avatar: "/barbeiros/nando.jpg",
-    bio: "Especialista em transições de degradê, cortes modernos e acabamento milimétrico na lâmina.",
+    bio: "Atendimento completo em cortes na tesoura ou máquina, degradê, barba na navalha, pezinho e sobrancelha.",
     commissionRate: 0.45, // Comissão oficial de 45% (55% repasse para a casa)
   },
   {
@@ -43,9 +43,9 @@ export const BARBERS: BarberData[] = [
     phone: "5575981208732",
     phoneDisplay: "(75) 98120-8732",
     role: "BARBER",
-    specialty: "Barba Terapia, Alinhamento & Navalha",
+    specialty: "Corte, Degradê, Barba & Acabamento",
     avatar: "/barbeiros/saul.jpg",
-    bio: "Especialista em desenho e escultura de barba na navalha, toalha quente e tratamentos faciais.",
+    bio: "Atendimento completo em cortes na tesoura ou máquina, degradê, barba na navalha, pezinho e sobrancelha.",
     commissionRate: 0.45, // Comissão oficial de 45% (55% repasse para a casa)
   },
 ];

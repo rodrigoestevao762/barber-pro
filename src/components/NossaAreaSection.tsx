@@ -439,14 +439,14 @@ export default function NossaAreaSection({
           <div>
             <p className="text-blue-400 uppercase tracking-[0.45em] text-xs font-semibold flex items-center gap-3 mb-3">
               <span className="w-8 h-[1px] bg-blue-600" />
-              Mestres da Navalha
+              Equipe Profissional
             </p>
             <h3 className="text-3xl md:text-4xl font-serif text-white leading-tight">
               Conheça Nossa <span className="text-blue-400">Equipe</span>
             </h3>
           </div>
           <p className="text-gray-400 text-sm font-light max-w-md">
-            Profissionais especialistas em visagismo, degradê navalhado e barboterapia em Alagoinhas.
+            Todos os profissionais realizam cortes na tesoura ou máquina, degradê, barba na navalha, pezinho e sobrancelha em Alagoinhas.
           </p>
         </div>
 
@@ -481,7 +481,7 @@ export default function NossaAreaSection({
                       }`}
                     >
                       <Scissors className="w-3 h-3" />
-                      {isOwner ? "Fundador & Mestre" : "Especialista"}
+                      {isOwner ? "Proprietário" : "Barbeiro"}
                     </span>
                   </div>
                 </div>

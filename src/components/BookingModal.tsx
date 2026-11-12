@@ -561,7 +561,7 @@ export default function BookingModal({
                                 {barber.name}
                               </h4>
                               <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-500/15 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-full">
-                                {barber.role === "ADMIN" ? "Fundador & Mestre" : barber.role === "BARBER" ? "Barbeiro" : barber.role}
+                                {barber.role === "ADMIN" ? "Proprietário" : barber.role === "BARBER" ? "Barbeiro" : barber.role}
                               </span>
                             </div>
                             <p className="text-xs text-slate-400 mt-0.5 truncate">
